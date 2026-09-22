@@ -61,6 +61,9 @@ export class Game {
   private wave = 0;
   private waveBreak = 0;
   private crateTimer = 8;
+  /** D-08 enabler: ?stress tops the field up to ~60 movers so the F3
+   *  50–100-mover budget is measurable (wave tables cap at 14). Debug-only. */
+  private stress = new URLSearchParams(location.search).has('stress');
   private high = 0;
   private scoreSys = new ScoreSystem();
 
@@ -156,6 +159,9 @@ export class Game {
 
   private showModeSelect(): void {
     this.state = 'mode';
+    // D-18: end-of-run banner + stale HUD must not bleed onto menus
+    this.banner.text = '';
+    this.hud.visible = false;
     this.clearMenu();
     this.menuText([
       'SELECT MODE',
@@ -484,6 +490,8 @@ export class Game {
       this.waveBreak += dt;
       if (this.waveBreak > 2.5) this.nextWave();
     }
+    // D-08: ?stress keeps ~60 movers on the field for F3 measurement
+    if (this.stress && this.zombies.length < 60) this.spawnZombie(Math.random() < 0.3, 60 + Math.random() * 40);
   }
 
   private spawnZombie(runner: boolean, speed: number): void {
@@ -594,7 +602,7 @@ export class Game {
 
       if (dead) {
         // grenades detonate on ANY termination — hit, wall, or expiry (D-03)
-        if ((b as Projectile & { grenade?: boolean }).grenade) this.detonate(b.pos, 60);
+        if ((b as Projectile & { grenade?: boolean }).grenade) this.detonate(b.pos, 60, (b as Projectile & { owner?: number }).owner);
         b.destroy();
         this.bullets.splice(i, 1);
       }
@@ -652,10 +660,13 @@ export class Game {
     barrel.explode();
     this.detonate(barrel.pos, BARREL_RADIUS);
   }
-
   /** shared AoE: barrels and grenade shells (D-03). Kills zombies in radius,
-   *  damages players in 0.8×radius, chains unlit barrels. */
-  private detonate(pos: Vec, radius: number): void {
+   *  damages players in 0.8×radius, chains unlit barrels.
+   *  D-19 ruling: a grenade's OWNER is exempt from its blast (fired weapon,
+   *  not environmental hazard like barrels); partners still take friendly
+   *  fire — era-consistent co-op chaos, recorded for ARCADE review. */
+  private detonate(pos: Vec, radius: number, owner?: number): void {
+
     const ring = new BlastRing(pos, radius);
     this.blasts.push(ring);
     this.world.addChild(ring.g);
@@ -671,6 +682,7 @@ export class Game {
     }
     for (const s of this.slots) {
       if (!s.alive || s.p.invuln > 0) continue;
+      if (owner !== undefined && this.slots.indexOf(s) === owner) continue; // D-19: shooter exempt from own grenade
       if (dist(s.p.pos, pos) < radius * 0.8) {
         s.p.hp -= BARREL_PLAYER_DAMAGE;
         s.p.invuln = 0.8;
