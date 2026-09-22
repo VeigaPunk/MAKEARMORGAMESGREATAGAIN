@@ -1,7 +1,8 @@
 # The World's Hardest Game — `hardest/`
 
 Dependency-free Canvas2D replica: red square, blue patrol dots (instant death),
-yellow coins (collect ALL to arm the goal), green zones (start / checkpoint / goal).
+yellow coins (collect ALL to arm the goal), green zones (start / checkpoint /
+goal), keys `y` that open every door `D`, and paired teleport pads `T`.
 
 ## Run
 
@@ -11,8 +12,10 @@ Or serve statically: `python3 -m http.server -d hardest` → http://localhost:80
 ## Controls
 
 - Move: WASD / arrows (touch: drag anywhere = joystick)
-- R: restart level · Esc: pause / back · Enter: next level / select
-- Progress (unlocks, best deaths/time, total deaths) saves to localStorage.
+- R: restart level · Esc: pause / back · Enter: next level / select · M: mute
+- Progress (unlocks, best deaths/time, medals, total deaths) saves to localStorage.
+- Medals: gold = 0 deaths, silver ≤ 2, bronze = clear. Level numbers are tinted
+  by difficulty tier (WARM-UP → INHUMAN).
 
 ## Layout
 

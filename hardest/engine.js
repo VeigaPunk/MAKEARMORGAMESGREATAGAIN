@@ -4,7 +4,8 @@
  *
  * Level format: see LEVEL-FORMAT.md. Tile chars:
  *   '#' wall   '.' floor   'S' start zone   'G' goal zone
- *   'K' checkpoint zone   'C'/'c' coin
+ *   'K' checkpoint zone   'C'/'c' coin   'y' key   'D' door (opens when all
+ *   keys collected)   'T' teleport pad (paired in scan order)
  */
 (function (root) {
 'use strict';
@@ -18,7 +19,7 @@ const COIN_R = 6;
 const DEAD_TIME = 0.25;        // s from death to respawn (≤200ms feel @60fps)
 const EPS = 0.001;
 
-const TILE_CHARS = new Set(['#', '.', 'S', 'G', 'K', 'C', 'c']);
+const TILE_CHARS = new Set(['#', '.', 'S', 'G', 'K', 'C', 'c', 'y', 'D', 'T']);
 const ZONE_CHARS = new Set(['S', 'G', 'K']);
 
 /* ---------- level parsing ---------- */
@@ -31,6 +32,8 @@ function parseLevel(level) {
   const grid = [];
   const zones = { start: [], goal: [], check: [] };
   const coins = [];
+  const keys = [];
+  const telepads = [];
   for (let y = 0; y < h; y++) {
     if (typeof rows[y] !== 'string' || rows[y].length !== w)
       throw new Error(`level.map[${y}]: ragged row`);
@@ -41,6 +44,8 @@ function parseLevel(level) {
       else if (ch === 'G') zones.goal.push([x, y]);
       else if (ch === 'K') zones.check.push([x, y]);
       else if (ch === 'C' || ch === 'c') coins.push({ x: x * TILE + TILE / 2, y: y * TILE + TILE / 2, r: COIN_R, taken: false, tx: x, ty: y });
+      else if (ch === 'y') keys.push({ x: x * TILE + TILE / 2, y: y * TILE + TILE / 2, r: COIN_R, taken: false, tx: x, ty: y });
+      else if (ch === 'T') telepads.push([x, y]);
     }
     grid.push(rows[y]);
   }
@@ -72,7 +77,8 @@ function parseLevel(level) {
   });
 
   return {
-    level, grid, w, h, zones, coins, patrols,
+    level, grid, w, h, zones, coins, keys, telepads, patrols,
+    doorsOpen: keys.length === 0,   // no keys → doors start open
     playerSpeed: level.playerSpeed || PLAYER_SPEED,
     pxW: w * TILE, pxH: h * TILE,
   };
@@ -80,41 +86,43 @@ function parseLevel(level) {
 
 /* ---------- collision helpers (exported for autopilot) ---------- */
 
-function solid(grid, tx, ty) {
-  if (ty < 0 || ty >= grid.length || tx < 0 || tx >= grid[0].length) return true; // OOB = wall
-  return grid[ty][tx] === '#';
+/* P = parsed level ({grid, doorsOpen}); 'D' tiles block until doorsOpen. */
+function solid(P, tx, ty) {
+  if (ty < 0 || ty >= P.grid.length || tx < 0 || tx >= P.grid[0].length) return true; // OOB = wall
+  const ch = P.grid[ty][tx];
+  return ch === '#' || (ch === 'D' && !P.doorsOpen);
 }
 
-function rectHitsWall(grid, x, y, w, h) {
+function rectHitsWall(P, x, y, w, h) {
   const x0 = Math.floor(x / TILE), x1 = Math.floor((x + w - EPS) / TILE);
   const y0 = Math.floor(y / TILE), y1 = Math.floor((y + h - EPS) / TILE);
   for (let ty = y0; ty <= y1; ty++)
     for (let tx = x0; tx <= x1; tx++)
-      if (solid(grid, tx, ty)) return true;
+      if (solid(P, tx, ty)) return true;
   return false;
 }
 
 /* Move an AABB one axis at a time, clamping to wall boundaries. */
-function moveResolve(grid, x, y, w, h, dx, dy) {
+function moveResolve(P, x, y, w, h, dx, dy) {
   x += dx;
   if (dx > 0) {
     const tx = Math.floor((x + w) / TILE);
     const y0 = Math.floor(y / TILE), y1 = Math.floor((y + h - EPS) / TILE);
-    for (let ty = y0; ty <= y1; ty++) if (solid(grid, tx, ty)) { x = tx * TILE - w - EPS; break; }
+    for (let ty = y0; ty <= y1; ty++) if (solid(P, tx, ty)) { x = tx * TILE - w - EPS; break; }
   } else if (dx < 0) {
     const tx = Math.floor(x / TILE);
     const y0 = Math.floor(y / TILE), y1 = Math.floor((y + h - EPS) / TILE);
-    for (let ty = y0; ty <= y1; ty++) if (solid(grid, tx, ty)) { x = (tx + 1) * TILE + EPS; break; }
+    for (let ty = y0; ty <= y1; ty++) if (solid(P, tx, ty)) { x = (tx + 1) * TILE + EPS; break; }
   }
   y += dy;
   if (dy > 0) {
     const ty = Math.floor((y + h) / TILE);
     const x0 = Math.floor(x / TILE), x1 = Math.floor((x + w - EPS) / TILE);
-    for (let tx = x0; tx <= x1; tx++) if (solid(grid, tx, ty)) { y = ty * TILE - h - EPS; break; }
+    for (let tx = x0; tx <= x1; tx++) if (solid(P, tx, ty)) { y = ty * TILE - h - EPS; break; }
   } else if (dy < 0) {
     const ty = Math.floor(y / TILE);
     const x0 = Math.floor(x / TILE), x1 = Math.floor((x + w - EPS) / TILE);
-    for (let tx = x0; tx <= x1; tx++) if (solid(grid, tx, ty)) { y = (ty + 1) * TILE + EPS; break; }
+    for (let tx = x0; tx <= x1; tx++) if (solid(P, tx, ty)) { y = (ty + 1) * TILE + EPS; break; }
   }
   return { x, y };
 }
@@ -162,6 +170,11 @@ function create(level) {
     coins: P.coins,
     coinsLeft: P.coins.length,
     coinsTotal: P.coins.length,
+    keys: P.keys,
+    keysLeft: P.keys.length,
+    keysTotal: P.keys.length,
+    teleports: 0,
+    onPad: -1,               // telepad index under player center, -1 off-pad
   };
 }
 
@@ -172,6 +185,7 @@ function step(st, input, dt) {
     st.deadT -= dt;
     if (st.deadT <= 0) {
       st.player.x = st.respawn.x; st.player.y = st.respawn.y;
+      st.onPad = -1;
       st.status = 'play';
     }
     return st;
@@ -184,7 +198,7 @@ function step(st, input, dt) {
   if (m > 1) { ix /= m; iy /= m; }
   const sp = st.P.playerSpeed * dt;
   const p = st.player;
-  const r = moveResolve(st.P.grid, p.x, p.y, p.w, p.h, ix * sp, iy * sp);
+  const r = moveResolve(st.P, p.x, p.y, p.w, p.h, ix * sp, iy * sp);
   p.x = r.x; p.y = r.y;
 
   // zone under player center
@@ -205,6 +219,31 @@ function step(st, input, dt) {
   for (const c of st.coins) {
     if (!c.taken && circleHitsRect(c.x, c.y, c.r + 2, p.x, p.y, p.w, p.h)) {
       c.taken = true; st.coinsLeft--;
+    }
+  }
+
+  // keys — collecting ALL opens every 'D' door
+  for (const k of st.keys) {
+    if (!k.taken && circleHitsRect(k.x, k.y, k.r + 2, p.x, p.y, p.w, p.h)) {
+      k.taken = true; st.keysLeft--;
+      if (st.keysLeft === 0) st.P.doorsOpen = true;
+    }
+  }
+
+  // teleport pads — edge-triggered: entering pad tile jumps to its pair
+  {
+    const chHere = (cy >= 0 && cy < st.P.h && cx >= 0 && cx < st.P.w) ? st.P.grid[cy][cx] : '#';
+    if (chHere === 'T') {
+      const idx = st.P.telepads.findIndex(([tx, ty]) => tx === cx && ty === cy);
+      if (idx >= 0 && st.onPad !== idx) {
+        const [dx2, dy2] = st.P.telepads[idx ^ 1];
+        p.x = dx2 * TILE + (TILE - p.w) / 2;
+        p.y = dy2 * TILE + (TILE - p.h) / 2;
+        st.onPad = idx ^ 1;
+        st.teleports++;
+      }
+    } else {
+      st.onPad = -1;
     }
   }
 

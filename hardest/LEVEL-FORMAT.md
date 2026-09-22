@@ -15,8 +15,6 @@ registers itself by pushing a plain object to `globalThis.HARDEST_LEVELS`:
 });
 ```
 
-## Map characters (tile = 32px)
-
 | Char | Meaning |
 |---|---|
 | `#` | wall (blocks player; dots may pass — they are not wall-blocked) |
@@ -25,10 +23,18 @@ registers itself by pushing a plain object to `globalThis.HARDEST_LEVELS`:
 | `G` | goal zone (green) — level ends here once ALL coins are collected |
 | `K` | checkpoint zone (green) — touching sets respawn |
 | `C` | coin (yellow) — must ALL be collected before goal works |
+| `y` | key (yellow) — collecting ALL keys opens every `D` door |
+| `D` | door (brown) — solid until all keys collected, then floor |
+| `T` | teleport pad (cyan ring) — pads pair in scan order (1↔2, 3↔4…);
+|     | stepping on one jumps to its twin. Count must be even. |
 
 Every row must be the same length. Only the chars above are legal.
-Coins may not sit on zone tiles (one char per tile). Keep maps inside
+Coins/keys may not sit on zone tiles (one char per tile). Keep maps inside
 `20–30` cols × `12–18` rows so they fit the stage.
+
+Design contract: **keys must be reachable with doors closed** — never put a
+key behind a door. The validator enforces this.
+
 
 ## Patrols (blue dots — instant death on touch)
 
@@ -44,8 +50,8 @@ Coins may not sit on zone tiles (one char per tile). Keep maps inside
 
 1. Schema: filename `NN-slug.js`, `id` matches NN and is unique, `name` present,
    rectangular map, legal chars, ≥1 `S`, ≥1 `G`, valid patrols.
-2. Reachability: BFS from start reaches every coin, every goal tile, every
-   patrol waypoint.
+2. Reachability: BFS from start reaches every key (doors closed), every coin,
+   every goal tile, every patrol waypoint (doors open + teleport edges).
 3. **Completability**: the deterministic autopilot (`autopilot.js`) must clear
    the level through the real engine within 120 simulated seconds / 400 deaths.
    A level the autopilot cannot clear is NOT verified — redesign it (wider

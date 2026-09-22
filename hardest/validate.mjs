@@ -35,17 +35,23 @@ function loadLevelFile(path) {
   return arr[0];
 }
 
-function reachable(P, tx, ty) {
+function reachable(P, tx, ty, doorsOpen) {
+  // BFS from start; 'D' blocks unless doorsOpen; 'T' pads add pair edges.
   const [sx, sy] = P.zones.start[0];
+  const Pv = { grid: P.grid, doorsOpen };
+  const tp = new Map();
+  P.telepads.forEach(([x, y], i) => tp.set(y * P.w + x, P.telepads[i ^ 1]));
   const key = (x, y) => y * P.w + x;
   const seen = new Set([key(sx, sy)]);
   const q = [[sx, sy]];
   while (q.length) {
     const [x, y] = q.shift();
     if (x === tx && y === ty) return true;
-    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-      const nx = x + dx, ny = y + dy;
-      if (nx < 0 || ny < 0 || nx >= P.w || ny >= P.h || P.grid[ny][nx] === '#' || seen.has(key(nx, ny))) continue;
+    const nbrs = [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]];
+    const pair = tp.get(key(x, y));
+    if (pair) nbrs.push(pair);
+    for (const [nx, ny] of nbrs) {
+      if (E.solid(Pv, nx, ny) || seen.has(key(nx, ny))) continue;
       seen.add(key(nx, ny)); q.push([nx, ny]);
     }
   }
@@ -69,8 +75,12 @@ function checkFile(path) {
   let P = null;
   try { P = E.parseLevel(level); } catch (e) { errs.push(`parse: ${e.message}`); }
   if (P) {
-    for (const c of P.coins) if (!reachable(P, c.tx, c.ty)) errs.push(`coin @${c.tx},${c.ty} unreachable`);
-    for (const g of P.zones.goal) if (!reachable(P, g[0], g[1])) errs.push(`goal @${g} unreachable`);
+    if (P.telepads.length % 2) errs.push(`telepads: odd count ${P.telepads.length} (pads pair in scan order)`);
+    // design contract: every key reachable with doors CLOSED
+    for (const k of P.keys) if (!reachable(P, k.tx, k.ty, false)) errs.push(`key @${k.tx},${k.ty} unreachable (keys must not sit behind doors)`);
+    // everything else reachable with doors OPEN + teleport edges
+    for (const c of P.coins) if (!reachable(P, c.tx, c.ty, true)) errs.push(`coin @${c.tx},${c.ty} unreachable`);
+    for (const g of P.zones.goal) if (!reachable(P, g[0], g[1], true)) errs.push(`goal @${g} unreachable`);
     for (const [i, p] of (level.patrols || []).entries()) {
       if (!(p.speed > 0)) errs.push(`patrol[${i}]: speed must be > 0`);
       if (p.r !== undefined && !(p.r > 0 && p.r <= 20)) errs.push(`patrol[${i}]: r out of range`);
@@ -78,7 +88,7 @@ function checkFile(path) {
         if (!Number.isInteger(tx) || !Number.isInteger(ty)) errs.push(`patrol[${i}]: non-integer waypoint ${tx},${ty}`);
         else if (tx < 0 || ty < 0 || tx >= P.w || ty >= P.h || P.grid[ty][tx] === '#')
           errs.push(`patrol[${i}]: waypoint ${tx},${ty} inside wall/OOB`);
-        else if (!reachable(P, tx, ty)) errs.push(`patrol[${i}]: waypoint ${tx},${ty} unreachable`);
+        else if (!reachable(P, tx, ty, true)) errs.push(`patrol[${i}]: waypoint ${tx},${ty} unreachable`);
       }
     }
   }

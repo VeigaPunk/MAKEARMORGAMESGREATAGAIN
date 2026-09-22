@@ -40,18 +40,23 @@ function solve(level, opts) {
   const P = st.P;
   const T = E.TILE, PS = E.PLAYER;
 
-  const walkable = (tx, ty) => !E.solid(P.grid, tx, ty);
+  const walkable = (tx, ty) => !E.solid(P, tx, ty);
   const tileOf = (px, py) => [Math.floor(px / T), Math.floor(py / T)];
 
+  // BFS over walkable tiles; 'T' pads add a zero-cost edge to the paired pad.
   function bfs(sx, sy, tx, ty) {
     if (sx === tx && sy === ty) return [[sx, sy]];
+    const tp = new Map();
+    P.telepads.forEach(([x, y], i) => tp.set(y * P.w + x, P.telepads[i ^ 1]));
     const key = (x, y) => y * P.w + x;
     const prev = new Map([[key(sx, sy), null]]);
     const q = [[sx, sy]];
     for (let h = 0; h < q.length; h++) {
       const [x, y] = q[h];
-      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-        const nx = x + dx, ny = y + dy;
+      const nbrs = [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]];
+      const pair = tp.get(key(x, y));
+      if (pair) nbrs.push(pair);
+      for (const [nx, ny] of nbrs) {
         if (!walkable(nx, ny) || prev.has(key(nx, ny))) continue;
         prev.set(key(nx, ny), [x, y]);
         if (nx === tx && ny === ty) {
@@ -70,15 +75,21 @@ function solve(level, opts) {
     const d = Math.hypot(bx - ax, by - ay), n = Math.max(1, Math.ceil(d / 4));
     for (let k = 0; k <= n; k++) {
       const x = ax + (bx - ax) * k / n - PS / 2, y = ay + (by - ay) * k / n - PS / 2;
-      if (E.rectHitsWall(P.grid, x, y, PS, PS)) return false;
+      if (E.rectHitsWall(P, x, y, PS, PS)) return false;
     }
     return true;
   }
 
   function objectives() {
-    if (st.coinsLeft > 0) return st.coins.filter(c => !c.taken).map(c => [c.tx, c.ty]);
+    // keys + coins in any order (design contract: keys never behind doors);
+    // goal only once everything is collected.
+    const items = [];
+    for (const k of st.keys) if (!k.taken) items.push([k.tx, k.ty]);
+    if (st.coinsLeft > 0) for (const c of st.coins) if (!c.taken) items.push([c.tx, c.ty]);
+    if (items.length) return items;
     return P.zones.goal.map(g => g);
   }
+
 
   function plan() { // → waypoints in px, or null
     const [sx, sy] = tileOf(st.player.x + PS / 2, st.player.y + PS / 2);
@@ -104,7 +115,7 @@ function solve(level, opts) {
     const steps = Math.round(HORIZON / E.STEP);
     const spd = P.playerSpeed * E.STEP;
     for (let k = 1; k <= steps; k++) {
-      const r = E.moveResolve(P.grid, x, y, PS, PS, dir[0] * spd, dir[1] * spd);
+      const r = E.moveResolve(P, x, y, PS, PS, dir[0] * spd, dir[1] * spd);
       x = r.x; y = r.y;
       if (k % CHECK_EVERY === 0 || k === 1) {
         const tt = t0 + k * E.STEP;
@@ -120,7 +131,7 @@ function solve(level, opts) {
     return { safe: true, minD, reached, dieAt };
   }
 
-  let wps = plan(), wi = 0;
+  let wps = plan(), wi = 0, tpCount = 0;
   let lastImprove = 0, bestD = Infinity, wiggle = 0;
   const tEnd = maxSim;
 
@@ -158,6 +169,7 @@ function solve(level, opts) {
     }
 
     E.step(st, { x: chosen[0], y: chosen[1] }, E.STEP);
+    if (st.teleports > tpCount) { tpCount = st.teleports; wps = plan(); wi = 0; bestD = Infinity; lastImprove = st.t; }
     if (opts.trace && (st.t * 240 | 0) % 240 === 0) opts.trace(st, wp, chosen);
   }
   return {
