@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>PROTO: Chicken Invaders / Cluck Horizon — mechanics proof (INTERNAL)</title>
+<style>
+  html,body{margin:0;height:100%;background:#050510;display:flex;align-items:center;justify-content:center;font-family:monospace}
+  canvas{max-width:100vw;max-height:100vh}
+</style>
+</head>
+<body>
+<canvas id="c" width="960" height="540"></canvas>
+<script>
+"use strict";
+/* maga-proto: Chicken Invaders (replica) + Cluck Horizon (original) — core-loop mechanics proof.
+ * Specs: 01-design-docs/02-concept-specs/04-chicken-invaders.md + 06-chicken-invaders-original.md
+ * Loop: chapter -> waves of formation chickens (dodge eggs) -> boss -> chapter clear -> unlock.
+ *       Gifts/crates cycle weapons; drumsticks/rations feed missile stock; lives + respawn.
+ * One skeleton, two content packs (spec 06 §FORGE: "shared shmup skeleton + content packs").
+ * All combat constants are DECLARED GUESSES (dossier: every numeric = TBD from ARCADE playtest).
+ */
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+const W = cv.width, H = cv.height;
+
+// ---------------- content packs (shared skeleton, swapped content) ----------------
+const PACKS = {
+  replica: {
+    id: 'replica', title: 'CHICKEN INVADERS', sub: 'The Next Wave — formula replica slice',
+    weapons: ['PEA SHOOTER', 'TWIN BOLT', 'TRI-SPREAD'],
+    gift: 'GIFT', food: 'DRUMSTICK', enemy: 'CHICKEN', boss: 'BIG HEN',
+    ship: '#4dabf7', foe: '#ffd43b', foe2: '#ff8787', egg: '#fff3bf',
+    bg0: '#0b0018', bg1: '#1a0b2e', accent: '#ff6b6b',
+    jokes: null
+  },
+  cluck: {
+    id: 'cluck', title: 'CLUCK HORIZON', sub: 'courier vs the flock — original IP slice',
+    weapons: ['SOUP LASER', 'SPATULA SPREAD', 'WHISK BARRAGE'],
+    gift: 'CRATE', food: 'RATIONS', enemy: 'FLOCKBIRD', boss: 'MOTHER GOOSE',
+    ship: '#20c997', foe: '#ffa94d', foe2: '#ffe066', egg: '#ffe8cc',
+    bg0: '#001a1a', bg1: '#00332b', accent: '#20c997',
+    jokes: ['Courier log: the flock took my route. Rude.',
+            'Courier log: eggs again. Sending them the invoice.']
+  }
+};
+
+// ---------------- tunables (ALL TBD from ARCADE playtest — declared, not measured) ----------------
+const DT = 1/120;
+const SHIP_ACC = 2600, SHIP_DAMP = 7.5, SHIP_MAXV = 400;   // inertia / float feel
+const SHIP_R = 13, SHIP_Y0 = H - 60;
+const FIRE_EVERY = 0.17, BULLET_V = -560, BULLET_DMG = 1;
+const EGG_V = 150, EGG_R = 6;
+const MISSILE_V = -330, MISSILE_DMG = 12, MISSILE_START = 2, MISSILE_CAP = 6;
+const PICKUP_V = 95, GIFT_CHANCE = 0.12;
+const LIVES_START = 3, RESPAWN_S = 1.2, INVULN_S = 2.0;    // spec #6: back in fight <=2s
+const CHAPTER_CLEAR_S = 2.6;
+
+// chapter -> wave list; boss appended after last wave. rows/cols = formation grid.
+const CHAPTERS = [
+  [ {pattern:'straight', rows:2, cols:6, hp:2, eggEvery:3.0},
+    {pattern:'swoop',    rows:2, cols:6, hp:2, eggEvery:2.4} ],
+  [ {pattern:'dive',     rows:2, cols:7, hp:3, eggEvery:2.1},
+    {pattern:'swoop',    rows:3, cols:6, hp:3, eggEvery:1.8} ],
+];
+const BOSS_HP = [60, 100];
+
+// ---------------- state ----------------
+const keys = {};
+let pack = PACKS.replica;
+let mode, ship, bullets, missiles, eggs, pickups, chickens, boss, parts;
+let chapter, waveIdx, score, lives, missileN, weaponLv, killsInChapter;
+let waveT, eggT, diveT, clearT, deadT, jokeT, paused, fireHeld, fireT, lastDeath;
+let unlocked = +(localStorage.getItem('ci_proto_unlock_' + pack.id) || 1);
+
+const stars = [];
+for (let i = 0; i < 90; i++) stars.push({x: Math.random()*W, y: Math.random()*H, s: Math.random()*2+0.5, v: 12+Math.random()*40});
+
+function startGame(ch) {
+  chapter = ch; waveIdx = 0; score = 0; lives = LIVES_START;
+  missileN = MISSILE_START; weaponLv = 0; killsInChapter = 0;
+  ship = {x: W/2, y: SHIP_Y0, vx: 0, vy: 0, alive: true, invuln: 0};
+  bullets = []; missiles = []; eggs = []; pickups = []; parts = [];
+  boss = null; fireT = 0; deadT = 0; jokeT = 2.2;
+  mode = 'play'; paused = false;
+  spawnWave();
+}
+function spawnWave() {
+  const w = CHAPTERS[chapter-1][waveIdx];
+  chickens = []; waveT = 0; eggT = 1.2; diveT = 1.5;
+  const cw = 64, ch2 = 44, ox = (W - w.cols*cw)/2 + cw/2, oy = 70;
+  for (let r = 0; r < w.rows; r++) for (let c = 0; c < w.cols; c++)
+    chickens.push({bx: ox + c*cw, by: oy + r*ch2, x: ox + c*cw, y: -60 - r*30,
+                   hp: w.hp, t: Math.random()*6, dive: 0, dvx: 0, dvy: 0, enter: 1});
+}
+function spawnBoss() {
+  const hp = BOSS_HP[chapter-1];
+  boss = {x: W/2, y: -80, hp, max: hp, t: 0, volley: 2.0, radial: 5.0, warn: 0};
+  chickens = [];
+}
+function burst(x, y, n, col) {
+  for (let i = 0; i < n; i++) parts.push({x, y, vx:(Math.random()-.5)*420, vy:(Math.random()-.5)*420-80,
+    s: 2+Math.random()*5, life:.4+Math.random()*.5, col});
+}
+function dropPickup(x, y) {
+  killsInChapter++;
+  let kind = null;
+  if (killsInChapter === 1) kind = 'gift';        // deterministic: 1st kill = weapon cycle
+  else if (killsInChapter === 2) kind = 'food';   // deterministic: 2nd kill = missile refill
+  else if (Math.random() < GIFT_CHANCE) kind = Math.random() < .6 ? 'gift' : 'food';
+  if (kind) pickups.push({x, y, vy: PICKUP_V, kind});
+}
+function fireMissile() {
+  if (mode !== 'play' || !ship.alive || missileN <= 0) return;
+  missileN--;
+  missiles.push({x: ship.x, y: ship.y - 18, vy: MISSILE_V});
+}
+function fireGuns() {
+  const y = ship.y - 16, v = BULLET_V;
+  if (weaponLv === 0) bullets.push({x: ship.x, y, vx: 0, vy: v});
+  else if (weaponLv === 1) { bullets.push({x: ship.x-9, y, vx: 0, vy: v}, {x: ship.x+9, y, vx: 0, vy: v}); }
+  else { bullets.push({x: ship.x, y, vx: 0, vy: v}, {x: ship.x-8, y, vx: -70, vy: v*.96}, {x: ship.x+8, y, vx: 70, vy: v*.96}); }
+}
+function hitShip(cause) {
+  if (!ship.alive || ship.invuln > 0) return;
+  ship.alive = false; deadT = 0; lives--;
+  lastDeath = {cause, x: ship.x|0, y: ship.y|0, t: +waveT.toFixed(1)};
+  burst(ship.x, ship.y, 30, pack.ship);
+}
+function killChicken(c) {
+  burst(c.x, c.y, 16, pack.foe);
+  score += 100;
+  dropPickup(c.x, c.y);
+}
+
+// ---------------- input ----------------
+addEventListener('keydown', e => {
+  keys[e.code] = true;
+  if (e.repeat) return;
+  if (mode === 'title') {
+    if (e.code === 'KeyT') setPack(pack.id === 'replica' ? 'cluck' : 'replica');
+    if (e.code === 'Digit1') titleSel = 1;
+    if (e.code === 'Digit2' && unlocked >= 2) titleSel = 2;
+    if (e.code === 'Enter' || e.code === 'Space') startGame(titleSel);
+  } else if (mode === 'play') {
+    if (['Space','KeyZ'].includes(e.code)) { fireHeld = true; e.preventDefault(); }
+    if (['KeyX','ShiftLeft','ShiftRight'].includes(e.code)) fireMissile();
+    if (['Escape','KeyP'].includes(e.code)) paused = !paused;
+  } else if (['gameover','win'].includes(mode)) {
+    if (e.code === 'KeyR' || e.code === 'Enter') mode = 'title';
+  }
+});
+addEventListener('keyup', e => {
+  keys[e.code] = false;
+  if (['Space','KeyZ'].includes(e.code)) fireHeld = false;
+});
+cv.addEventListener('pointerdown', e => {
+  const p = cvPos(e);
+  if (mode === 'title') { titleClick(p.x, p.y); return; }
+  if (mode === 'play') { if (e.button === 2) fireMissile(); else fireHeld = true; }
+  else if (['gameover','win'].includes(mode)) mode = 'title';
+});
+addEventListener('pointerup', () => { fireHeld = false; });
+cv.addEventListener('contextmenu', e => e.preventDefault());
+function cvPos(e) {
+  const r = cv.getBoundingClientRect();
+  return {x: (e.clientX - r.left) * W / r.width, y: (e.clientY - r.top) * H / r.height};
+}
+let titleSel = 1;
+function setPack(id) {
+  pack = PACKS[id];
+  unlocked = +(localStorage.getItem('ci_proto_unlock_' + pack.id) || 1);
+  if (titleSel > unlocked) titleSel = 1;
+}
+// title hit regions (canvas-space rects)
+const BTN = {start:{x:W/2-110,y:330,w:220,h:44}, pack:{x:W/2-160,y:392,w:320,h:34},
+             ch1:{x:W/2-120,y:284,w:110,h:32}, ch2:{x:W/2+10,y:284,w:110,h:32}};
+const inR = (p,r) => p.x>r.x && p.x<r.x+r.w && p.y>r.y && p.y<r.y+r.h;
+function titleClick(x, y) {
+  const p = {x, y};
+  if (inR(p, BTN.pack)) return setPack(pack.id === 'replica' ? 'cluck' : 'replica');
+  if (inR(p, BTN.ch1)) return void (titleSel = 1);
+  if (inR(p, BTN.ch2) && unlocked >= 2) return void (titleSel = 2);
+  if (inR(p, BTN.start)) startGame(titleSel);
+}
+
+// ---------------- simulation ----------------
+function step(dt) {
+  if (mode !== 'play' || paused) return;
+  waveT += dt;
+  for (const s of stars) { s.y += s.v*dt; if (s.y > H) { s.y = -2; s.x = Math.random()*W; } }
+
+  // ship: inertial movement (feel target: float, not tank)
+  if (ship.alive) {
+    const ax = (keys.ArrowRight||keys.KeyD?1:0) - (keys.ArrowLeft||keys.KeyA?1:0);
+    const ay = (keys.ArrowDown||keys.KeyS?1:0) - (keys.ArrowUp||keys.KeyW?1:0);
+    ship.vx += ax*SHIP_ACC*dt; ship.vy += ay*SHIP_ACC*dt;
+    ship.vx -= ship.vx*SHIP_DAMP*dt; ship.vy -= ship.vy*SHIP_DAMP*dt;
+    ship.vx = Math.max(-SHIP_MAXV, Math.min(SHIP_MAXV, ship.vx));
+    ship.vy = Math.max(-SHIP_MAXV, Math.min(SHIP_MAXV, ship.vy));
+    ship.x = Math.max(20, Math.min(W-20, ship.x + ship.vx*dt));
+    ship.y = Math.max(H-220, Math.min(H-30, ship.y + ship.vy*dt));
+    ship.invuln = Math.max(0, ship.invuln - dt);
+    fireT -= dt;
+    if (fireHeld && fireT <= 0) { fireGuns(); fireT = FIRE_EVERY; }
+  } else {
+    deadT += dt;
+    if (deadT >= RESPAWN_S) {
+      if (lives > 0) { ship.alive = true; ship.x = W/2; ship.y = SHIP_Y0; ship.vx = ship.vy = 0; ship.invuln = INVULN_S; }
+      else { mode = 'gameover'; return; }
+    }
+  }
+  jokeT = Math.max(0, jokeT - dt);
+
+  // chickens: formation patterns (Galaxian-ish, readable — not danmaku)
+  const wdef = CHAPTERS[chapter-1][waveIdx] || null;
+  for (const c of chickens) {
+    c.t += dt;
+    if (c.enter) { // fly-in
+      c.y += (c.by - c.y) * Math.min(1, 3*dt) + 40*dt;
+      if (Math.abs(c.y - c.by) < 4) { c.y = c.by; c.enter = 0; }
+      c.x = c.bx; continue;
+    }
+    if (c.dive) { // diving at ship
+      c.x += c.dvx*dt; c.y += c.dvy*dt;
+      if (c.y > H + 30) { c.dive = 0; c.y = -40; c.enter = 1; }
+      continue;
+    }
+    if (!wdef) continue;
+    if (wdef.pattern === 'straight') {
+      c.x = c.bx + Math.sin(waveT*0.7)*130;
+      c.y = Math.min(c.by + waveT*4, 300);
+    } else if (wdef.pattern === 'swoop') {
+      c.x = c.bx + Math.sin(waveT*1.1 + c.bx*0.01)*170;
+      c.y = Math.min(c.by + Math.sin(waveT*0.9 + c.bx*0.02)*36 + waveT*6, 320);
+    } else { // dive formation: mild sway; individuals peel off
+      c.x = c.bx + Math.sin(waveT*0.5)*70;
+      c.y = Math.min(c.by + waveT*3, 280);
+    }
+  }
+  // dive scheduler
+  if (wdef && wdef.pattern === 'dive') {
+    diveT -= dt;
+    if (diveT <= 0) {
+      const cand = chickens.filter(c => !c.dive && !c.enter);
+      if (cand.length) {
+        const c = cand[(Math.random()*cand.length)|0];
+        c.dive = 1;
+        const dx = ship.x - c.x, dy = ship.y - c.y, d = Math.hypot(dx, dy) || 1;
+        const sp = 240; c.dvx = dx/d*sp; c.dvy = Math.max(160, dy/d*sp);
+      }
+      diveT = 1.4 + Math.random();
+    }
+  }
+  // egg drops (aimed-ish, readable speed)
+  eggT -= dt;
+  if (eggT <= 0 && chickens.length) {
+    const c = chickens[(Math.random()*chickens.length)|0];
+    if (!c.enter && c.y < ship.y - 40) {
+      const dx = ship.x - c.x, dy = ship.y - c.y, d = Math.hypot(dx, dy) || 1;
+      const spread = (Math.random()-.5)*0.35;
+      eggs.push({x: c.x, y: c.y + 12, vx: (dx/d + spread)*EGG_V*0.5, vy: EGG_V});
+    }
+    eggT = (wdef ? wdef.eggEvery : 2.2) * (0.7 + Math.random()*0.6);
+  }
+  // wave cleared?
+  if (!chickens.length && !boss) {
+    waveIdx++;
+    if (waveIdx < CHAPTERS[chapter-1].length) spawnWave();
+    else spawnBoss();
+  }
+
+  if (boss) {
+    boss.t += dt;
+    boss.y += (110 - boss.y) * Math.min(1, 1.5*dt);
+    boss.x = W/2 + Math.sin(boss.t*0.7)*240;
+    boss.volley -= dt; boss.radial -= dt; boss.warn = Math.max(0, boss.warn - dt);
+    if (boss.volley <= 0) { // aimed 3-egg volley
+      for (let i = -1; i <= 1; i++) {
+        const dx = ship.x - boss.x, dy = ship.y - boss.y, d = Math.hypot(dx, dy) || 1;
+        eggs.push({x: boss.x, y: boss.y + 30, vx: dx/d*EGG_V*0.6 + i*60, vy: EGG_V*1.05});
+      }
+      boss.volley = 2.4;
+    }
+    if (boss.radial <= 0) { boss.warn = 0.7; boss.radial = 6.0; }
+    if (boss.warn > 0 && boss.warn - dt <= 0.05) { // telegraph fires
+      for (let i = 0; i < 12; i++) {
+        const a = i/12*Math.PI*2;
+        eggs.push({x: boss.x, y: boss.y + 20, vx: Math.cos(a)*EGG_V*0.7, vy: Math.abs(Math.sin(a))*EGG_V*0.7 + 60});
+      }
+    }
+    if (boss.hp <= 0) {
+      burst(boss.x, boss.y, 60, pack.foe2); score += 1000; boss = null;
+      unlocked = Math.max(unlocked, Math.min(2, chapter + 1));
+      localStorage.setItem('ci_proto_unlock_' + pack.id, unlocked);
+      mode = chapter >= 2 ? 'win' : 'clear'; clearT = 0;
+    }
+  }
+
+  // projectiles
+  for (const b of bullets) { b.x += (b.vx||0)*dt; b.y += b.vy*dt; }
+  for (const m of missiles) m.y += m.vy*dt;
+  for (const e of eggs) { e.x += e.vx*dt; e.y += e.vy*dt; }
+  for (const p of pickups) p.y += p.vy*dt;
+  bullets = bullets.filter(b => b.y > -20 && b.x > -20 && b.x < W+20);
+  missiles = missiles.filter(m => m.y > -40);
+  eggs = eggs.filter(e => e.y < H+20 && e.x > -20 && e.x < W+20);
+  pickups = pickups.filter(p => p.y < H+20);
+
+  // bullet/missile vs chickens
+  const hitC = (b, dmg) => {
+    for (const c of chickens) {
+      if (Math.abs(b.x - c.x) < 24 && Math.abs(b.y - c.y) < 18) {
+        c.hp -= dmg; burst(b.x, b.y, 4, pack.foe);
+        if (c.hp <= 0) { killChicken(c); chickens = chickens.filter(k => k !== c); }
+        return true;
+      }
+    }
+    return false;
+  };
+  bullets = bullets.filter(b => !hitC(b, BULLET_DMG));
+  missiles = missiles.filter(m => !hitC(m, MISSILE_DMG));
+  // vs boss
+  if (boss) {
+    const hitB = b => Math.abs(b.x - boss.x) < 56 && Math.abs(b.y - boss.y) < 40;
+    for (const b of bullets) if (hitB(b)) { boss.hp -= BULLET_DMG; b.y = -99; burst(b.x, b.y, 3, pack.foe2); }
+    for (const m of missiles) if (hitB(m)) { boss.hp -= MISSILE_DMG; m.y = -99; burst(m.x, m.y, 12, pack.foe2); }
+    bullets = bullets.filter(b => b.y > -20); missiles = missiles.filter(m => m.y > -40);
+    // boss body collision
+    if (ship.alive && ship.invuln <= 0 && Math.abs(ship.x - boss.x) < 50 && Math.abs(ship.y - boss.y) < 36) hitShip('boss');
+  }
+  // chicken body collision
+  if (ship.alive && ship.invuln <= 0)
+    for (const c of chickens)
+      if (Math.abs(ship.x - c.x) < 26 && Math.abs(ship.y - c.y) < 20) { hitShip('chicken'); break; }
+  // eggs vs ship
+  if (ship.alive && ship.invuln <= 0)
+    for (const e of eggs)
+      if (Math.hypot(e.x - ship.x, e.y - ship.y) < SHIP_R + EGG_R) { hitShip('egg'); e.y = H + 99; break; }
+  // pickups vs ship
+  if (ship.alive)
+    for (const p of pickups) {
+      if (Math.abs(p.x - ship.x) < 26 && Math.abs(p.y - ship.y) < 22) {
+        p.y = H + 99; score += 50;
+        if (p.kind === 'gift') weaponLv = (weaponLv + 1) % pack.weapons.length; // cycle/upgrade
+        else missileN = Math.min(MISSILE_CAP, missileN + 1);
+      }
+    }
+  pickups = pickups.filter(p => p.y < H + 20);
+
+  // particles
+  for (const p of parts) { p.x += p.vx*dt; p.y += p.vy*dt; p.vy += 300*dt; p.life -= dt; }
+  parts = parts.filter(p => p.life > 0);
+}
+
+// ---------------- render ----------------
+function draw() {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, pack.bg1); g.addColorStop(1, pack.bg0);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#fff';
+  for (const s of stars) { ctx.globalAlpha = .35 + s.s/4; ctx.fillRect(s.x, s.y, s.s, s.s); }
+  ctx.globalAlpha = 1;
+
+  if (mode === 'title') return drawTitle();
+
+  // pickups
+  for (const p of pickups) {
+    ctx.fillStyle = p.kind === 'gift' ? '#e599f7' : '#ffa94d';
+    ctx.fillRect(p.x-9, p.y-7, 18, 14);
+    ctx.strokeStyle = '#fff'; ctx.strokeRect(p.x-9, p.y-7, 18, 14);
+    ctx.fillStyle = '#111'; ctx.font = '9px monospace'; ctx.textAlign = 'center';
+    ctx.fillText(p.kind === 'gift' ? pack.gift[0] : 'M', p.x, p.y+3); ctx.textAlign = 'left';
+  }
+  // chickens
+  for (const c of chickens) drawBird(c.x, c.y, 1);
+  // boss
+  if (boss) {
+    if (boss.warn > 0) { ctx.strokeStyle = pack.accent; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(boss.x, boss.y, 62 + Math.sin(boss.t*30)*6, 0, 7); ctx.stroke(); }
+    drawBird(boss.x, boss.y, 3.2);
+    ctx.fillStyle = '#333'; ctx.fillRect(W/2-160, 14, 320, 10);
+    ctx.fillStyle = pack.accent; ctx.fillRect(W/2-160, 14, 320*Math.max(0,boss.hp)/boss.max, 10);
+    ctx.strokeStyle = '#fff'; ctx.strokeRect(W/2-160, 14, 320, 10);
+    ctx.fillStyle = '#fff'; ctx.font = '11px monospace'; ctx.textAlign = 'center';
+    ctx.fillText(pack.boss, W/2, 36); ctx.textAlign = 'left';
+  }
+  // eggs
+  ctx.fillStyle = pack.egg; ctx.strokeStyle = '#948b6b';
+  for (const e of eggs) { ctx.beginPath(); ctx.ellipse(e.x, e.y, EGG_R-1, EGG_R+2, 0, 0, 7); ctx.fill(); ctx.stroke(); }
+  // bullets / missiles
+  ctx.fillStyle = '#8ce99a';
+  for (const b of bullets) ctx.fillRect(b.x-2, b.y-8, 4, 12);
+  ctx.fillStyle = '#ffd43b';
+  for (const m of missiles) { ctx.fillRect(m.x-4, m.y-12, 8, 20); ctx.fillStyle='#ff6b6b'; ctx.fillRect(m.x-4, m.y+6, 8, 4); ctx.fillStyle='#ffd43b'; }
+  // ship
+  if (ship.alive && (ship.invuln <= 0 || (waveT*16|0) % 2 === 0)) drawShip();
+  // particles
+  for (const p of parts) { ctx.globalAlpha = Math.max(0, p.life*2); ctx.fillStyle = p.col; ctx.fillRect(p.x, p.y, p.s, p.s); }
+  ctx.globalAlpha = 1;
+
+  drawHUD();
+  if (jokeT > 0 && pack.jokes) center2(pack.jokes[chapter-1] || '', H-120, '#8ce99a', 14);
+  if (paused) banner('PAUSED');
+  if (mode === 'clear') banner(`CHAPTER ${chapter} CLEAR — next: chapter ${chapter+1}`);
+  if (mode === 'gameover') banner('GAME OVER — R / click for title');
+  if (mode === 'win') banner('ALL CHAPTERS CLEAR — R / click for title');
+}
+function drawBird(x, y, k) {
+  ctx.fillStyle = pack.foe;
+  ctx.beginPath(); ctx.ellipse(x, y, 16*k, 13*k, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = pack.foe2;
+  ctx.beginPath(); ctx.ellipse(x, y-12*k, 8*k, 7*k, 0, 0, 7); ctx.fill(); // head
+  ctx.fillStyle = '#ff8787';
+  ctx.beginPath(); ctx.ellipse(x, y-19*k, 4*k, 3*k, 0, 0, 7); ctx.fill(); // comb
+  ctx.fillStyle = '#ffa94d';
+  ctx.beginPath(); ctx.moveTo(x-3*k, y-11*k); ctx.lineTo(x+3*k, y-11*k); ctx.lineTo(x, y-7*k); ctx.fill(); // beak
+  ctx.fillStyle = '#111'; ctx.fillRect(x-3*k, y-14*k, 2*k, 2*k); ctx.fillRect(x+1.5*k, y-14*k, 2*k, 2*k);
+}
+function drawShip() {
+  ctx.save(); ctx.translate(ship.x, ship.y);
+  ctx.fillStyle = pack.ship;
+  ctx.beginPath(); ctx.moveTo(0, -18); ctx.lineTo(-14, 12); ctx.lineTo(-5, 8); ctx.lineTo(5, 8); ctx.lineTo(14, 12); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.fillRect(-3, -8, 6, 8);
+  ctx.fillStyle = pack.accent; ctx.fillRect(-9, 12, 4, 5); ctx.fillRect(5, 12, 4, 5);
+  ctx.restore();
+}
+function drawHUD() {
+  ctx.fillStyle = '#fff'; ctx.font = '14px monospace';
+  ctx.fillText(`SCORE ${score}`, 14, 22);
+  ctx.fillText(`LIVES ${'♥'.repeat(Math.max(0,lives))}`, 14, 42);
+  ctx.fillText(`${pack.weapons[weaponLv]}`, 14, 62);
+  ctx.fillText(`MISSILES ${missileN}`, 14, 82);
+  ctx.textAlign = 'right';
+  ctx.fillText(`CH ${chapter} · ${boss ? 'BOSS' : 'WAVE ' + (waveIdx+1) + '/' + CHAPTERS[chapter-1].length}`, W-14, 22);
+  ctx.fillText(`[${pack.id.toUpperCase()}]`, W-14, 42);
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#889'; ctx.font = '11px monospace';
+  ctx.fillText('ARROWS/WASD move · SPACE/Z/LMB fire · X/SHIFT/RMB missile · ESC pause — INTERNAL mechanics proof', 14, H-10);
+}
+function banner(t) {
+  ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(0, H/2-40, W, 80);
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 26px monospace'; ctx.textAlign = 'center';
+  ctx.fillText(t, W/2, H/2+9); ctx.textAlign = 'left';
+}
+function center2(t, y, col, size) {
+  ctx.fillStyle = col; ctx.font = `${size}px monospace`; ctx.textAlign = 'center';
+  ctx.fillText(t, W/2, y); ctx.textAlign = 'left';
+}
+function drawTitle() {
+  center2(pack.title, 120, pack.accent, 44);
+  center2(pack.sub, 152, '#aab', 15);
+  center2('— INTERNAL mechanics proof · not for public ship —', 178, '#667', 12);
+  // chapter select
+  btn(BTN.ch1, 'CH 1', titleSel === 1);
+  btn(BTN.ch2, unlocked >= 2 ? 'CH 2' : 'CH 2 🔒', titleSel === 2 && unlocked >= 2);
+  btn(BTN.start, '▶ START', true);
+  btn(BTN.pack, 'PACK: ' + pack.id.toUpperCase() + '  (T / click to swap)', false);
+  center2('ENTER start · 1/2 chapter · T swap pack', 460, '#889', 13);
+  center2('replica = CI2-era formula · cluck = original IP (Cluck Horizon)', 482, '#667', 12);
+}
+function btn(r, t, on) {
+  ctx.fillStyle = on ? pack.accent : '#223'; ctx.fillRect(r.x, r.y, r.w, r.h);
+  ctx.strokeStyle = '#fff'; ctx.strokeRect(r.x, r.y, r.w, r.h);
+  ctx.fillStyle = on ? '#111' : '#dde'; ctx.font = 'bold 15px monospace'; ctx.textAlign = 'center';
+  ctx.fillText(t, r.x + r.w/2, r.y + r.h/2 + 5); ctx.textAlign = 'left';
+}
+
+// ---------------- main loop ----------------
+mode = 'title';
+let acc = 0, last = performance.now();
+function frame(now) {
+  acc += Math.min(0.1, (now - last)/1000); last = now;
+  while (acc >= DT) { step(DT); acc -= DT; }
+  if (mode === 'clear') { clearT += DT; if (clearT >= CHAPTER_CLEAR_S) { chapter++; waveIdx = 0; killsInChapter = 0; jokeT = 2.2; mode = 'play'; spawnWave(); } }
+  draw();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+// ---------------- verification hook (read-only; not gameplay) ----------------
+window.__proto = {
+  get mode(){return mode}, get pack(){return pack.id}, get chapter(){return chapter},
+  get wave(){return waveIdx+1}, get wavesTotal(){return CHAPTERS[chapter-1].length},
+  get score(){return score}, get lives(){return lives}, get missiles(){return missileN},
+  get weapon(){return weaponLv}, get weaponName(){return pack.weapons[weaponLv]},
+  get shipX(){return ship ? ship.x : null}, get shipY(){return ship ? ship.y : null},
+  get shipAlive(){return ship ? ship.alive : null}, get invuln(){return ship ? ship.invuln : 0},
+  get chickens(){return chickens ? chickens.map(c => ({x:c.x, y:c.y, hp:c.hp, dive:!!c.dive})) : []},
+  get eggs(){return eggs ? eggs.length : 0}, get pickups(){return pickups ? pickups.map(p => ({x:p.x, y:p.y, kind:p.kind})) : []},
+  get bossHp(){return boss ? boss.hp : null}, get bossMax(){return boss ? boss.max : null},
+  get bossX(){return boss ? boss.x : null}, get bossWarn(){return boss ? boss.warn : 0},
+  get unlocked(){return unlocked}, get paused(){return paused},
+  get eggs(){return eggs ? eggs.length : 0}, get eggList(){return eggs ? eggs.map(e => ({x:e.x, y:e.y})) : []}, get pickups(){return pickups ? pickups.map(p => ({x:p.x, y:p.y, kind:p.kind})) : []},
+  BTN, PACKS: Object.keys(PACKS)
+};
+</script>
+</body>
+</html>
