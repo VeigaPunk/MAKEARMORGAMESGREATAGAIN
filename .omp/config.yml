@@ -1,0 +1,19 @@
+# Project-level OMP settings — fleet maga.
+# L0 directive 2026-09-22: all L2 task dispatches route to m_kcode
+# (kimi-for-coding) at thinking=low. The m_kcode alias in the global
+# config resolves to :high, so the literal selector is pinned here.
+task:
+  agentModelOverrides:
+    planner: "kimi-code/kimi-for-coding:low"
+    scout: "kimi-code/kimi-for-coding:low"
+    reviewer: "kimi-code/kimi-for-coding:low"
+    critic: "kimi-code/kimi-for-coding:low"
+    connector: "kimi-code/kimi-for-coding:low"
+    sentinel: "kimi-code/kimi-for-coding:low"
+    executor: "kimi-code/kimi-for-coding:low"
+    mutation-tester: "kimi-code/kimi-for-coding:low"
+    revenger: "kimi-code/kimi-for-coding:low"
+    simplifier: "kimi-code/kimi-for-coding:low"
+    scribe: "kimi-code/kimi-for-coding:low"
+    distiller: "kimi-code/kimi-for-coding:low"
+    labrat: "kimi-code/kimi-for-coding:low"

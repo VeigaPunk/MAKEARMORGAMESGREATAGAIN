@@ -1,8 +1,7 @@
 # Level format — The World's Hardest Game
 
-Each level is one file `hardest/levels/NN-slug.js` (NN = zero-padded `id`). The file
+Each level is one file `hardest/levels/NN-slug.js` (NN = zero-padded `id`, 2–3 digits). The file
 registers itself by pushing a plain object to `globalThis.HARDEST_LEVELS`:
-
 ```js
 (globalThis.HARDEST_LEVELS = globalThis.HARDEST_LEVELS || []).push({
   id: 7,                    // integer, unique, must match filename NN
@@ -11,6 +10,9 @@ registers itself by pushing a plain object to `globalThis.HARDEST_LEVELS`:
   map: [ '####', '#SS#', ... ],   // array of equal-length strings
   patrols: [
     { path: [[4,2],[15,2]], speed: 110, mode: 'pingpong', r: 6, phase: 0 },
+  ],
+  movers: [
+    { path: [[13,5],[13,7]], w: 1, h: 2, speed: 80, mode: 'pingpong', phase: 0 },
   ],
 });
 ```
@@ -34,6 +36,21 @@ Coins/keys may not sit on zone tiles (one char per tile). Keep maps inside
 
 Design contract: **keys must be reachable with doors closed** — never put a
 key behind a door. The validator enforces this.
+
+## Movers (sliding wall blocks — solid, they push; pinned = crushed)
+
+- `path`: `[tileX, tileY]` waypoints for the block's CENTER (same path math as
+  patrols: `pingpong`/`loop`, `speed` px/s, `phase` 0–1).
+- `w`/`h`: block size in tiles, integer 1–4 (default 1×1).
+- The block's swept area must NEVER overlap `#` walls — movers live in open
+  floor. It must also never cover `S`/`K` tiles (respawns stay safe). The
+  validator samples the whole sweep and enforces both.
+- Behavior: the player cannot enter a mover (it clamps like a wall); a mover
+  that catches the player pushes them along its motion; if the push leaves the
+  player overlapping anything solid → death (crushed). Design generous timing
+  windows — the autopilot never plans to be pushed, so a level that REQUIRES
+  riding a push cannot be verified.
+- Keep mover speed ≤ 140 and leave ≥2 free tiles beside its lane for dodges.
 
 
 ## Patrols (blue dots — instant death on touch)

@@ -6,6 +6,8 @@
  *   '#' wall   '.' floor   'S' start zone   'G' goal zone
  *   'K' checkpoint zone   'C'/'c' coin   'y' key   'D' door (opens when all
  *   keys collected)   'T' teleport pad (paired in scan order)
+ * Movers (sliding wall blocks) are entities like patrols — level.movers[],
+ * not map chars. Solid: they push the player; pinned against anything = crush.
  */
 (function (root) {
 'use strict';
@@ -52,10 +54,11 @@ function parseLevel(level) {
   if (zones.start.length === 0) throw new Error('level: no start zone S');
   if (zones.goal.length === 0) throw new Error('level: no goal zone G');
 
-  const patrols = (level.patrols || []).map((p, i) => {
-    if (!Array.isArray(p.path) || p.path.length < 1) throw new Error(`patrol[${i}]: path empty`);
+  /* Shared path machinery: patrol dots and movers both ride waypoint paths. */
+  function buildPath(p, i, what) {
+    if (!Array.isArray(p.path) || p.path.length < 1) throw new Error(`${what}[${i}]: path empty`);
     const pts = p.path.map(([tx, ty]) => {
-      if (!Number.isFinite(tx) || !Number.isFinite(ty)) throw new Error(`patrol[${i}]: bad waypoint`);
+      if (!Number.isFinite(tx) || !Number.isFinite(ty)) throw new Error(`${what}[${i}]: bad waypoint`);
       return [tx * TILE + TILE / 2, ty * TILE + TILE / 2];
     });
     const mode = p.mode === 'loop' ? 'loop' : 'pingpong';
@@ -69,15 +72,25 @@ function parseLevel(level) {
       segs.push({ a, b, len });
       L += len;
     }
-    return {
-      pts, segs, L, mode,
-      speed: p.speed, r: p.r || DOT_R,
-      phase: p.phase || 0,
-    };
+    return { pts, segs, L, mode, speed: p.speed, phase: p.phase || 0 };
+  }
+
+  const patrols = (level.patrols || []).map((p, i) => {
+    const base = buildPath(p, i, 'patrol');
+    return { ...base, r: p.r || DOT_R };
+  });
+
+  /* Movers: solid w×h-tile blocks centered on their path point. */
+  const movers = (level.movers || []).map((m, i) => {
+    const base = buildPath(m, i, 'mover');
+    const wT = m.w || 1, hT = m.h || 1;
+    if (!Number.isFinite(wT) || !Number.isFinite(hT) || wT < 1 || hT < 1 || wT > 4 || hT > 4)
+      throw new Error(`mover[${i}]: w/h must be 1-4 tiles`);
+    return { ...base, w: wT * TILE, h: hT * TILE };
   });
 
   return {
-    level, grid, w, h, zones, coins, keys, telepads, patrols,
+    level, grid, w, h, zones, coins, keys, telepads, patrols, movers,
     doorsOpen: keys.length === 0,   // no keys → doors start open
     playerSpeed: level.playerSpeed || PLAYER_SPEED,
     pxW: w * TILE, pxH: h * TILE,
@@ -93,38 +106,61 @@ function solid(P, tx, ty) {
   return ch === '#' || (ch === 'D' && !P.doorsOpen);
 }
 
-function rectHitsWall(P, x, y, w, h) {
+function rectsOverlap(ax, ay, aw, ah, bx, by, bw, bh) {
+  return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
+}
+
+function rectHitsWall(P, x, y, w, h, rects) {
   const x0 = Math.floor(x / TILE), x1 = Math.floor((x + w - EPS) / TILE);
   const y0 = Math.floor(y / TILE), y1 = Math.floor((y + h - EPS) / TILE);
   for (let ty = y0; ty <= y1; ty++)
     for (let tx = x0; tx <= x1; tx++)
       if (solid(P, tx, ty)) return true;
+  if (rects) for (const r of rects) if (rectsOverlap(x, y, w, h, r.x, r.y, r.w, r.h)) return true;
   return false;
 }
 
-/* Move an AABB one axis at a time, clamping to wall boundaries. */
-function moveResolve(P, x, y, w, h, dx, dy) {
+/* Move an AABB one axis at a time, clamping to wall + mover-rect boundaries. */
+function moveResolve(P, x, y, w, h, dx, dy, rects) {
   x += dx;
   if (dx > 0) {
     const tx = Math.floor((x + w) / TILE);
     const y0 = Math.floor(y / TILE), y1 = Math.floor((y + h - EPS) / TILE);
     for (let ty = y0; ty <= y1; ty++) if (solid(P, tx, ty)) { x = tx * TILE - w - EPS; break; }
+    if (rects) for (const r of rects)
+      if (rectsOverlap(x, y, w, h, r.x, r.y, r.w, r.h)) x = Math.min(x, r.x - w - EPS);
   } else if (dx < 0) {
     const tx = Math.floor(x / TILE);
     const y0 = Math.floor(y / TILE), y1 = Math.floor((y + h - EPS) / TILE);
     for (let ty = y0; ty <= y1; ty++) if (solid(P, tx, ty)) { x = (tx + 1) * TILE + EPS; break; }
+    if (rects) for (const r of rects)
+      if (rectsOverlap(x, y, w, h, r.x, r.y, r.w, r.h)) x = Math.max(x, r.x + r.w + EPS);
   }
   y += dy;
   if (dy > 0) {
     const ty = Math.floor((y + h) / TILE);
     const x0 = Math.floor(x / TILE), x1 = Math.floor((x + w - EPS) / TILE);
     for (let tx = x0; tx <= x1; tx++) if (solid(P, tx, ty)) { y = ty * TILE - h - EPS; break; }
+    if (rects) for (const r of rects)
+      if (rectsOverlap(x, y, w, h, r.x, r.y, r.w, r.h)) y = Math.min(y, r.y - h - EPS);
   } else if (dy < 0) {
     const ty = Math.floor(y / TILE);
     const x0 = Math.floor(x / TILE), x1 = Math.floor((x + w - EPS) / TILE);
     for (let tx = x0; tx <= x1; tx++) if (solid(P, tx, ty)) { y = (ty + 1) * TILE + EPS; break; }
+    if (rects) for (const r of rects)
+      if (rectsOverlap(x, y, w, h, r.x, r.y, r.w, r.h)) y = Math.max(y, r.y + r.h + EPS);
   }
   return { x, y };
+}
+
+/* Mover AABB at time t (deterministic — same path math as dots). */
+function moverRect(m, t) {
+  const c = dotPos(m, t);
+  return { x: c.x - m.w / 2, y: c.y - m.h / 2, w: m.w, h: m.h };
+}
+
+function moverRects(P, t) {
+  return P.movers.map(m => moverRect(m, t));
 }
 
 /* Patrol dot center at time t (deterministic). */
@@ -192,14 +228,41 @@ function step(st, input, dt) {
   }
   st.time += dt;
 
-  // movement
+  // movement — clamped by walls AND mover rects at the new clock time
   let ix = input.x || 0, iy = input.y || 0;
   const m = Math.hypot(ix, iy);
   if (m > 1) { ix /= m; iy /= m; }
   const sp = st.P.playerSpeed * dt;
   const p = st.player;
-  const r = moveResolve(st.P, p.x, p.y, p.w, p.h, ix * sp, iy * sp);
+  const mrects = st.P.movers.length ? moverRects(st.P, st.t) : null;
+  const r = moveResolve(st.P, p.x, p.y, p.w, p.h, ix * sp, iy * sp, mrects);
   p.x = r.x; p.y = r.y;
+
+  // movers push the player; pinned against anything solid = crushed
+  if (mrects) {
+    for (let i = 0; i < st.P.movers.length; i++) {
+      const mv = st.P.movers[i], r0 = mrects[i];
+      if (!rectsOverlap(p.x, p.y, p.w, p.h, r0.x, r0.y, r0.w, r0.h)) continue;
+      const prev = moverRect(mv, st.t - dt);
+      const dx = r0.x - prev.x, dy = r0.y - prev.y;
+      // eject the player at the mover's leading edge (dominant motion axis);
+      // a parked mover ejects along the shallower penetration axis.
+      if (Math.abs(dx) >= Math.abs(dy) && dx !== 0) {
+        p.x = dx > 0 ? r0.x + r0.w + EPS : r0.x - p.w - EPS;
+      } else if (dy !== 0) {
+        p.y = dy > 0 ? r0.y + r0.h + EPS : r0.y - p.h - EPS;
+      } else {
+        const penX = Math.min(p.x + p.w - r0.x, r0.x + r0.w - p.x);
+        const penY = Math.min(p.y + p.h - r0.y, r0.y + r0.h - p.y);
+        if (penX < penY) p.x = (p.x + p.w / 2 < r0.x + r0.w / 2) ? r0.x - p.w - EPS : r0.x + r0.w + EPS;
+        else p.y = (p.y + p.h / 2 < r0.y + r0.h / 2) ? r0.y - p.h - EPS : r0.y + r0.h + EPS;
+      }
+      if (rectHitsWall(st.P, p.x, p.y, p.w, p.h, mrects)) {
+        st.status = 'dead'; st.deadT = DEAD_TIME; st.deaths++;
+        return st;
+      }
+    }
+  }
 
   // zone under player center
   const cx = Math.floor((p.x + p.w / 2) / TILE), cy = Math.floor((p.y + p.h / 2) / TILE);
@@ -263,5 +326,6 @@ root.HardestEngine = {
   TILE_CHARS, ZONE_CHARS,
   parseLevel, create, step,
   solid, rectHitsWall, moveResolve, dotPos, circleHitsRect,
+  rectsOverlap, moverRect, moverRects,
 };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

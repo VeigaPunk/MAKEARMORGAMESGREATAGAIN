@@ -66,8 +66,8 @@ function checkFile(path) {
 
   if (!Number.isInteger(level.id)) errs.push('id: missing/non-integer');
   else {
-    const m = file.match(/^(\d{2})-[a-z0-9-]+\.js$/);
-    if (!m) errs.push(`filename '${file}' must match NN-slug.js`);
+    const m = file.match(/^(\d{2,3})-[a-z0-9-]+\.js$/);
+    if (!m) errs.push(`filename '${file}' must match NN-slug.js (2-3 digit id)`);
     else if (parseInt(m[1], 10) !== level.id) errs.push(`filename id ${m[1]} != level.id ${level.id}`);
   }
   if (typeof level.name !== 'string' || !level.name) errs.push('name: missing');
@@ -89,6 +89,35 @@ function checkFile(path) {
         else if (tx < 0 || ty < 0 || tx >= P.w || ty >= P.h || P.grid[ty][tx] === '#')
           errs.push(`patrol[${i}]: waypoint ${tx},${ty} inside wall/OOB`);
         else if (!reachable(P, tx, ty, true)) errs.push(`patrol[${i}]: waypoint ${tx},${ty} unreachable`);
+      }
+    }
+    // movers: solid w×h-tile blocks on waypoint paths. Sweep must never touch
+    // '#' (they live in open floor) and never cover S/K (respawn must be safe).
+    for (const [i, m] of (level.movers || []).entries()) {
+      if (!(m.speed > 0)) errs.push(`mover[${i}]: speed must be > 0`);
+      const wT = m.w || 1, hT = m.h || 1;
+      if (!Number.isInteger(wT) || !Number.isInteger(hT) || wT < 1 || hT < 1 || wT > 4 || hT > 4)
+        errs.push(`mover[${i}]: w/h must be integer 1-4 tiles`);
+      const pm = P.movers[i];
+      if (!pm) continue;
+      const sweepBad = (cx, cy, what) => {
+        const x0 = Math.floor((cx - pm.w / 2) / E.TILE), x1 = Math.floor((cx + pm.w / 2 - 0.001) / E.TILE);
+        const y0 = Math.floor((cy - pm.h / 2) / E.TILE), y1 = Math.floor((cy + pm.h / 2 - 0.001) / E.TILE);
+        for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) {
+          const ch = (ty >= 0 && ty < P.h && tx >= 0 && tx < P.w) ? P.grid[ty][tx] : '#';
+          if (ch === '#') errs.push(`mover[${i}]: ${what} sweeps wall @${tx},${ty}`);
+          else if (ch === 'S' || ch === 'K') errs.push(`mover[${i}]: ${what} sweeps ${ch} zone @${tx},${ty} (respawn must stay safe)`);
+        }
+      };
+      for (const s of pm.segs) {
+        const n = Math.max(1, Math.ceil(s.len / 8));
+        for (let k = 0; k <= n; k++) sweepBad(s.a[0] + (s.b[0] - s.a[0]) * k / n, s.a[1] + (s.b[1] - s.a[1]) * k / n, 'path');
+      }
+      for (const [tx, ty] of m.path) {
+        if (!Number.isInteger(tx) || !Number.isInteger(ty)) errs.push(`mover[${i}]: non-integer waypoint ${tx},${ty}`);
+        else if (tx < 0 || ty < 0 || tx >= P.w || ty >= P.h || P.grid[ty][tx] === '#')
+          errs.push(`mover[${i}]: waypoint ${tx},${ty} inside wall/OOB`);
+        else if (!reachable(P, tx, ty, true)) errs.push(`mover[${i}]: waypoint ${tx},${ty} unreachable`);
       }
     }
   }

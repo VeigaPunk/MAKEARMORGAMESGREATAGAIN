@@ -123,6 +123,11 @@ function solve(level, opts) {
           const pos = E.dotPos(d, tt);
           if (E.circleHitsRect(pos.x, pos.y, d.r, x, y, PS, PS)) { dieAt = k * E.STEP; return { safe: false, minD, reached, dieAt }; }
         }
+        // movers are solid hazards: the policy never plans to be pushed/crushed
+        for (const mv of P.movers) {
+          const mr = E.moverRect(mv, tt);
+          if (E.rectsOverlap(x, y, PS, PS, mr.x, mr.y, mr.w, mr.h)) { dieAt = k * E.STEP; return { safe: false, minD, reached, dieAt }; }
+        }
       }
       const dd = Math.hypot(wp[0] - (x + PS / 2), wp[1] - (y + PS / 2));
       if (dd < minD) minD = dd;

@@ -5,6 +5,7 @@
 const E = globalThis.HardestEngine;
 const STAGE_W = 960, STAGE_H = 576;
 const SAVE_KEY = 'hardest.save.v1';
+const MENU_COLS = 16;
 
 const cv = document.getElementById('c');
 const ctx = cv.getContext('2d');
@@ -37,8 +38,7 @@ function beep(f, d, type, g, slide) {
 
 /* ---------- medals + tiers ---------- */
 function medalFor(d) { return d === 0 ? 'gold' : d <= 2 ? 'silver' : 'bronze'; }
-const MEDAL_COL = { gold: '#ffd23f', silver: '#c8c8c8', bronze: '#c87f3f' };
-const TIERS = [[10, '#7ec850', 'WARM-UP'], [20, '#9be15d', 'DEMANDING'], [30, '#ffd23f', 'BRUTAL'], [40, '#ff9f3f', 'HARD+'], [50, '#ff6f3f', 'SAVAGE'], [60, '#d21f26', 'NIGHTMARE'], [Infinity, '#b04fd8', 'INHUMAN']];
+const TIERS = [[10, '#7ec850', 'WARM-UP'], [20, '#9be15d', 'DEMANDING'], [30, '#ffd23f', 'BRUTAL'], [40, '#ff9f3f', 'HARD+'], [50, '#ff6f3f', 'SAVAGE'], [60, '#d21f26', 'NIGHTMARE'], [120, '#b04fd8', 'INHUMAN'], [Infinity, '#ff3f6f', 'APEX']];
 function tierOf(id) { for (const [max, c, n] of TIERS) if (id <= max) return { c, n }; }
 
 /* ---------- levels ---------- */
@@ -92,8 +92,8 @@ function onKey(code) {
   if (screen === 'menu') {
     if (code === 'ArrowRight' || code === 'KeyD') sel = Math.min(LEVELS.length - 1, sel + 1);
     if (code === 'ArrowLeft' || code === 'KeyA') sel = Math.max(0, sel - 1);
-    if (code === 'ArrowDown' || code === 'KeyS') sel = Math.min(LEVELS.length - 1, sel + 12);
-    if (code === 'ArrowUp' || code === 'KeyW') sel = Math.max(0, sel - 12);
+    if (code === 'ArrowDown' || code === 'KeyS') sel = Math.min(LEVELS.length - 1, sel + MENU_COLS);
+    if (code === 'ArrowUp' || code === 'KeyW') sel = Math.max(0, sel - MENU_COLS);
     if (code === 'Enter' || code === 'Space') { if (sel < save.unlocked) startLevel(sel); }
     if (code === 'KeyM') { save.mute = !save.mute; persist(); }
   } else if (screen === 'play') {
@@ -156,6 +156,7 @@ const COL = {
   zone: '#7ec850', zoneG: '#9be15d', player: '#d21f26', playerEdge: '#8f1218',
   dot: '#1f4fd2', dotEdge: '#12307f', coin: '#ffd23f', coinEdge: '#c8a000',
   door: '#a06828', doorEdge: '#6e4517', pad: '#3fd2d2', padEdge: '#1a7f8f',
+  mover: '#3d3d3d', moverEdge: '#ff9f3f',
   text: '#f2f2f2', dim: '#9a9a9a', lock: '#3a3a3a',
 };
 function levelOrigin() {
@@ -188,6 +189,16 @@ function draw() {
     ctx.fillStyle = COL.doorEdge;
     ctx.fillRect(o.x + x * T, o.y + y * T, T, 3);
     ctx.fillRect(o.x + x * T, o.y + y * T + T - 3, T, 3);
+  }
+  // movers — sliding wall blocks (wall-dark body, hazard-orange edge + stripe)
+  for (const mv of P.movers) {
+    const r = E.moverRect(mv, st.t);
+    ctx.fillStyle = COL.mover; ctx.fillRect(o.x + r.x, o.y + r.y, r.w, r.h);
+    ctx.strokeStyle = COL.moverEdge; ctx.lineWidth = 2;
+    ctx.strokeRect(o.x + r.x + 1, o.y + r.y + 1, r.w - 2, r.h - 2);
+    ctx.fillStyle = COL.moverEdge;
+    if (r.w >= r.h) ctx.fillRect(o.x + r.x + r.w / 2 - 1, o.y + r.y + 4, 2, r.h - 8);
+    else ctx.fillRect(o.x + r.x + 4, o.y + r.y + r.h / 2 - 1, r.w - 8, 2);
   }
   // teleport pads
   for (const [tx, ty] of P.telepads) {
@@ -236,7 +247,11 @@ function draw() {
   }
   drawHud();
   if (screen === 'pause') overlay('PAUSED', 'Esc resume · R restart · Q quit · M mute');
-  if (screen === 'clear') overlay(`LEVEL CLEAR — ${medalFor(st.deaths).toUpperCase()}`, `deaths ${st.deaths} · time ${st.time.toFixed(1)}s — Enter for next`);
+  if (screen === 'clear') {
+    const par = (globalThis.HARDEST_PARS || {})[LEVELS[levelIdx].id];
+    const parTxt = par ? ` · par ${par}s ${st.time <= par ? 'BEATEN' : 'missed'}` : '';
+    overlay(`LEVEL CLEAR — ${medalFor(st.deaths).toUpperCase()}`, `deaths ${st.deaths} · time ${st.time.toFixed(1)}s${parTxt} — Enter for next`);
+  }
 }
 function drawHud() {
   const L = LEVELS[levelIdx];
@@ -246,7 +261,9 @@ function drawHud() {
   ctx.textAlign = 'center';
   const mid = st.keysTotal > 0 ? `COINS ${st.coinsTotal - st.coinsLeft}/${st.coinsTotal}  KEYS ${st.keysTotal - st.keysLeft}/${st.keysTotal}` : `COINS ${st.coinsTotal - st.coinsLeft}/${st.coinsTotal}`;
   ctx.fillText(mid, STAGE_W / 2, 14);
-  ctx.textAlign = 'right'; ctx.fillText(`DEATHS ${st.deaths}   ${st.time.toFixed(1)}s`, STAGE_W - 10, 14);
+  ctx.textAlign = 'right';
+  const par = (globalThis.HARDEST_PARS || {})[L.id];
+  ctx.fillText(`DEATHS ${st.deaths}   ${st.time.toFixed(1)}s${par ? ` / PAR ${par}s` : ''}`, STAGE_W - 10, 14);
 }
 function overlay(title, sub) {
   ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(0, 0, STAGE_W, STAGE_H);
@@ -260,20 +277,24 @@ function drawMenu() {
   ctx.font = '14px monospace'; ctx.fillStyle = COL.dim;
   ctx.fillText('arrows/WASD move · grab every coin · reach green · blue kills · R restart · M mute', STAGE_W / 2, 92);
   ctx.fillText(`total deaths ${save.deaths}`, STAGE_W / 2, 114);
-  // tier legend
+  // tier legend — two centered rows of 4
   {
-    let lx = STAGE_W / 2 - 7 * 55;
     ctx.font = '10px monospace';
-    for (const [, c, n] of TIERS) {
-      ctx.fillStyle = c; ctx.fillRect(lx, 132, 8, 8);
-      ctx.fillStyle = COL.dim; ctx.textAlign = 'left'; ctx.fillText(n, lx + 11, 137);
-      lx += 110;
-    }
+    const rows = [TIERS.slice(0, 4), TIERS.slice(4)];
+    rows.forEach((row, ri) => {
+      const w = row.length * 110;
+      let lx = STAGE_W / 2 - w / 2;
+      for (const [, c, n] of row) {
+        ctx.fillStyle = c; ctx.fillRect(lx, 128 + ri * 14, 8, 8);
+        ctx.fillStyle = COL.dim; ctx.textAlign = 'left'; ctx.fillText(n, lx + 11, 133 + ri * 14);
+        lx += 110;
+      }
+    });
     ctx.textAlign = 'center';
   }
   menuRects = [];
-  const cols = 12, bw = 60, bh = 38, gx = 10, gy = 10;
-  const x0 = (STAGE_W - cols * bw - (cols - 1) * gx) / 2, y0 = 160;
+  const cols = MENU_COLS, bw = 44, bh = 34, gx = 6, gy = 6;
+  const x0 = (STAGE_W - cols * bw - (cols - 1) * gx) / 2, y0 = 156;
   for (let i = 0; i < LEVELS.length; i++) {
     const r = i % cols, q = Math.floor(i / cols);
     const x = x0 + r * (bw + gx), y = y0 + q * (bh + gy);
