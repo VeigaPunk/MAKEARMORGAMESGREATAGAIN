@@ -68,3 +68,5 @@ Branded McDonald's marks / Ronald analogues · exact Flash pixel UI clone · dee
 **r08 (uncommitted, DD-94):** burger WIP grew — `main.ts`+`sim.ts` add a 4-pane grid view (all panes + actions + meters visible at once on wide viewports) and event-log dedupe by string compare. Feature work, not defect-driven; verify's 5/5 PASS (verdict 09) predates it — re-probe pane interactions after commit.
 
 **r09:** burn still uncommitted (same 11 files, DD-94) — 4-pane grid + event-log dedupe still in-tree only; re-probe pane interactions after commit. `prototypes/MECHANICS-DIGEST.md` §5 records the proven dirty-toggle mechanism (multiplier + backlash accrual + event risk; two fail conditions + stall detector) — the satire coupling the app must preserve.
+
+**r12:** burn **committed `69f9b24`** — 4-pane grid (≥900px) + event-log dedupe + **`icons.ts` (175-line authored icon set)** + `drawIcon`/`drawWordmark` wired into pane rendering. Committed-but-unverified — verify's 5/5 PASS (verdict 09) predates the grid; re-probe pane interactions post-commit (DD-111). Proto digest §5 dirty-toggle mechanism remains the satire coupling to preserve.
