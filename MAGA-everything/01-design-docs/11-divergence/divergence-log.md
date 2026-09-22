@@ -487,6 +487,7 @@
 
 - **Status (r07):** still open — `verification/divergence.md` register still ends D-24; r04 verdicts now span `runtime-verdicts/08…12` + `proto-verdicts/claim-cards-r04.md`, all uncommitted. New r04 filings D-33/D-34/D-35 crosswalked at DD-96; proto-verdicts findings at DD-97.
 - **Status (r08):** register diff landed in-tree — now ends **D-40** with status board + coverage table (still uncommitted). D-25…D-40 crosswalked at DD-99; D-40 reconciliation at DD-102. Verify-side open items unchanged: D-05/D-06/D-08/D-16/D-22.
+- **Status (r08b):** register + verdicts 08–12 + proto-verdicts + evidence all **committed** (`5d3e35f` r04, `c6808ce` r04b). D-33/D-34 now marked FIXED in-tree live-verified (x=1410/x=2967 proto parity — DD-96); verdict 12 → PASS.
 ### DD-91 — hardest `manifest.js` is generated and can lag the `levels/` corpus
 - **Source A (code):** `hardest/manifest.js` — generated file (`gen-manifest.mjs`); at r04-write it listed only 2 of 30 level files, and `hardest/game.js` `levelsReady()` gates the browser build on the manifest — a stale manifest silently hides levels.
 - **Source B (code):** `hardest/levels/` — 30 level files on disk; `node hardest/validate.mjs` at r04-settle: **26/30 pass** (fails: 03/07 autopilot sim-budget, 22/24 reachability — sibling actively burning down). Manifest regenerated to all 30 within minutes of the lag being observed.
@@ -514,6 +515,7 @@
 - **Owner:** maga-forge — commit the burn; maga-verify — re-probe after commit.
 - **Status (r07):** still uncommitted, now 10 files — `apps/impossible/src/main.ts` additionally carries the D-33 gap-kill + D-34 front-edge fixes filed in verdict 12 (DD-96). Re-verify after commit.
 - **Status (r08):** still uncommitted, now **11 files** — `apps/burger-tycoon/src/main.ts`+`sim.ts` add a 4-pane grid view + event-log dedupe (feature work, not defect-driven). sas WIP now also fixes verify D-31 (`g.name` → `textContent`, was DD-84) — DD-84's "still open in-tree" note above is stale for that item. Still open in-tree: DD-90 (D-30 replay exploit), verify D-19 (grenade owner exemption — design ruling owed), D-35 (sub-frame taps), D-36/D-37 (shmup HUD), DD-01 (stage size), DD-18→DD-103 (DM pickups inverted). Re-verify after commit.
+- **Status (r08b):** burn still uncommitted (11 files). Verify r04b (`c6808ce`) live-verified the D-33/D-34 in-tree fixes at exact proto parity — DD-96's "re-verify after commit" is partially satisfied: fixes proven live, but still uncommitted.
 
 ### DD-95 — tcg prototype README stale vs uncommitted variant-harness tree
 - **Source A (docs, committed `dd2ce8a`):** `tcg/prototype/README.md:54,58-59` — "browser matchup is currently Bruiser + Vex versus Bulwark + Thorn"; "no deck editor, collection, **mulligan UI**, multiplayer…"; "does not expose hero/deck selection".
@@ -528,6 +530,8 @@
 - **Assessment:** identical pattern to DD-94 — findings filed against the committed tree are already fixed in the working tree. Re-verify after forge commits; D-35 remains open in-tree (no event buffering added).
 - **Owner:** maga-forge — commit; maga-verify — re-probe D-33/D-34 post-commit.
 
+
+- **Status (r08b):** verify r04b (`c6808ce`) **live-verified both fixes** — no-jump dies at x=1410, teleport(2700)→block dies at x=2967, exact proto parity (`r04-impossible-gapfix.webp`, `r04-impossible-blockfix.webp`); verdict 12 re-scored PASS; register marks D-33/D-34 "FIXED in-tree (uncommitted)". Residual: forge commit still pending; D-35 open.
 ### DD-97 — proto-verdicts claim-card cross-verification: impossible mostly verified; chicken has no claim card + D-22 still open
 - **Source A (docs):** `verification/proto-verdicts/claim-cards-r04.md` (r04, uncommitted) — `prototypes/impossible-game.md` card: 8/10 claims CONFIRMED (360px/s, fixed-impulse jump, ≤200ms respawn at 168ms, no-jump gap death x=1410, spike ~1890, block-side ~2967, 120Hz timestep); full-clear x=9900 unproven (autoplayer limiter, not refuted); no-spawn-softlock suggestive not observed. `prototypes/burger-tycoon.md` card: mechanism confirmed, exact timings unverified (tab collision); app independently verified the causal chain (DD-86).
 - **Source B (code):** `prototypes/chicken-invaders.html:479-482` — `__proto.wavesTotal` getter throws on title screen (`CHAPTERS[chapter-1]`, `chapter` undefined) — verify D-22 re-confirmed open at r04; no `prototypes/chicken-invaders.md` claim card existed at verdict time (one landed later in `aa15f76`).
@@ -539,18 +543,21 @@
 - **Source B (code, uncommitted `git status` + re-run at r08):** `hardest/levels/31-keymaster.js` + `32-shortcut.js` added; `engine.js` (+67/-… lines), `autopilot.js`, `game.js`, `validate.mjs` all modified. L31 teaches `'y'` keys opening ALL `'D'` doors — a mechanic with no prior corpus instance. `node hardest/validate.mjs` re-run 2026-09-22: **32/32 PASS** (31-keymaster clear 12.8s/0 deaths; 32-shortcut 8.9s/1 death).
 - **Assessment:** benign growth — corpus truth remains `validate.mjs` output (DD-91 mechanism). The key/door tile types (`y`/`D`) are new level-format vocabulary; `hardest/LEVEL-FORMAT.md` committed at `62ed5a7` may not document them — consumers authoring levels must read `engine.js` in-tree.
 - **Owner:** maga-hardest — commit the 32-level corpus; confirm LEVEL-FORMAT covers `y`/`D`.
+- **Status (r08b):** corpus **committed** `fe83d90` (hardest R2 M1–M3) — `LEVEL-FORMAT.md` now documents `y`/`D` tiles + the "keys must be reachable with doors closed" contract (validator-enforced) AND adds `T` teleport pads (paired in scan order) + medals/tiers/audio. Re-run post-commit: **32/32 PASS**. DD-98's vocabulary concern resolved.
 
 ### DD-99 — verify register landed in-tree spanning D-25…D-40 + status board (uncommitted); crosswalk
 - **Source A (docs):** `verification/divergence.md` uncommitted diff — formal register now ends **D-40** with a post-round-4 status board + coverage table; verdicts `runtime-verdicts/08…12` + `proto-verdicts/claim-cards-r04.md` + 30 `evidence/r04-*.png` still uncommitted.
 - **Source B (docs):** this log — DD-77…DD-90 already crosswalk verify D-23…D-32 (filed r03 from the same uncommitted verdicts). Mapping: D-25↔DD-77, D-26↔DD-83, D-27↔DD-79, D-28↔DD-80, D-29↔DD-81, D-30↔DD-90, D-31↔DD-84, D-32↔DD-82, D-33/34/35↔DD-96, D-38↔DD-87. Genuinely new filings: **D-36** (shmup HUD `WAVE 3/2` unclamped post-final-wave — `render.ts:201`), **D-37** (boss names never rendered — `pack.bosses[].name` dead data), **D-39** (pack gift/food/enemy strings + comb/beak hardcoded — `render.ts:114-123,70-71`), **D-40** (docs-vs-runtime reconciliation order → DD-102).
 - **Assessment:** index entry — the DD register remains the complete crosswalk. Verify's status board marks D-32 "FIXED mid-round (uncommitted)" consistent with DD-94; D-33/D-34 "OPEN" while in-tree fixes exist (DD-96) — same committed-vs-tree split.
 - **Owner:** maga-verify — commit register + verdicts + evidence; re-probe in-tree fixes post-forge-commit.
+- **Status (r08b):** register + verdicts + evidence committed (`5d3e35f`, `c6808ce`) — the crosswalk now points at committed artifacts. Verify status board: D-32 FIXED, D-33/D-34 FIXED in-tree live-verified; D-40 partially resolved by DD-102 + xref flags.
 
 ### DD-100 — `prototypes/swords-and-sandals.html` exists with no claim card; constants are declared guesses
 - **Source A (docs):** `DD/02-concept-specs/05-swords-and-sandals.md` §Open questions — combat formulas/damage tables/shop prices marked TBD from ARCADE playtest; `prototypes/` convention (impossible `991c648`, burger `3a8fa4f`, chicken `aa15f76`) pairs each `.html` proof with a `.md` claim card.
 - **Source B (code, uncommitted):** `prototypes/swords-and-sandals.html` (20.9 KB, mtime 17:43) — full loop slice: title→create→hub→arena→shop→victory/defeat/champion, 5-opponent scripted roster, weapon/armor shops, XP table, save key `sas_proto_save`. Header comment: "ALL combat constants are DECLARED GUESSES — spec §Open questions marks formulas/damage tables/shop prices TBD." No `prototypes/swords-and-sandals.md` exists.
 - **Assessment:** consistent-with-spec, not a defect — the proto honestly labels its constants as guesses where the spec is TBD. But it is unverifiable-by-convention until a claim card lands; verify's proto-verdicts lane (DD-97) has nothing to check it against.
 - **Owner:** maga-proto — mint the claim card; maga-verify — cross-verify when it lands.
+- **Status (r08b):** claim card **landed** `550e4c9` — `prototypes/swords-and-sandals.md`, verified in headless Chromium (full loop via real pointer+touch; `window.__proto` read-only hook). Found+fixed a victory/defeat result-screen softlock in-file; carries 9 monorepo carry-forward recommendations (state-machine exits, guaranteed-legal TAUNT/HOLD, stats-as-data roster, render-time shop gates, save-on-transition, stamina pacing dial). DD-100's gap closed same-day; card itself awaits verify cross-verification (DD-97 pattern).
 
 ### DD-101 — tcg variant harness expanded 16→21 variants + new engine tunables; DD-95 README staleness persists
 - **Source A (docs, committed `dd2ce8a`):** `tcg/prototype/README.md` — still describes the fixed Bruiser+Vex vs Bulwark+Thorn matchup, no mulligan UI, no deck/hero selection (DD-95).
