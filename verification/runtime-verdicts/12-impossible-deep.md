@@ -2,7 +2,7 @@
 **Build:** committed `apps/impossible` (`f8449eb` tree) · **URL:** http://localhost:5174 · **Env:** Linux · headless Chromium · 2026-09-22
 **Spec:** `01-design-docs/02-concept-specs/02-impossible-game.md` · Lanes: ImpossibleBoot + ImpossibleLoop + ImpossibleClear
 
-## Verdict: PARTIAL — core loop PASS; two proto-proven collision fixes never carried into the app (2 major defects)
+## Verdict: PASS — core loop green; two major defects found AND fixed in-tree this round (live re-verified)
 
 ## PASS items (live-verified)
 | Item | Result |
@@ -19,16 +19,15 @@
 
 ## New findings
 
-### D-33 · DEFECT (major) — Gaps are not lethal: cube falls through and snaps back
-**Observed (live):** no-jump run — cube descends to y=566.8 (171px below ground) inside gap@1400, crosses while falling, lands at x=1518 past the gap, continues to spike@1900.
-**Code:** `main.ts:185` — only fall-kill is `cube.y > H + 200` (=740); no gap-bottom check. Fall math: 130–170px gaps crossed in 0.36–0.47s → 170–290px fall, all < 740; only the 200px gap@7800 kills.
-**Spec:** proto card `prototypes/impossible-game.md` "Bug found by verification (fixed)": death when `floor === -Infinity && bottom > ground + margin`; proto measured no-jump death at x=1410. Carry-forward recommendation #4 explicitly warned: "kill on `floor === -Infinity && bottom > ground + margin` — a width-only gap test lets the cube survive narrow gaps." **Forge missed it.**
-**Impact:** 3 of 4 gaps are free passes — level difficulty structure broken vs proto-proven mechanics.
+### D-33 · DEFECT (major) → **FIXED in-tree (uncommitted, live-verified)** — Gaps were not lethal
+**Observed (live, pre-fix):** no-jump run — cube descends to y=566.8 (171px below ground) inside gap@1400, crosses while falling, lands at x=1518 past the gap, continues to spike@1900.
+**Code (pre-fix):** `main.ts:185` — only fall-kill was `cube.y > H + 200` (=740); no gap-bottom check. Fall math: 130–170px gaps crossed in 0.36–0.47s → 170–290px fall, all < 740; only the 200px gap@7800 killed.
+**Spec:** proto card documented this exact bug + fix (`floor === -Infinity && bottom > ground+margin`); carry-forward #4 warned forge — initially missed, then landed mid-round.
+**Impact (pre-fix):** 3 of 4 gaps were free passes.
 
-### D-34 · DEFECT (major) — Block side-kill tests cube's LEFT edge, not front edge
-**Observed (live):** death at x=3003 for block@3000 (proto-fixed expectation ≈2967); sprite overlaps block ~34px at death; at 360px/s death fires ~94ms late.
-**Code:** `main.ts:185` calls `solidSideAt(cube.x, cube.y)`; `solidSideAt` (`main.ts:135-141`) tests `x > ox` on the left edge.
-**Spec:** proto card: "side check used cube's *left* edge, allowing ~34px visible penetration before death. Fixed to front edge (`cube.x + CUBE`)." Same carry-forward item #4 — missed.
+### D-34 · DEFECT (major) → **FIXED in-tree (uncommitted, live-verified)** — Block side-kill tested LEFT edge
+**Observed (live, pre-fix):** death at x=3003 for block@3000 (proto-fixed expectation ≈2967); sprite overlapped block ~34px at death; at 360px/s death fired ~94ms late.
+**Code (pre-fix):** `solidSideAt(cube.x, cube.y)` tested the left edge (`main.ts:135-141`). Same carry-forward #4 — initially missed, then landed mid-round.
 
 ### D-35 · NOTE (minor) — Sub-frame pointer taps dropped
 `main.ts:199-200` polls pointer press-edge per frame (`active && !prevActive`), no event buffering; a down+up inside one rAF gap is invisible. Real ~100ms clicks fine; synthetic 0-duration taps lost. Edge case only.
@@ -38,3 +37,8 @@ Timed autoplayer (jumps ~220px before each of 22 obstacles) reached 13% / attemp
 
 ## Evidence
 `r04-ImpossibleBoot-title.png`, `r04-ImpossibleBoot-pause.png`, `r04-ImpossibleLoop-gameplay.png`, `-death.png`, `-paused.png`, `-holdjump.png`, `-viewport.png`, `r04-ImpossibleClear-autoplayer.png`
+
+## Fix verification (L1, current bytes post-17:42 edit)
+- **D-33:** `main.ts:188` now `floor === -Infinity && cube.y + CUBE > GROUND_Y + 8 → die()`. Live: no-jump run dies at **x=1410** — exact proto parity. `r04-impossible-gapfix.webp`.
+- **D-34:** `main.ts:187` now `solidSideAt(cube.x + CUBE, cube.y)` (front edge). Live: `__maga.teleport(2700)` run into block@3000 dies at **x=2967** — exact proto parity. `r04-impossible-blockfix.webp`.
+- Forge landed both fixes mid-round (mtime 17:42) after DocsXref/verdict-12 circulation — the verify→docs→forge loop worked.

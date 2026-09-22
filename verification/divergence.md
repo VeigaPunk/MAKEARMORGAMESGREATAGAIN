@@ -297,13 +297,15 @@ Complete screen replayable indefinitely; reward `18 + defeated*8` gold each time
 
 `touch.ts` bound release on canvas only; outside-canvas release left ship moving (live-verified, `r04-ShmupTouch-5176-stuck-pointerup.png`). Forge fixed mid-probe: `touch.ts:89-90` now `window` + capture. Same class as boxhead D-14.
 
-## D-33 · DEFECT (major) — impossible app: gaps not lethal (proto fix not carried)
+## D-33 · DEFECT (major) → **FIXED in-tree (uncommitted, live-verified)** — impossible app: gaps were not lethal
 
-**Observed (live):** no-jump cube falls 171px into gap@1400, crosses, snaps back at x=1518, continues. `main.ts:185` only fall-kill is `cube.y > 740`; no gap-bottom check. Proto card documented this exact bug + fix (`floor === -Infinity && bottom > ground+margin`) and carry-forward #4 warned forge — missed. 3 of 4 gaps are free passes.
+**Observed (live, pre-fix):** no-jump cube falls 171px into gap@1400, crosses, snaps back at x=1518, continues. Pre-fix `main.ts:185` only fall-kill was `cube.y > 740`; no gap-bottom check. Proto card documented this exact bug + fix (`floor === -Infinity && bottom > ground+margin`) and carry-forward #4 warned forge — initially missed, landed mid-round. 3 of 4 gaps were free passes.
 
-## D-34 · DEFECT (major) — impossible app: block side-kill tests LEFT edge (~34px penetration)
+## D-34 · DEFECT (major) → **FIXED in-tree (uncommitted, live-verified)** — impossible app: block side-kill tested LEFT edge
 
-`main.ts:185` → `solidSideAt(cube.x,…)` tests left edge (`main.ts:135-141`); death at x=3003 for block@3000 (proto-fixed ≈2967), ~94ms late at 360px/s. Same proto carry-forward #4 — missed.
+**Observed (live, pre-fix):** `solidSideAt(cube.x,…)` tested left edge; death at x=3003 for block@3000 (proto-fixed ≈2967), ~94ms late at 360px/s. Same proto carry-forward #4 — initially missed, landed mid-round.
+
+**Fix verification (L1, post-17:42 bytes):** `main.ts:187` front-edge `solidSideAt(cube.x + CUBE,…)`; `main.ts:188` gap-bottom kill `floor === -Infinity && cube.y + CUBE > GROUND_Y + 8`. Live: no-jump dies at **x=1410**; teleport(2700)→block dies at **x=2967** — exact proto parity (`r04-impossible-gapfix.webp`, `r04-impossible-blockfix.webp`). Forge landed both mid-round after verdict circulation.
 
 ## D-35 · NOTE — impossible app: sub-frame pointer taps dropped
 
@@ -357,8 +359,8 @@ HUD shows generic `BOSS` (`render.ts:201`); `pack.bosses[].name` dead data. Spec
 | D-30 sas complete-screen replay exploit | **OPEN — new DEFECT** |
 | D-31 sas name innerHTML | OPEN — new NOTE |
 | D-32 shmup stick pointerup | **FIXED mid-round (uncommitted)** — window-level release |
-| D-33 impossible gaps non-lethal | **OPEN — new major DEFECT** |
-| D-34 impossible block left-edge | **OPEN — new major DEFECT** |
+| D-33 impossible gaps non-lethal | **FIXED in-tree (uncommitted)** — live-verified x=1410 |
+| D-34 impossible block left-edge | **FIXED in-tree (uncommitted)** — live-verified x=2967 |
 | D-35 impossible sub-frame taps | OPEN — new NOTE |
 | D-36/37/38/39 shmup cosmetics | OPEN — new NOTEs |
 | D-40 docs-vs-runtime contradictions | OPEN — reconciliation owed (maga-docs scope) |
@@ -371,6 +373,5 @@ HUD shows generic `BOSS` (`render.ts:201`); `pack.bosses[].name` dead data. Spec
 | burger-tycoon deep (acc #1/2/3/5/7) | `runtime-verdicts/09-burger-tycoon-deep.md` | PASS all five; collapse chain live |
 | swords-and-sandals deep | `runtime-verdicts/10-swords-and-sandals-deep.md` | PARTIAL — D-23 corrected, D-27/28/30 defects |
 | shmup apps deep (both packs) | `runtime-verdicts/11-shmup-deep.md` | PASS — D-32 found+fixed, D-36–39 notes |
-| impossible app deep | `runtime-verdicts/12-impossible-deep.md` | PARTIAL — D-33/D-34 major |
+| impossible app deep | `runtime-verdicts/12-impossible-deep.md` | PASS — D-33/D-34 found+fixed, live re-verified |
 | proto claim cards ×3 | `proto-verdicts/claim-cards-r04.md` | impossible mostly verified; burger partial; chicken D-22 open |
-| `prototypes/chicken-invaders.html` | `proto-verdicts/chicken-invaders.md` | PASS (was FAIL/D-21) |
