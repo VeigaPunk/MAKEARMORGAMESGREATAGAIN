@@ -98,7 +98,7 @@ R2 left two violations: bulwark>bruiser symmetrized ≈64% (ordered 72/46) and a
 | bulwark | 53% | 46% | 44% |
 | trickster | 47% | 58% | 53% |
 
-Symmetrized non-mirror legs: bulwark>bruiser **53%**, trickster>bulwark **51%**, bruiser>trickster **53.5%** — all inside 35–65% and centered near 50. Mirrors 45–53% P1 (seat skew fixed). Avg turns 8.4–9.9, decisions/game 49–58, comeback rate 0.56–0.65, CP-lead reversals ~1.1/game.
+Symmetrized non-mirror legs: bulwark>bruiser **56%**, trickster>bulwark **57%**, bruiser>trickster **54%** — all inside 35–65%, clustered 54–57 (corrected R5: R3/R4 reported 53/51/53.5, which were the pre-integration variant-combo numbers, not this matrix's derivation). Mirrors 46–53% P1 (seat skew fixed). Avg turns 8.4–9.9, decisions/game 48–57, comeback rate 0.57–0.68, CP-lead reversals ~1.2/game.
 
 Rejected in R3: contest target 7 (mirrors worsen, lethal gutted) and 9 (bulwark entrenches, pace out of band); Push +2 mana (no seat effect); Push +extra card (over-corrects 2 mirrors to 44% P1); bulwark curve rebuild (bulwark>trickster collapses to 15%); bruiser Pierce/burn packages (bulwark leg worsens — the problem was wall efficiency + Thorn, not bruiser's tools).
 
