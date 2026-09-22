@@ -484,6 +484,7 @@
 - **Assessment:** index entry so the DD register stays a complete crosswalk; no new divergence claimed.
 - **Owner:** per verify register.
 
+- **Status (r07):** still open — `verification/divergence.md` register still ends D-24; r04 verdicts now span `runtime-verdicts/08…12` + `proto-verdicts/claim-cards-r04.md`, all uncommitted. New r04 filings D-33/D-34/D-35 crosswalked at DD-96; proto-verdicts findings at DD-97.
 ### DD-91 — hardest `manifest.js` is generated and can lag the `levels/` corpus
 - **Source A (code):** `hardest/manifest.js` — generated file (`gen-manifest.mjs`); at r04-write it listed only 2 of 30 level files, and `hardest/game.js` `levelsReady()` gates the browser build on the manifest — a stale manifest silently hides levels.
 - **Source B (code):** `hardest/levels/` — 30 level files on disk; `node hardest/validate.mjs` at r04-settle: **26/30 pass** (fails: 03/07 autopilot sim-budget, 22/24 reachability — sibling actively burning down). Manifest regenerated to all 30 within minutes of the lag being observed.
@@ -509,6 +510,25 @@
 - **Source B (code, uncommitted `git diff` at r06):** 9-file WIP burn — `apps/boxhead/src/game.ts` (`'paused'` state + Esc/P consume → DD-83; gameplay `dt` cap 0.05 → verify D-16; DM crate gate removed → DD-77; `?stress` 60→100 movers → verify D-08 partial), `apps/boxhead/src/touch.ts` + `packages/shmup-core/src/touch.ts` (pointerup/cancel → `window` → DD-82), `apps/swords-and-sandals/src/main.ts` (save-aware boot `mode='hub'` + `defeated` restore → DD-78; `points=0` on save → DD-79; `owned[]` persisted + disabled re-buy → DD-80; Buckler gate L3→L2 → DD-81), `packages/shmup-core/src/packs.ts`+`sim.ts`+`render.ts` (`enemyTypes`×3 + `bosses`×2 per pack with per-type speed/hp → DD-87), `apps/impossible/src/main.ts` (`__proto` debug getter → verify D-22 probe hazard), `apps/burger-tycoon/src/main.ts` (≥900px 4-pane grid view — feature, no divergence), `CODE/README.md` (apps table + all dev scripts).
 - **Assessment:** consumers reading OPEN entries must check the working tree before re-filing or re-verifying — the fix may already exist uncommitted. Still open in-tree: DD-90 (complete-screen replay), DD-84 (innerHTML), DD-19-class grenade owner exemption (verify D-19), DD-01 (stage size), DD-18 (DM pickups — now *changed* by the crate enable; ARCADE ruling still owed).
 - **Owner:** maga-forge — commit the burn; maga-verify — re-probe after commit.
+- **Status (r07):** still uncommitted, now 10 files — `apps/impossible/src/main.ts` additionally carries the D-33 gap-kill + D-34 front-edge fixes filed in verdict 12 (DD-96). Re-verify after commit.
+
+### DD-95 — tcg prototype README stale vs uncommitted variant-harness tree
+- **Source A (docs, committed `dd2ce8a`):** `tcg/prototype/README.md:54,58-59` — "browser matchup is currently Bruiser + Vex versus Bulwark + Thorn"; "no deck editor, collection, **mulligan UI**, multiplayer…"; "does not expose hero/deck selection".
+- **Source B (code, uncommitted `git diff` at r07):** `tcg/prototype/index.html` adds `#deckselect` screen (3 decks: bruiser/Vex, bulwark/Thorn, trickster/Oddsmaker) + `#mulliganbar` keep-hand UI; `engine.js` adds `phase:"mulligan"` + exposes tunables on `CB.engine.*` (`PUSH_CARD`, `SURGE_*`, `START_HP`, `OPEN_HAND`, `MAX_MANA`, `CONTEST_TARGET`); `sim.js` gains `--matrix`, `--deckA/--deckB`, `--heroA/--heroB`, `--variant <file>`; `variants/` holds 16 mutation files (e.g. `contest-t6.js` sets `CONTEST_TARGET=6`).
+- **Assessment:** doc-vs-tree drift, same class as DD-94 — the README describes the committed prototype, the working tree is a balance-research harness. Consumers citing tcg mechanics must diff the tree or wait for the sibling's commit + README refresh.
+- **Owner:** tcg-arena — commit the harness and refresh README run/controls sections.
+
+### DD-96 — verify verdict 12 files D-33/D-34 against committed impossible; uncommitted tree already fixes both
+- **Source A (docs):** `verification/runtime-verdicts/12-impossible-deep.md` (r04, uncommitted) — **D-33** gaps not lethal: `main.ts:185` committed code only kills on `cube.y > H+200`; 3 of 4 gaps are free passes (proto card warned: kill on `floor === -Infinity && bottom > ground + margin`). **D-34** block side-kill tests cube's LEFT edge (`solidSideAt(cube.x, cube.y)`), ~34px penetration, death ~94ms late. **D-35** minor: sub-frame pointer taps dropped (poll-based edge detect).
+- **Source B (code, uncommitted `git diff` at r07):** `CODE/apps/impossible/src/main.ts` WIP — `solidSideAt(cube.x + CUBE, cube.y)` (front edge → D-34) and `if (floor === -Infinity && cube.y + CUBE > GROUND_Y + 8) return die()` (gap-kill → D-33). Both fixes sit in the same uncommitted burn as DD-94.
+- **Assessment:** identical pattern to DD-94 — findings filed against the committed tree are already fixed in the working tree. Re-verify after forge commits; D-35 remains open in-tree (no event buffering added).
+- **Owner:** maga-forge — commit; maga-verify — re-probe D-33/D-34 post-commit.
+
+### DD-97 — proto-verdicts claim-card cross-verification: impossible mostly verified; chicken has no claim card + D-22 still open
+- **Source A (docs):** `verification/proto-verdicts/claim-cards-r04.md` (r04, uncommitted) — `prototypes/impossible-game.md` card: 8/10 claims CONFIRMED (360px/s, fixed-impulse jump, ≤200ms respawn at 168ms, no-jump gap death x=1410, spike ~1890, block-side ~2967, 120Hz timestep); full-clear x=9900 unproven (autoplayer limiter, not refuted); no-spawn-softlock suggestive not observed. `prototypes/burger-tycoon.md` card: mechanism confirmed, exact timings unverified (tab collision); app independently verified the causal chain (DD-86).
+- **Source B (code):** `prototypes/chicken-invaders.html:479-482` — `__proto.wavesTotal` getter throws on title screen (`CHAPTERS[chapter-1]`, `chapter` undefined) — verify D-22 re-confirmed open at r04; no `prototypes/chicken-invaders.md` claim card existed at verdict time (one landed later in `aa15f76`).
+- **Assessment:** index entry — proto claim cards are now verify-checked artifacts; impossible card's unproven claims are autoplayer-limited, not refuted. Chicken proto probe hazard (D-22) persists; the new claim card `aa15f76` postdates the verdict and is itself unverified.
+- **Owner:** maga-proto — fix `__proto` title-screen guard (D-22); maga-verify — cross-verify `chicken-invaders.md` next round.
 
 ## Resolved (docs already reconcile — recorded so consumers don't re-litigate)
 
