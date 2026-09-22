@@ -1,0 +1,4 @@
+.ufo/
+node_modules/
+dist/
+*.local

@@ -1,0 +1,70 @@
+{
+  "project": "Make Armor Games Great Again",
+  "idea": "001",
+  "generated_at": "2026-09-22T13:48:00-03:00",
+  "games": [
+    {
+      "slug": "swords-and-sandals",
+      "title": "Swords and Sandals",
+      "primary_version": "Swords and Sandals 2: Emperor's Reign (2007 Flash, AS2)",
+      "approach": "EMULATE",
+      "difficulty": 4,
+      "legal_risk": "high",
+      "legal_notes": "Commercial rights tied to eGames.com LLC + Whiskeybarrel; AG was host only. Active Redux/Steam line.",
+      "first_ship_candidate_score": 62
+    },
+    {
+      "slug": "mcdonalds-game",
+      "title": "The McDonald's Videogame (Molleindustria)",
+      "primary_version": "Burger Tycoon (portal-safe twin of 2005/6 Flash 7 original)",
+      "approach": "EMULATE",
+      "difficulty": 2,
+      "legal_risk": "medium",
+      "legal_notes": "Molleindustria CC claim (exact deed unverified). Branded McDonald's marks = trademark risk; prefer Burger Tycoon.",
+      "first_ship_candidate_score": 78
+    },
+    {
+      "slug": "impossible-game",
+      "title": "The Impossible Game",
+      "primary_version": "Impossible Game Lite (Newgrounds Flash 2010) for SWF-exact; full game is XBLIG 2009 / non-Flash",
+      "approach": "EMULATE",
+      "difficulty": 3,
+      "legal_risk": "high",
+      "legal_notes": "Fluke Games owns; sequel active. Lite emulate OK technically; full recreate needs license (then approach shifts to RECREATE).",
+      "first_ship_candidate_score": 48
+    },
+    {
+      "slug": "boxhead-2play",
+      "title": "Boxhead: 2Play Rooms",
+      "primary_version": "Boxhead: 2Play Rooms (2007 Flash; local co-op/deathmatch — not networked LAN)",
+      "approach": "EMULATE",
+      "difficulty": 3,
+      "legal_risk": "medium",
+      "legal_notes": "Sean Cooper creator; Crazy Monkey historical sponsor; Fire Source/Immortal suggests ongoing commercial interest — clear before monetize.",
+      "first_ship_candidate_score": 88
+    },
+    {
+      "slug": "chicken-invaders",
+      "title": "Chicken Invaders",
+      "primary_version": "Chicken Invaders 2: The Next Wave (2002 desktop) — official series is not Flash",
+      "approach": "RECREATE",
+      "difficulty": 5,
+      "legal_risk": "high",
+      "legal_notes": "InterAction studios actively sells remasters/Universe. Kongregate Flash 'Chicken Invaders' by hopslop is unofficial.",
+      "first_ship_candidate_score": 22
+    }
+  ],
+  "recommended_first_slug": "boxhead-2play",
+  "rationale_bullets": [
+    "Armor Games catalog title with proven Ruffle listings — aligns with 'Make Armor Games Great Again' identity better than McDonald's or Chicken Invaders.",
+    "EMULATE path is fastest under no-plugin / exact-original constraint; wave-shooter scope is smaller than S&S RPG systems.",
+    "Local two-player shared-keyboard co-op is the strongest 30-second swarm demo among the five (clarified: not networked LAN).",
+    "Legal risk is medium (indie creator chain) vs high for S&S (eGames), Impossible full (Fluke), Chicken (InterAction), or branded McDonald's marks.",
+    "Nostalgia punch is high for AG Flash audiences; fidelity risk stays low if SWF+Ruffle is the ship vehicle."
+  ],
+  "approach_legend": {
+    "EMULATE": "Ruffle or SWF wrapper; prefer when official SWF exists and AVM1/compatible",
+    "HYBRID": "Emulated core + modern shell (input/UI/save)",
+    "RECREATE": "Rebuild in modern engine; required when no authentic SWF or for full non-Flash titles"
+  }
+}

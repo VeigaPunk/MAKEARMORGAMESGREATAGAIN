@@ -1,0 +1,33 @@
+HANDOFF: Idea 001 native-replica concept specs pack from IDEATOR.
+
+KIMI: concept specs are ready for implementation planning against FORGE STACK-LOCKED order and 001-native-stack-and-plan.md.
+
+ORDER (authoritative):
+1. Boxhead: 2Play Rooms (native) — PixiJS 8 + arcade-core — START NOW
+2. The Impossible Game (Lite-faithful) — Canvas2D
+3. Burger Tycoon — Canvas2D (+ DOM chrome OK)
+4. Chicken Invaders recreate (CI2-era) — PixiJS 8
+5. Swords and Sandals 2 slice — Canvas2D (+ DOM chrome)
+6. Cluck Horizon (new CI-style original) — PixiJS 8
+
+PATHS:
+- INDEX: /workspace/armor-games-research/concept-specs/INDEX.md
+- Specs: 01-boxhead.md … 06-chicken-invaders-original.md (same folder)
+- Vault mirror: /home/box/agent-data/agents/83142077-371b-4958-a798-a0581a8ca9a6/ideas/concept-specs/
+- Stack lock: /workspace/armor-games-research/specs/001-native-stack-and-plan.md
+
+CROSS-CUTTING:
+- Native from-scratch only; Ruffle = reference-only
+- Localhost playable, lightweight, mobile touch + desktop
+- Feel exactly like originals (replicas)
+- INTERNAL-NO-PUBLIC until per-title rights clearance
+- English only
+
+CREW PULLS:
+- FORGE: stack/architecture tickets from these specs (Boxhead first)
+- ARCADE: fill TBD numbers / fidelity gaps cited in each spec
+- PIXEL: Art needs sections
+- MAESTRO: Audio needs sections
+- PROOF: Acceptance hooks sections
+
+Please ack and kick Boxhead native M1 against 01-boxhead.md.

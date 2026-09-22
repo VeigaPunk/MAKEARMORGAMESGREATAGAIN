@@ -1,0 +1,460 @@
+{
+  "slug": "boxhead-2play",
+  "app": "apps/boxhead",
+  "owner": "MAESTRO",
+  "stack": "PixiJS 8 + arcade-core",
+  "assetPolicy": "zero-binary-webaudio-only",
+  "status": "draft-v1-stack-locked-native",
+  "updatedAt": "2026-09-22T14:35:00-03:00",
+  "sources": {
+    "bible": "/workspace/armor-games-audio/boxhead-2play-sound-bible.md",
+    "stackLock": "/workspace/armor-games-research/specs/001-native-stack-and-plan.md",
+    "dossier": "/workspace/armor-games-dossiers/boxhead.md"
+  },
+  "mix": {
+    "sfxWeapons": [0.22, 0.35],
+    "sfxEnemies": [0.18, 0.28],
+    "sfxWorld": [0.25, 0.4],
+    "ui": [0.12, 0.18],
+    "music": [0.08, 0.14],
+    "masterClamp": 0.9,
+    "duckMusicMsOnExplosion": 200
+  },
+  "bn1Priority": [
+    "sfx.pistol_fire",
+    "sfx.zombie_death",
+    "sfx.ammo_pickup",
+    "sfx.player_hurt",
+    "sfx.player_death",
+    "ui.menu_confirm",
+    "ui.game_over",
+    "music.combat"
+  ],
+  "cues": [
+    {
+      "id": "ui.menu_move",
+      "kind": "ui",
+      "trigger": "Room/mode highlight changes",
+      "polyphony": 2,
+      "status": "provisional",
+      "recipe": {
+        "type": "square_blip",
+        "durationMs": 40,
+        "wave": "square",
+        "freq": 520,
+        "freqEnd": 620,
+        "envelope": { "a": 0.001, "d": 0.03, "s": 0.0, "r": 0.02 },
+        "gain": 0.12
+      }
+    },
+    {
+      "id": "ui.menu_confirm",
+      "kind": "ui",
+      "trigger": "Start / confirm",
+      "polyphony": 1,
+      "status": "provisional",
+      "recipe": {
+        "type": "square_blip",
+        "durationMs": 80,
+        "wave": "square",
+        "freq": 440,
+        "freqEnd": 880,
+        "envelope": { "a": 0.001, "d": 0.05, "s": 0.0, "r": 0.03 },
+        "gain": 0.16
+      }
+    },
+    {
+      "id": "ui.player_join",
+      "kind": "ui",
+      "trigger": "Co-op / DM mode select flavor",
+      "polyphony": 1,
+      "status": "provisional",
+      "recipe": {
+        "type": "arpeggio",
+        "durationMs": 240,
+        "wave": "square",
+        "pattern": ["C4", "E4", "G4"],
+        "bpm": 160,
+        "envelope": { "a": 0.002, "d": 0.05, "s": 0.15, "r": 0.06 },
+        "gain": 0.14
+      }
+    },
+    {
+      "id": "ui.game_over",
+      "kind": "ui",
+      "trigger": "Death → run end",
+      "polyphony": 1,
+      "status": "provisional",
+      "recipe": {
+        "type": "arpeggio",
+        "durationMs": 600,
+        "wave": "sawtooth",
+        "pattern": ["G3", "Eb3", "C3", "G2"],
+        "bpm": 90,
+        "filter": { "type": "lowpass", "freq": 1200, "Q": 0.7 },
+        "envelope": { "a": 0.01, "d": 0.15, "s": 0.2, "r": 0.25 },
+        "gain": 0.22
+      }
+    },
+    {
+      "id": "ui.high_score",
+      "kind": "ui",
+      "trigger": "New high score present",
+      "polyphony": 1,
+      "status": "provisional",
+      "recipe": {
+        "type": "arpeggio",
+        "durationMs": 400,
+        "wave": "square",
+        "pattern": ["C4", "E4", "G4", "C5"],
+        "bpm": 150,
+        "envelope": { "a": 0.002, "d": 0.06, "s": 0.2, "r": 0.08 },
+        "gain": 0.18
+      }
+    },
+    {
+      "id": "ui.wave_clear",
+      "kind": "ui",
+      "trigger": "Wave cleared sting (if original has one)",
+      "polyphony": 1,
+      "status": "gap",
+      "recipe": {
+        "type": "arpeggio",
+        "durationMs": 280,
+        "wave": "square",
+        "pattern": ["G4", "B4", "D5"],
+        "bpm": 140,
+        "envelope": { "a": 0.002, "d": 0.05, "s": 0.1, "r": 0.06 },
+        "gain": 0.15
+      }
+    },
+    {
+      "id": "sfx.pistol_fire",
+      "kind": "sfx",
+      "trigger": "player fires pistol",
+      "polyphony": 6,
+      "status": "provisional",
+      "recipe": {
+        "type": "noise_burst",
+        "durationMs": 70,
+        "wave": "square",
+        "freq": 420,
+        "freqEnd": 180,
+        "filter": { "type": "bandpass", "freq": 1200, "Q": 0.9 },
+        "envelope": { "a": 0.001, "d": 0.04, "s": 0.0, "r": 0.03 },
+        "gain": 0.28,
+        "noise": { "amount": 0.75, "color": "white" }
+      }
+    },
+    {
+      "id": "sfx.shotgun_fire",
+      "kind": "sfx",
+      "trigger": "player fires shotgun",
+      "polyphony": 3,
+      "status": "provisional",
+      "recipe": {
+        "type": "noise_burst",
+        "durationMs": 140,
+        "wave": "sawtooth",
+        "freq": 90,
+        "freqEnd": 50,
+        "filter": { "type": "lowpass", "freq": 2400, "Q": 0.5 },
+        "envelope": { "a": 0.001, "d": 0.08, "s": 0.05, "r": 0.06 },
+        "gain": 0.34,
+        "noise": { "amount": 1.0, "color": "white" }
+      }
+    },
+    {
+      "id": "sfx.uzi_fire",
+      "kind": "sfx",
+      "trigger": "uzi auto pulse (one per shot)",
+      "polyphony": 8,
+      "status": "provisional",
+      "recipe": {
+        "type": "square_blip",
+        "durationMs": 35,
+        "wave": "square",
+        "freq": 880,
+        "freqEnd": 440,
+        "duty": 0.25,
+        "envelope": { "a": 0.0005, "d": 0.02, "s": 0.0, "r": 0.015 },
+        "gain": 0.2,
+        "noise": { "amount": 0.25, "color": "white" }
+      }
+    },
+    {
+      "id": "sfx.grenade_throw",
+      "kind": "sfx",
+      "trigger": "grenade leave hand",
+      "polyphony": 2,
+      "status": "provisional",
+      "recipe": {
+        "type": "square_blip",
+        "durationMs": 60,
+        "wave": "square",
+        "freq": 220,
+        "freqEnd": 160,
+        "envelope": { "a": 0.001, "d": 0.04, "s": 0.0, "r": 0.03 },
+        "gain": 0.14
+      }
+    },
+    {
+      "id": "sfx.grenade_explode",
+      "kind": "sfx",
+      "trigger": "grenade detonate",
+      "polyphony": 2,
+      "status": "provisional",
+      "recipe": {
+        "type": "saw_thud",
+        "durationMs": 380,
+        "wave": "sawtooth",
+        "freq": 100,
+        "freqEnd": 40,
+        "filter": { "type": "lowpass", "freq": 900, "Q": 0.8 },
+        "envelope": { "a": 0.002, "d": 0.16, "s": 0.12, "r": 0.2 },
+        "gain": 0.36,
+        "noise": { "amount": 0.8, "color": "pink" }
+      }
+    },
+    {
+      "id": "sfx.empty_click",
+      "kind": "sfx",
+      "trigger": "fire with no ammo",
+      "polyphony": 2,
+      "status": "gap",
+      "recipe": {
+        "type": "square_blip",
+        "durationMs": 25,
+        "wave": "square",
+        "freq": 180,
+        "envelope": { "a": 0.0005, "d": 0.015, "s": 0.0, "r": 0.01 },
+        "gain": 0.1
+      }
+    },
+    {
+      "id": "sfx.weapon_unlock",
+      "kind": "sfx",
+      "trigger": "kill-streak unlock / weapon upgrade",
+      "polyphony": 1,
+      "status": "provisional",
+      "recipe": {
+        "type": "arpeggio",
+        "durationMs": 320,
+        "wave": "square",
+        "pattern": ["C4", "E4", "G4", "C5"],
+        "bpm": 180,
+        "envelope": { "a": 0.002, "d": 0.06, "s": 0.2, "r": 0.08 },
+        "gain": 0.2,
+        "vibrato": { "hz": 5, "depth": 4 }
+      }
+    },
+    {
+      "id": "sfx.ammo_pickup",
+      "kind": "sfx",
+      "trigger": "ammo crate pickup",
+      "polyphony": 4,
+      "status": "provisional",
+      "recipe": {
+        "type": "square_blip",
+        "durationMs": 90,
+        "wave": "square",
+        "freq": 660,
+        "freqEnd": 990,
+        "envelope": { "a": 0.001, "d": 0.05, "s": 0.0, "r": 0.04 },
+        "gain": 0.16
+      }
+    },
+    {
+      "id": "sfx.barrel_explode",
+      "kind": "sfx",
+      "trigger": "explosive barrel detonation",
+      "polyphony": 2,
+      "status": "provisional",
+      "recipe": {
+        "type": "saw_thud",
+        "durationMs": 420,
+        "wave": "sawtooth",
+        "freq": 110,
+        "freqEnd": 38,
+        "filter": { "type": "lowpass", "freq": 800, "Q": 0.8 },
+        "envelope": { "a": 0.002, "d": 0.18, "s": 0.15, "r": 0.22 },
+        "gain": 0.38,
+        "noise": { "amount": 0.85, "color": "pink" }
+      }
+    },
+    {
+      "id": "sfx.player_hurt",
+      "kind": "sfx",
+      "trigger": "player takes damage",
+      "polyphony": 3,
+      "status": "provisional",
+      "recipe": {
+        "type": "noise_burst",
+        "durationMs": 90,
+        "wave": "sawtooth",
+        "freq": 300,
+        "freqEnd": 120,
+        "filter": { "type": "bandpass", "freq": 800, "Q": 0.7 },
+        "envelope": { "a": 0.001, "d": 0.05, "s": 0.0, "r": 0.04 },
+        "gain": 0.24,
+        "noise": { "amount": 0.65, "color": "white" }
+      }
+    },
+    {
+      "id": "sfx.player_death",
+      "kind": "sfx",
+      "trigger": "player dies",
+      "polyphony": 1,
+      "status": "provisional",
+      "recipe": {
+        "type": "saw_thud",
+        "durationMs": 500,
+        "wave": "sawtooth",
+        "freq": 140,
+        "freqEnd": 45,
+        "filter": { "type": "lowpass", "freq": 700, "Q": 0.6 },
+        "envelope": { "a": 0.005, "d": 0.2, "s": 0.1, "r": 0.25 },
+        "gain": 0.32,
+        "noise": { "amount": 0.7, "color": "pink" }
+      }
+    },
+    {
+      "id": "sfx.zombie_hit",
+      "kind": "sfx",
+      "trigger": "zombie damaged",
+      "polyphony": 10,
+      "status": "provisional",
+      "recipe": {
+        "type": "noise_burst",
+        "durationMs": 50,
+        "wave": "square",
+        "freq": 200,
+        "freqEnd": 120,
+        "filter": { "type": "lowpass", "freq": 1000, "Q": 0.5 },
+        "envelope": { "a": 0.001, "d": 0.03, "s": 0.0, "r": 0.02 },
+        "gain": 0.18,
+        "noise": { "amount": 0.55, "color": "pink" }
+      }
+    },
+    {
+      "id": "sfx.zombie_death",
+      "kind": "sfx",
+      "trigger": "zombie killed",
+      "polyphony": 10,
+      "status": "provisional",
+      "recipe": {
+        "type": "noise_burst",
+        "durationMs": 110,
+        "wave": "sawtooth",
+        "freq": 160,
+        "freqEnd": 70,
+        "filter": { "type": "lowpass", "freq": 900, "Q": 0.6 },
+        "envelope": { "a": 0.001, "d": 0.07, "s": 0.0, "r": 0.05 },
+        "gain": 0.22,
+        "noise": { "amount": 0.7, "color": "pink" }
+      }
+    },
+    {
+      "id": "sfx.zombie_attack",
+      "kind": "sfx",
+      "trigger": "zombie melee / contact hit on player",
+      "polyphony": 4,
+      "status": "gap",
+      "recipe": {
+        "type": "saw_thud",
+        "durationMs": 80,
+        "wave": "sawtooth",
+        "freq": 180,
+        "freqEnd": 90,
+        "envelope": { "a": 0.001, "d": 0.04, "s": 0.0, "r": 0.03 },
+        "gain": 0.2,
+        "noise": { "amount": 0.4, "color": "white" }
+      }
+    },
+    {
+      "id": "sfx.special_spawn",
+      "kind": "sfx",
+      "trigger": "devil / special enemy appears",
+      "polyphony": 2,
+      "status": "provisional",
+      "recipe": {
+        "type": "fm_chirp",
+        "durationMs": 280,
+        "wave": "square",
+        "freq": 200,
+        "freqEnd": 600,
+        "envelope": { "a": 0.01, "d": 0.1, "s": 0.3, "r": 0.1 },
+        "gain": 0.24,
+        "vibrato": { "hz": 12, "depth": 30 }
+      }
+    },
+    {
+      "id": "sfx.special_death",
+      "kind": "sfx",
+      "trigger": "special killed",
+      "polyphony": 2,
+      "status": "gap",
+      "recipe": {
+        "type": "fm_chirp",
+        "durationMs": 320,
+        "wave": "square",
+        "freq": 600,
+        "freqEnd": 120,
+        "envelope": { "a": 0.005, "d": 0.12, "s": 0.1, "r": 0.12 },
+        "gain": 0.22,
+        "vibrato": { "hz": 8, "depth": 20 }
+      }
+    },
+    {
+      "id": "music.menu",
+      "kind": "music",
+      "trigger": "title / room select",
+      "polyphony": 1,
+      "status": "provisional",
+      "recipe": {
+        "type": "drone",
+        "loop": true,
+        "bpm": 100,
+        "wave": "triangle",
+        "pattern": ["C3", "Eb3", "G3", "Bb3"],
+        "filter": { "type": "lowpass", "freq": 1800, "Q": 0.4 },
+        "envelope": { "a": 0.05, "d": 0.1, "s": 0.6, "r": 0.2 },
+        "gain": 0.09
+      }
+    },
+    {
+      "id": "music.combat",
+      "kind": "music",
+      "trigger": "in-run background",
+      "polyphony": 1,
+      "status": "provisional",
+      "recipe": {
+        "type": "drone",
+        "loop": true,
+        "bpm": 128,
+        "wave": "square",
+        "pattern": ["C2", "C2", "G1", "C2"],
+        "filter": { "type": "lowpass", "freq": 1400, "Q": 0.5 },
+        "envelope": { "a": 0.01, "d": 0.05, "s": 0.7, "r": 0.05 },
+        "gain": 0.1
+      }
+    },
+    {
+      "id": "music.deathmatch",
+      "kind": "music",
+      "trigger": "DM mode bed (if distinct)",
+      "polyphony": 1,
+      "status": "gap",
+      "recipe": {
+        "type": "drone",
+        "loop": true,
+        "bpm": 140,
+        "wave": "square",
+        "pattern": ["D2", "D2", "A1", "D2"],
+        "filter": { "type": "lowpass", "freq": 1600, "Q": 0.5 },
+        "envelope": { "a": 0.01, "d": 0.04, "s": 0.7, "r": 0.04 },
+        "gain": 0.1
+      }
+    }
+  ]
+}
