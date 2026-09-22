@@ -1,5 +1,6 @@
 import { Input, Sfx, fitIntegerScale, letterboxOffset, viewport, load, save } from '@maga/arcade-core';
 import { Sim, PANES, type PaneKey } from './sim';
+import { drawIcon, drawWordmark } from './icons';
 
 /**
  * Burger Tycoon — native replica (Canvas2D + DOM chrome).
@@ -67,7 +68,7 @@ let best = load('burger-tycoon', 'best-time', 0);
 let musicStarted = false;
 let prevPointerActive = false;
 let prevBacklash = 0;
-let renderedEvents = -1;
+let renderedEvents = '';
 
 interface Hit { x: number; y: number; w: number; h: number; fn: () => void }
 let hits: Hit[] = [];
@@ -127,6 +128,58 @@ function meter(x: number, y: number, w: number, v: number, max: number, col: str
   ctx.fillText(`${label} ${v.toFixed(0)}`, x + 4, y + 11);
 }
 
+function drawPane(key: PaneKey, index: number, x: number, y: number, w: number, h: number, grid: boolean): void {
+  const s = sim.s;
+  const active = index === pane;
+  ctx.fillStyle = active && grid ? '#d7e7f7' : '#f4eddf';
+  ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = active && grid ? '#4a6fa5' : '#9a8f7d';
+  ctx.lineWidth = active && grid ? 3 : 1;
+  ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
+  ctx.fillStyle = '#222'; ctx.font = 'bold 16px monospace';
+  ctx.fillText(`${index + 1} ${PANES[index].title}`, x + 14, y + 25);
+  const iconSize = grid ? 24 : 32;
+  drawIcon(ctx, key, x + w - iconSize - 10, y + 6, iconSize);
+
+  const actions = sim.actions[key];
+  const actionH = grid ? 34 : 48;
+  const actionGap = grid ? 7 : 16;
+  const actionW = grid ? Math.min(270, w - 28) : 560;
+  actions.forEach((a, i) => {
+    const ay = y + 38 + i * (actionH + actionGap);
+    ctx.fillStyle = a.dirty ? '#8b2c2c' : '#4a6fa5';
+    ctx.fillRect(x + 14, ay, actionW, actionH);
+    ctx.save();
+    ctx.beginPath(); ctx.rect(x + 14, ay, actionW, actionH); ctx.clip();
+    ctx.fillStyle = '#fff'; ctx.font = `${grid ? 9 : 15}px monospace`;
+    ctx.fillText(a.label, x + 20, ay + (grid ? 21 : 30));
+    ctx.restore();
+    hits.push({
+      x: x + 14, y: ay, w: actionW, h: actionH,
+      fn: () => { if (sim.act(key, i) !== null) sfx.preset('ui'); },
+    });
+  });
+
+  const mx = grid ? x + actionW + 14 : x + 596;
+  const mw = grid ? w - (mx - x) - 14 : 300;
+  ctx.font = '11px monospace'; ctx.fillStyle = '#222';
+  if (key === 'farm') {
+    meter(mx, y + 44, mw, s.crops, 100, '#2b8a3e', 'CROPS');
+    meter(mx, y + 68, mw, s.cattle, 50, '#a0522d', 'CATTLE');
+    if (s.dirty.deforest) ctx.fillText('rainforest burning…', mx, y + 104);
+  } else if (key === 'feed') {
+    meter(mx, y + 44, mw, s.patties, 60, '#d6336c', 'PATTIES');
+    meter(mx, y + 68, mw, s.cattle, 50, '#a0522d', 'CATTLE');
+    meter(mx, y + 92, mw, s.disease, 20, '#e8590c', 'DISEASE');
+  } else if (key === 'rest') {
+    meter(mx, y + 44, mw, s.patties, 60, '#d6336c', 'PATTY STOCK');
+    meter(mx, y + 68, mw, s.demand, 3, '#1971c2', 'DEMAND');
+  } else {
+    meter(mx, y + 44, mw, s.backlash, 100, '#e8590c', 'BACKLASH');
+    meter(mx, y + 68, mw, s.boardPressure, 100, '#c2255c', 'BOARD');
+  }
+}
+
 function draw(): void {
   const s = sim.s;
   [...tabsEl.children].forEach((b, i) => (b as HTMLElement).className = i === pane ? 'on' : '');
@@ -136,50 +189,25 @@ function draw(): void {
     `<span>DEMAND <b>${s.demand.toFixed(1)}x</b></span><span>PROFIT <b>$${s.lastProfit.toFixed(1)}/s</b></span>` +
     `<span>OVERHEAD <b>-$${s.rates.overhead}/s</b></span><span>TIME <b>${s.t.toFixed(0)}s</b></span>` +
     `<span>BEST <b>${best.toFixed(0)}s</b></span>`;
-
-  if (renderedEvents !== sim.events.length) {
-    renderedEvents = sim.events.length;
+  const newestEvent = sim.events[0] ?? '';
+  if (renderedEvents !== newestEvent) {
+    renderedEvents = newestEvent;
     logEl.innerHTML = sim.events.map((e) => `<div>${e}</div>`).join('');
   }
-
   ctx.fillStyle = '#e8e0d0'; ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = '#222'; ctx.font = 'bold 22px monospace';
-  ctx.fillText(PANES[pane].title, 24, 40);
-
   hits = [];
-  const paneKey = PANES[pane].key;
-  sim.actions[paneKey].forEach((a, i) => {
-    const y = 80 + i * 64;
-    ctx.fillStyle = a.dirty ? '#8b2c2c' : '#4a6fa5';
-    ctx.fillRect(24, y, 560, 48);
-    ctx.fillStyle = '#fff'; ctx.font = '15px monospace';
-    ctx.fillText(a.label, 40, y + 30);
-    hits.push({ x: 24, y, w: 560, h: 48, fn: () => { if (sim.act(paneKey, i) !== null) sfx.preset('ui'); } });
-  });
-
-  ctx.font = '14px monospace'; ctx.fillStyle = '#222';
-  if (paneKey === 'farm') {
-    meter(620, 80, 300, s.crops, 100, '#2b8a3e', 'CROPS');
-    meter(620, 110, 300, s.cattle, 50, '#a0522d', 'CATTLE');
-    if (s.dirty.deforest) ctx.fillText('rainforest burning…', 620, 160);
+  const grid = cv.clientWidth >= 900;
+  if (grid) {
+    const pw = W / 2; const ph = 190;
+    PANES.forEach((p, i) => drawPane(p.key, i, (i % 2) * pw, Math.floor(i / 2) * ph, pw, ph, true));
+    ctx.fillStyle = '#666'; ctx.font = '11px monospace';
+    ctx.fillText('Grid view · keys 1-4 highlight panes · click actions · sim runs while idle', 14, H - 12);
+    drawWordmark(ctx, W - 236, H - 32, 18);
+  } else {
+    drawPane(PANES[pane].key, pane, 0, 0, W, H, false);
+    ctx.fillStyle = '#666'; ctx.font = '12px monospace';
+    ctx.fillText('Click actions · keys 1-4 switch panes · sim runs while idle — INTERNAL replica', 24, H - 14);
   }
-  if (paneKey === 'feed') {
-    meter(620, 80, 300, s.patties, 60, '#d6336c', 'PATTIES');
-    meter(620, 110, 300, s.cattle, 50, '#a0522d', 'CATTLE');
-    meter(620, 140, 300, s.disease, 20, '#e8590c', 'DISEASE RISK');
-  }
-  if (paneKey === 'rest') {
-    meter(620, 80, 300, s.patties, 60, '#d6336c', 'PATTY STOCK');
-    meter(620, 110, 300, s.demand, 3, '#1971c2', 'DEMAND');
-  }
-  if (paneKey === 'hq') {
-    meter(620, 80, 300, s.backlash, 100, '#e8590c', 'BACKLASH');
-    meter(620, 110, 300, s.boardPressure, 100, '#c2255c', 'BOARD PRESSURE');
-  }
-
-  ctx.fillStyle = '#666'; ctx.font = '12px monospace';
-  ctx.fillText('Click actions · keys 1-4 switch panes · sim runs while idle — INTERNAL replica', 24, H - 14);
-
   if (s.over) {
     ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(0, 140, W, 140);
     ctx.fillStyle = '#fff'; ctx.font = 'bold 26px monospace'; ctx.textAlign = 'center';

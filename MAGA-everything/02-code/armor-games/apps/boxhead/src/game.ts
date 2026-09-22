@@ -1,4 +1,4 @@
-import { Application, Container, Graphics, Text } from 'pixi.js';
+import { Application, Assets, Container, Graphics, Sprite, Text, TilingSprite, type Texture } from 'pixi.js';
 import { Input, Sfx, load, save } from '@maga/arcade-core';
 import {
   AmmoCrate, Barrel, BlastRing, Player, Projectile, Zombie,
@@ -26,7 +26,7 @@ const DM_RESPAWN = 1.4;
 const P1_COLOR = 0xe8e8f0;
 const P2_COLOR = 0x7ab8ff;
 
-type GameState = 'title' | 'mode' | 'room' | 'playing' | 'dead' | 'victory';
+type GameState = 'title' | 'mode' | 'room' | 'playing' | 'paused' | 'dead' | 'victory';
 type Mode = 'solo' | 'coop' | 'deathmatch';
 
 /** per-player runtime state */
@@ -61,7 +61,7 @@ export class Game {
   private wave = 0;
   private waveBreak = 0;
   private crateTimer = 8;
-  /** D-08 enabler: ?stress tops the field up to ~60 movers so the F3
+  /** D-08 enabler: ?stress tops the field up to ~100 movers so the F3
    *  50–100-mover budget is measurable (wave tables cap at 14). Debug-only. */
   private stress = new URLSearchParams(location.search).has('stress');
   private high = 0;
@@ -70,6 +70,10 @@ export class Game {
   private hudText!: Text;
   private banner!: Text;
   private menuChip = new Container();
+  /** direct-authored art (public/art/*.svg); menus/arena work without them,
+   *  these decorate once the async load resolves. */
+  private logoTex: Texture | null = null;
+  private floorTex: Texture | null = null;
 
   constructor(
     private app: Application,
@@ -115,6 +119,13 @@ export class Game {
     this.menuChip.y = STAGE_H - 44;
     this.menuChip.visible = false;
     this.hud.addChild(this.menuChip);
+    // authored art preload — decorative only; failures leave procedural look.
+    Assets.load<Texture>('/art/boxhead-logo.svg')
+      .then((t) => { this.logoTex = t; if (this.state === 'title') this.showTitle(); })
+      .catch(() => { /* keep text-only title */ });
+    Assets.load<Texture>('/art/floor-tile.svg')
+      .then((t) => { this.floorTex = t; })
+      .catch(() => { /* keep flat arena fill */ });
     this.showTitle();
   }
 
@@ -149,12 +160,20 @@ export class Game {
     this.clearMenu();
     this.world.visible = false;
     this.hud.visible = false;
+    if (this.logoTex) {
+      const logo = new Sprite(this.logoTex);
+      logo.anchor.set(0.5);
+      logo.x = STAGE_W / 2;
+      logo.y = 72;
+      logo.scale.set(0.72);
+      this.menu.addChild(logo);
+    }
     this.menuText([
       'BOXHEAD — 2PLAY ROOMS (native replica)',
       'INTERNAL-NO-PUBLIC build · localhost only',
       '',
       'PRESS SPACE / ENTER / TAP TO CONTINUE',
-    ], 140);
+    ], 150);
   }
 
   private showModeSelect(): void {
@@ -201,6 +220,15 @@ export class Game {
       arena.rect(o.x, o.y, o.w, o.h).fill(0x2c2c3c).stroke({ width: 1, color: 0x44445c });
     }
     this.world.addChild(arena);
+    if (this.floorTex) {
+      // authored floor tile over the flat fill — same base color (0x101018),
+      // so this only adds the subtle grid/grime layer; entities draw above.
+      const floor = new TilingSprite({ texture: this.floorTex, width: STAGE_W - 20, height: STAGE_H - 20 });
+      floor.x = 10;
+      floor.y = 10;
+      floor.alpha = 0.85;
+      this.world.addChild(floor);
+    }
 
     const twoPlayer = this.mode !== 'solo';
     this.input.setMode(twoPlayer ? 'versus' : 'solo');
@@ -304,7 +332,18 @@ export class Game {
     // touch zones exist only during gameplay — menus/end screens get raw taps
     this.touch.setActive(this.state === 'playing');
     this.menuChip.visible = this.state === 'dead' || this.state === 'victory';
-    switch (this.state) {
+    if (this.state === 'playing' && this.input.wasPressed('pause')) {
+      this.state = 'paused';
+      this.banner.text = 'PAUSED\nESC / P — resume · M / ENTER — menu';
+    } else if (this.state === 'paused') {
+      if (this.input.wasPressed('pause')) {
+        this.state = 'playing';
+        this.banner.text = '';
+      } else if (this.input.wasPressed('action') || this.input.pointer.tapped) {
+        // Pause remains keyboard- and touch-accessible; tapping the banner quits.
+        this.showModeSelect();
+      }
+    } else switch (this.state) {
       case 'title':
         if (this.input.wasPressed('fire') || this.input.wasPressed('action') || this.input.pointer.tapped) this.showModeSelect();
         break;
@@ -342,6 +381,10 @@ export class Game {
   }
 
   private tickPlaying(dt: number): void {
+    // D-16: cap gameplay time so tab-throttled frames cannot consume invulnerability
+    // in one jump and let stacked movers deliver several hits at once.
+    const gameplayDt = Math.min(dt, 0.05);
+    dt = gameplayDt;
     this.updatePlayers(dt);
     if (this.mode !== 'deathmatch') {
       this.updateSpawning(dt);
@@ -358,6 +401,7 @@ export class Game {
       this.gameOver();
     }
   }
+
 
   // --- players -------------------------------------------------------------------
   private updatePlayers(dt: number): void {
@@ -460,8 +504,7 @@ export class Game {
       this.world.addChild(b.g);
     };
     if (weapon === 'grenades') {
-      // lobbed AoE shell — detonates on first contact/expiry (D-03: was a
-      // single slow bullet, strictly worse than uzi)
+      // lobbed AoE shell — detonates on first contact/expiry (D-03)
       shoot(dir, 'grenade');
     } else {
       shoot(dir);
@@ -490,8 +533,8 @@ export class Game {
       this.waveBreak += dt;
       if (this.waveBreak > 2.5) this.nextWave();
     }
-    // D-08: ?stress keeps ~60 movers on the field for F3 measurement
-    if (this.stress && this.zombies.length < 60) this.spawnZombie(Math.random() < 0.3, 60 + Math.random() * 40);
+    // D-08: ?stress keeps ~100 movers on the field, including runner variants.
+    if (this.stress && this.zombies.length < 100) this.spawnZombie(Math.random() < 0.35, 60 + Math.random() * 40);
   }
 
   private spawnZombie(runner: boolean, speed: number): void {
@@ -611,8 +654,8 @@ export class Game {
 
   // --- props ---------------------------------------------------------------------
   private updateProps(dt: number): void {
-    // ammo crate spawner (solo + co-op only)
-    if (this.mode !== 'deathmatch') {
+    // DD-77 / DD-18: spec has no DM pickups; crates are enabled in all modes
+    // as the deadlock fix pending ARCADE ruling on the no-pickup divergence.
       this.crateTimer -= dt;
       if (this.crateTimer <= 0 && this.crates.length < 2) {
         this.crateTimer = 12;
@@ -636,7 +679,6 @@ export class Game {
           }
         }
       }
-    }
 
     // barrels: fuses and chain reactions
     for (const barrel of this.barrels) {

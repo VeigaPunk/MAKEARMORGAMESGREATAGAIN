@@ -97,8 +97,9 @@ export class TouchControls {
         this.drawFire();
       }
     };
-    canvas.addEventListener('pointerup', release);
-    canvas.addEventListener('pointercancel', release);
+    // Release can occur outside the canvas when a finger leaves the viewport.
+    window.addEventListener('pointerup', release);
+    window.addEventListener('pointercancel', release);
   }
 
   /** gameplay gate — menus/end screens leave every touch to Input (D-14) */

@@ -97,7 +97,9 @@ export class Sim {
   act(pane: PaneKey, idx: number): string | null {
     const a = this.actions[pane][idx];
     if (!a || this.s.over) return null;
+    const before = JSON.stringify(this.s);
     a.run(this.s);
+    if (JSON.stringify(this.s) === before) return null;
     this.log(a.label);
     return a.label;
   }

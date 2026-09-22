@@ -5,6 +5,16 @@
  * `cluck` = Cluck Horizon original IP. Colors are Pixi hex numbers;
  * names/strings come straight from the proto packs.
  */
+export interface EnemyType {
+  name: string;
+  color: number;
+  headColor: number;
+  speed: number; // TBD ARCADE behavior tint multiplier
+  hp: number; // TBD ARCADE per-type durability
+}
+
+export interface BossType { name: string; color: number; headColor: number }
+
 export interface ContentPack {
   id: 'replica' | 'cluck';
   title: string;
@@ -12,8 +22,8 @@ export interface ContentPack {
   weapons: string[];
   gift: string;
   food: string;
-  enemy: string;
-  boss: string;
+  enemyTypes: [EnemyType, EnemyType, EnemyType];
+  bosses: [BossType, BossType];
   ship: number;
   foe: number;
   foe2: number;
@@ -32,8 +42,15 @@ export const PACKS: Record<ContentPack['id'], ContentPack> = {
     weapons: ['PEA SHOOTER', 'TWIN BOLT', 'TRI-SPREAD'],
     gift: 'GIFT',
     food: 'DRUMSTICK',
-    enemy: 'CHICKEN',
-    boss: 'BIG HEN',
+    enemyTypes: [
+      { name: 'CHICKEN', color: 0xffd43b, headColor: 0xff8787, speed: 1, hp: 2 },
+      { name: 'CHICKEN SCOUT', color: 0xffd43b, headColor: 0xff8787, speed: 1, hp: 2 },
+      { name: 'CHICKEN ACE', color: 0xffd43b, headColor: 0xff8787, speed: 1, hp: 2 },
+    ],
+    bosses: [
+      { name: 'BIG HEN', color: 0xffd43b, headColor: 0xff8787 },
+      { name: 'MOTHER HEN', color: 0xffd43b, headColor: 0xff8787 },
+    ],
     ship: 0x4dabf7,
     foe: 0xffd43b,
     foe2: 0xff8787,
@@ -50,8 +67,15 @@ export const PACKS: Record<ContentPack['id'], ContentPack> = {
     weapons: ['SOUP LASER', 'SPATULA SPREAD', 'WHISK BARRAGE'],
     gift: 'CRATE',
     food: 'RATIONS',
-    enemy: 'FLOCKBIRD',
-    boss: 'MOTHER GOOSE',
+    enemyTypes: [
+      { name: 'FLOCKBIRD', color: 0xffa94d, headColor: 0xffe066, speed: 1, hp: 2 },
+      { name: 'FLOCKBIRD GLIDER', color: 0xffe066, headColor: 0xffa94d, speed: 1.15, hp: 2 },
+      { name: 'FLOCKBIRD BRUISER', color: 0xffe677, headColor: 0xffc92a, speed: 0.85, hp: 3 },
+    ],
+    bosses: [
+      { name: 'MOTHER GOOSE', color: 0xffa94d, headColor: 0xffe066 },
+      { name: 'ROOSTER REGENT', color: 0xffe677, headColor: 0xffc92a },
+    ],
     ship: 0x20c997,
     foe: 0xffa94d,
     foe2: 0xffe066,

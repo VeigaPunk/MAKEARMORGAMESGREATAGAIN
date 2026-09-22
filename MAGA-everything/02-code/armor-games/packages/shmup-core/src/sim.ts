@@ -47,8 +47,8 @@ const BOSS_HP = [60, 100];
 
 // ---------------- entities ----------------
 export interface Ship { x: number; y: number; vx: number; vy: number; alive: boolean; invuln: number }
-export interface Chicken { bx: number; by: number; x: number; y: number; hp: number; t: number; dive: number; dvx: number; dvy: number; enter: number }
-export interface Boss { x: number; y: number; hp: number; max: number; t: number; volley: number; radial: number; warn: number; radialArmed: boolean }
+export interface Chicken { bx: number; by: number; x: number; y: number; hp: number; dive: number; dvx: number; dvy: number; enter: number; type: number }
+export interface Boss { x: number; y: number; hp: number; max: number; t: number; volley: number; radial: number; warn: number; radialArmed: boolean; type: number }
 export interface Bullet { x: number; y: number; vx: number; vy: number }
 export interface Missile { x: number; y: number; vy: number }
 export interface Egg { x: number; y: number; vx: number; vy: number }
@@ -175,16 +175,18 @@ export class ShmupSim {
     const oy = FORM_OY;
     this.chickens = []; this.waveT = 0; this.eggT = 1.2; this.diveT = 1.5;
     for (let r = 0; r < w.rows; r++) for (let c = 0; c < w.cols; c++) {
+      const type = (r * w.cols + c) % this.pack.enemyTypes.length;
+      const variant = this.pack.enemyTypes[type];
       this.chickens.push({
         bx: ox + c * cw, by: oy + r * ch2, x: ox + c * cw, y: -60 - r * 30,
-        hp: w.hp, t: Math.random() * 6, dive: 0, dvx: 0, dvy: 0, enter: 1,
+        hp: Math.max(w.hp, variant.hp), dive: 0, dvx: 0, dvy: 0, enter: 1, type,
       });
     }
   }
 
   private spawnBoss(): void {
     const hp = BOSS_HP[this.chapter - 1];
-    this.boss = { x: STAGE_W / 2, y: -80, hp, max: hp, t: 0, volley: 2.0, radial: 5.0, warn: 0, radialArmed: false };
+    this.boss = { x: STAGE_W / 2, y: -80, hp, max: hp, t: 0, volley: 2.0, radial: 5.0, warn: 0, radialArmed: false, type: this.chapter - 1 };
     this.chickens = [];
     this.events.push('bossSpawn');
   }
@@ -280,7 +282,7 @@ export class ShmupSim {
     // wdef is undefined (proto crashed here too; its boss was unreachable).
     const wdef = CHAPTERS[this.chapter - 1][Math.min(this.waveIdx, CHAPTERS[this.chapter - 1].length - 1)];
     for (const c of this.chickens) {
-      c.t += dt;
+      if (this.pack.enemyTypes[c.type].speed <= 0) continue;
       if (c.enter) { // fly-in
         c.y += (c.by - c.y) * Math.min(1, 3 * dt) + 40 * dt;
         if (Math.abs(c.y - c.by) < 4) { c.y = c.by; c.enter = 0; }
@@ -292,14 +294,17 @@ export class ShmupSim {
         continue;
       }
       if (wdef.pattern === 'straight') {
-        c.x = c.bx + Math.sin(this.waveT * 0.7) * 130;
-        c.y = c.by + this.waveT * 4;
+        const motionT = this.waveT * this.pack.enemyTypes[c.type].speed;
+        c.x = c.bx + Math.sin(motionT * 0.7) * 130;
+        c.y = c.by + motionT * 4;
       } else if (wdef.pattern === 'swoop') {
-        c.x = c.bx + Math.sin(this.waveT * 1.1 + c.bx * 0.01) * 170;
-        c.y = c.by + Math.sin(this.waveT * 0.9 + c.bx * 0.02) * 36 + this.waveT * 6;
+        const motionT = this.waveT * this.pack.enemyTypes[c.type].speed;
+        c.x = c.bx + Math.sin(motionT * 1.1 + c.bx * 0.01) * 170;
+        c.y = c.by + Math.sin(motionT * 0.9 + c.bx * 0.02) * 36 + motionT * 6;
       } else { // dive formation: mild sway; individuals peel off
-        c.x = c.bx + Math.sin(this.waveT * 0.5) * 70;
-        c.y = c.by + this.waveT * 3;
+        const motionT = this.waveT * this.pack.enemyTypes[c.type].speed;
+        c.x = c.bx + Math.sin(motionT * 0.5) * 70;
+        c.y = c.by + motionT * 3;
       }
     }
     // dive scheduler

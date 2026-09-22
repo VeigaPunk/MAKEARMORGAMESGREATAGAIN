@@ -146,6 +146,9 @@ function spikeAt(x: number, y: number): boolean {
 }
 
 function die(): void {
+  const prog = cube.x / LEVEL_END;
+  if (prog > best) best = prog;
+  save('impossible', 'best-progress', best);
   state = 'dead'; deadT = 0; deaths++;
   sfx.preset('death');
   for (let i = 0; i < 26; i++) particles.push({
@@ -182,14 +185,15 @@ function step(dt: number): void {
     sfx.blip({ wave: 'square', freq: 520, freqEnd: 700, duration: 0.05, volume: 0.4 }); // jump tick
   }
 
-  if (spikeAt(cube.x, cube.y) || solidSideAt(cube.x, cube.y) || cube.y > H + 200) return die();
+  if (spikeAt(cube.x, cube.y) || solidSideAt(cube.x + CUBE, cube.y)) return die();
+  if (floor === -Infinity && cube.y + CUBE > GROUND_Y + 8) return die(); // fell into gap
   if (cube.x >= LEVEL_END) {
     state = 'clear'; clearT = 0;
     sfx.preset('pickup');
     if (1 > best) { best = 1; save('impossible', 'best-progress', best); }
   }
   const prog = cube.x / LEVEL_END;
-  if (prog > best) { best = prog; save('impossible', 'best-progress', best); }
+  if (prog > best) best = prog;
 }
 
 // ---- input → jump (press-edge, spec: tap-on-press) ----
@@ -276,4 +280,16 @@ if (new URLSearchParams(location.search).has('debug')) {
     teleport(x: number) { cube.x = x; }, die,
     LEVEL_END,
   };
+  Object.defineProperty(window, '__proto', {
+    value: {
+      get state() { return state; }, get x() { return cube.x; }, get y() { return cube.y; },
+      get attempt() { return attempt; }, get deaths() { return deaths; },
+      get grounded() { return cube.grounded; },
+      get progress() { return cube.x / LEVEL_END; },
+      get camX() { return camX; }, get paused() { return paused; },
+      get best() { return best; },
+      get LEVEL() { return LEVEL; }, get LEVEL_END() { return LEVEL_END; },
+    },
+    configurable: true, enumerable: true, writable: false,
+  });
 }

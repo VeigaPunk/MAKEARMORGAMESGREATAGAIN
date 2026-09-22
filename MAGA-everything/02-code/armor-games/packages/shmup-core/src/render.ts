@@ -1,4 +1,4 @@
-import { Container, Graphics, Text, Texture } from 'pixi.js';
+import { Assets, Container, Graphics, Sprite, Text, Texture } from 'pixi.js';
 import { BTN, STAGE_H, STAGE_W, type ShmupSim } from './sim';
 
 /**
@@ -82,7 +82,20 @@ export class ShmupRenderer {
       this.titleTexts.push(t); this.menuLayer.addChild(t);
       return t;
     };
-    mk(pack.title, 120, 44, pack.accent, true);
+    const titleText = mk(pack.title, 120, 44, pack.accent, true);
+    // cluck pack: authored wordmark replaces the text title when the asset
+    // resolves (served from the app's public/art/; replica keeps text).
+    if (pack.id === 'cluck') {
+      Assets.load<Texture>('/art/title-cluck-horizon.svg')
+        .then((tex) => {
+          const s = new Sprite(tex);
+          s.anchor.set(0.5); s.x = STAGE_W / 2; s.y = 120;
+          s.scale.set(Math.min(1, (STAGE_W - 80) / tex.width));
+          this.menuLayer.addChild(s);
+          titleText.visible = false;
+        })
+        .catch(() => { /* asset absent — text title stays */ });
+    }
     mk(pack.sub, 152, 15, 0xaaaabb);
     mk('— INTERNAL mechanics proof · not for public ship —', 178, 12, 0x666677);
     mk('ENTER start · 1/2 chapter · click works too', 460, 13, 0x888899);
@@ -115,12 +128,13 @@ export class ShmupRenderer {
   }
 
   // ---------------- entities ----------------
-  private drawBird(x: number, y: number, k: number): void {
+  private drawBird(x: number, y: number, k: number, type = 0, boss = false): void {
     const g = this.field, pack = this.sim.pack;
-    g.ellipse(x, y, 16 * k, 13 * k).fill(pack.foe);
-    g.ellipse(x, y - 12 * k, 8 * k, 7 * k).fill(pack.foe2);          // head
-    g.ellipse(x, y - 19 * k, 4 * k, 3 * k).fill(0xff8787);           // comb
-    g.poly([x - 3 * k, y - 11 * k, x + 3 * k, y - 11 * k, x, y - 7 * k]).fill(0xffa94d); // beak
+    const variant = boss ? pack.bosses[type] : pack.enemyTypes[type];
+    g.ellipse(x, y, 16 * k, 13 * k).fill(variant.color);
+    g.ellipse(x, y - 12 * k, 8 * k, 7 * k).fill(variant.headColor);
+    g.ellipse(x, y - 19 * k, 4 * k, 3 * k).fill(0xff8787);
+    g.poly([x - 3 * k, y - 11 * k, x + 3 * k, y - 11 * k, x, y - 7 * k]).fill(0xffa94d);
     g.rect(x - 3 * k, y - 14 * k, 2 * k, 2 * k).fill(0x111111);
     g.rect(x + 1.5 * k, y - 14 * k, 2 * k, 2 * k).fill(0x111111);
   }
@@ -165,14 +179,14 @@ export class ShmupRenderer {
       }
     }
     // chickens
-    for (const c of sim.chickens) this.drawBird(c.x, c.y, 1);
+    for (const c of sim.chickens) this.drawBird(c.x, c.y, 1, c.type);
     // boss
     if (sim.boss) {
       const b = sim.boss;
       if (b.warn > 0) {
         g.circle(b.x, b.y, 62 + Math.sin(b.t * 30) * 6).stroke({ width: 3, color: sim.pack.accent });
       }
-      this.drawBird(b.x, b.y, 3.2);
+      this.drawBird(b.x, b.y, 3.2, b.type, true);
       g.rect(STAGE_W / 2 - 160, 14, 320, 10).fill(0x333333);
       g.rect(STAGE_W / 2 - 160, 14, 320 * Math.max(0, b.hp) / b.max, 10).fill(sim.pack.accent);
       g.rect(STAGE_W / 2 - 160, 14, 320, 10).stroke({ width: 1, color: 0xffffff });

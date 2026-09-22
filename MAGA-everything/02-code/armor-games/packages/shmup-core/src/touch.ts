@@ -86,8 +86,8 @@ export class ShmupTouch {
       if (e.pointerId === this.firePointer) { this.firePointer = -1; this.fire = false; }
       if (e.pointerId === this.missilePointer) this.missilePointer = -1;
     };
-    canvas.addEventListener('pointerup', release, { capture: true });
-    canvas.addEventListener('pointercancel', release, { capture: true });
+    window.addEventListener('pointerup', release, { capture: true });
+    window.addEventListener('pointercancel', release, { capture: true });
   }
 
   /** gameplay gate — menus/end screens leave every touch to Input (D-14) */
