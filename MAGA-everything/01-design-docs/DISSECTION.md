@@ -149,6 +149,6 @@ Docs were written on a different machine layout. Translate citations:
 
 | Surface | What it holds | Consumer note |
 |---|---|---|
-| `02-code/armor-games/` | Shipped monorepo: `apps/{boxhead,impossible,burger-tycoon}`, `packages/arcade-core`, `boxhead-2play-spike/` (gitignored, tarball-only) | Current build state; contradicts docs → `11-divergence/` |
+| `02-code/armor-games/` | Shipped monorepo: `apps/{boxhead,impossible,burger-tycoon,chicken-invaders,chicken-invaders-original,swords-and-sandals}` (all six scaffolded by `50665ba`), `packages/{arcade-core,shmup-core}`, `boxhead-2play-spike/` (gitignored, tarball-only) | Current build state; contradicts docs → `11-divergence/` |
 | `prototypes/` | maga-proto mechanics proofs: `impossible-game.html` (verified `991c648`), `burger-tycoon.html` (verified `3a8fa4f`), `chicken-invaders.html` (two-pack shmup skeleton — **unverified, no proto card**) | Port, don't re-derive (cards cite them) |
-| `verification/` | maga-verify live probes: `divergence.md` (`D-01…D-21` register), `doc-audit.md`, `evidence/*.webp`, `proto-verdicts/` | Lane-local + dated; its `D-NN` ids are NOT this log's `DD-NN` (DD-75) |
+| `verification/` | maga-verify live probes: `divergence.md` (`D-01…D-24` register), `doc-audit.md`, `evidence/*.webp`, `proto-verdicts/` | Lane-local + dated; its `D-NN` ids are NOT this log's `DD-NN` (DD-75) |

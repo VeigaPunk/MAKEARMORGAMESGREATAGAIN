@@ -1,7 +1,7 @@
 # BUILD CARD — Swords and Sandals 2: Emperor's Reign (v1 loop slice)
-**Slug:** `swords-and-sandals` · **Priority:** 5 (FORGE STACK-LOCKED) · **Renderer:** Canvas2D (+ DOM chrome for shop/menus) · **App:** `02-code/armor-games/apps/swords-and-sandals` (not yet scaffolded) · SPEC scope/rights: §Meta, §Content scope—Playable v1 (IN)
+**Slug:** `swords-and-sandals` · **Priority:** 5 (FORGE STACK-LOCKED) · **Renderer:** Canvas2D (+ DOM chrome for shop/menus) · **App:** `02-code/armor-games/apps/swords-and-sandals` (scaffolded — forge R04 `50665ba`) · SPEC scope/rights: §Meta, §Content scope—Playable v1 (IN)
 **Card sources:** `02-concept-specs/05-swords-and-sandals.md` (SPEC), `05-dossiers/swords-and-sandals.md` (DOSSIER), `03-stack-and-tickets/001-native-stack-and-plan.md` (STACK), `04-research/deep-dive.md` §1 (RESEARCH)
-**Build state:** not started. No tickets exist yet. Highest legal friction — parallel license track from day 1 (eGames.com LLC + Whiskeybarrel **+ verify 3RD Sense residual rights** — original 2007 SWF publisher dropped from the chain, DD-27; STACK §3).
+**Build state:** scaffolded `50665ba` (`src/main.ts` 29 ln + DOM chrome + INTERNAL badge). Highest legal friction — parallel license track from day 1 (eGames.com LLC + Whiskeybarrel **+ verify 3RD Sense residual rights** — original 2007 SWF publisher dropped from the chain, DD-27; STACK §3).
 
 ## 1. Core loop (SPEC §Core loop — v1 = create + few fights + shop, NOT full campaign)
 1. **Create gladiator** — look presets + skill-point spread mapped to combat styles.

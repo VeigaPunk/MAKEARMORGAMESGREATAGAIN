@@ -1,7 +1,7 @@
 # BUILD CARD — Chicken Invaders (CI2-era recreate)
-**Slug:** `chicken-invaders` · **Priority:** 4 (FORGE STACK-LOCKED) · **Renderer:** PixiJS 8 · **App:** `02-code/armor-games/apps/chicken-invaders` (not yet scaffolded) · SPEC scope/rights: §Meta, §Content scope—Playable v1 (IN)
+**Slug:** `chicken-invaders` · **Priority:** 4 (FORGE STACK-LOCKED) · **Renderer:** PixiJS 8 · **App:** `02-code/armor-games/apps/chicken-invaders` (scaffolded — forge R04 `50665ba`, `packages/shmup-core` replica pack) · SPEC scope/rights: §Meta, §Content scope—Playable v1 (IN)
 **Card sources:** `02-concept-specs/04-chicken-invaders.md` (SPEC), `05-dossiers/chicken-invaders.md` (DOSSIER), `03-stack-and-tickets/001-native-stack-and-plan.md` (STACK), `04-research/deep-dive.md` §5 (RESEARCH)
-**Build state:** not started. No tickets exist yet.
+**Build state:** scaffolded `50665ba` — `shmup-core` skeleton + `replica` content pack shipped (`main.ts` 9-ln boot; sim/render/touch in `packages/shmup-core/`); INTERNAL badge ships. Chicken tickets still to mint.
 **Critical:** official CI series = native desktop (UveDX), **not Flash** — no *official* SWF exists; fan Flash clones (hopslop Kongregate) are NOT acceptable originals (DOSSIER §Target versions). Recreate the CI2 *formula* via playtest notes, never asset extraction (SPEC §Ship path; §Notes for FORGE — Parity source). Governing bar: **formula replica** per SPEC; dossier's exact-parity checklist applies only if "exact-as-original" is claimed (DD-57).
 **Stack:** PixiJS 8 + TS + Vite; reuse Boxhead + `arcade-core` patterns; slot #4, sets bar for #6 Cluck Horizon (SPEC §Notes for FORGE; STACK §3). ⚠ inherit the Pixi-external + importmap + `public/vendor/` build workaround (STACK §build note) — Rollup-bundled Pixi hangs.
 **Rights:** INTERNAL-NO-PUBLIC — localhost internal OK; public ship needs InterAction studios / Prouskas clearance (SPEC §Meta). Owner actively commercial; extraction blocked (DOSSIER §Asset/audio).
@@ -77,4 +77,4 @@ Exact wave scripts/formation data (10 waves/chapter default — RESEARCH §5) ·
 ## 10. Out of scope (SPEC §Deferred)
 Full CI2 Pluto→Sun campaign · CI3 4P co-op/overheat/full modifiers · holiday reskins · Universe MMO · any InterAction ripped art/audio · online multiplayer.
 
-**Posture:** INTERNAL-NO-PUBLIC (above). **Skeleton:** shared shmup skeleton with #6 Cluck Horizon — entity vocab + home undecided (DD-34); `prototypes/chicken-invaders.html` already ships one skeleton + two content packs (unverified — no proto card). **Gates:** G0–G5 per STACK §3.
+**Posture:** INTERNAL-NO-PUBLIC (above). **Skeleton:** `packages/shmup-core` shared with #6 Cluck Horizon (shipped `50665ba`, proto's normalized vocabulary — DD-34 resolved-in-code; spec docs still need the vocabulary decision). **Gates:** G0–G5 per STACK §3.

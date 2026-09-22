@@ -1,7 +1,7 @@
 # BUILD CARD — Cluck Horizon (new CI-style original)
-**Slug:** `chicken-invaders-original` · **Priority:** 6 (FORGE STACK-LOCKED) · **Renderer:** PixiJS 8 · **App:** `02-code/armor-games/apps/chicken-invaders-original` (not yet scaffolded) · SPEC scope: §Content scope—Playable v1 (IN)
+**Slug:** `chicken-invaders-original` · **Priority:** 6 (FORGE STACK-LOCKED) · **Renderer:** PixiJS 8 · **App:** `02-code/armor-games/apps/chicken-invaders-original` (scaffolded — forge R04 `50665ba`, `shmup-core` `cluck` pack) · SPEC scope: §Content scope—Playable v1 (IN)
 **Card sources:** `02-concept-specs/06-chicken-invaders-original.md` (SPEC), `03-stack-and-tickets/001-native-stack-and-plan.md` (STACK); CI replica card/spec for shared skeleton (SPEC §Controls cites `02-chicken-invaders.md` — i.e. `04-chicken-invaders.md` in this pack, DD-11)
-**Build state:** not started. No tickets exist yet. New IP — **not** a replica claim; no fidelity dossier (CI dossier is reference only).
+**Build state:** scaffolded `50665ba` — `shmup-core` skeleton + `cluck` content pack shipped; INTERNAL badge ships ("original IP (Cluck Horizon) · trademark search open"). New IP — **not** a replica claim; no fidelity dossier (CI dossier is reference only).
 **Pitch (SPEC §Meta):** campy vertical shmup — courier pilot defends solar suburbs from space poultry + egg artillery; supply crates remix guns into kitchen-tech weapons; overgrown-bird chapter bosses. Echoes CI *feel* with original characters/jokes/systems.
 
 ## 1. Core loop (SPEC §Core loop — same skeleton as CI replica, original content)
@@ -17,8 +17,8 @@
 - Mobile: layouts A/B as CI replica (twin-thumb landscape; one-thumb drag + auto-fire). Shared control code encouraged; content packs differ.
 
 ## 3. Entities (SPEC §Notes for FORGE — shared shmup skeleton w/ CI replica)
-`Ship`, `FlockEnemy`, `Boss`, `Projectile`, `Crate`, `WaveSpawner`, `SectorDirector` + content packs. ⚠ CI replica spec uses different names for the same concepts (`Chicken`, `EggProjectile`/`PlayerBullet`/`Missile`, `GiftParcel`/`FoodPickup`, `ChapterDirector`) — one normalized type set must be picked before #4 scaffolds (DD-34); `prototypes/chicken-invaders.html` already ships one skeleton + two packs (`replica`/`cluck` — align id to `original`, DD-59).
-Prefer shared codebase with CI replica (SPEC §Open questions — recommended, not decided; no package home locked, DD-34).
+`Ship`, `FlockEnemy`, `Boss`, `Projectile`, `Crate`, `WaveSpawner`, `SectorDirector` + content packs. **Resolved in code:** `packages/shmup-core` ships one skeleton + `PACKS.replica`/`PACKS.cluck` using the proto's normalized vocabulary (`Ship`, `Chicken`, …) — spec-side names still disagree (DD-34); pack id is `cluck`, spec label says `original` (DD-59).
+Shared codebase shipped: both apps boot `shmup-core` with different packs (DD-34 resolved-in-code; spec docs still need the vocabulary decision).
 
 ## 4. Progression
 - ≥3 original weapon kits via crates (e.g. "Soup Laser", "Spatula Spread" — SPEC §Feel targets).
