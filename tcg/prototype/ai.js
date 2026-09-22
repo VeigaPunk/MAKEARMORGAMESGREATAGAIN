@@ -4,6 +4,9 @@
 
   function E() { return CB.engine; }
 
+  // Contest scoring mirrors engine.js GUARD_NO_CONTEST: Guard ATK doesn't contest.
+  function contestAtk(m) { return (E().GUARD_NO_CONTEST && m.card.keywords.includes("Guard")) ? 0 : m.atk; }
+
   // Heuristic policy: spend early tempo, then choose attacks by their contest impact.
   function takeTurn(st, pi) {
     const p = st.players[pi], opp = st.players[1 - pi];
@@ -19,10 +22,11 @@
       }
 
       // Remove a guard when it is the only thing preventing lethal damage.
-      const guards = E().legalTargets(st, pi).filter((t) => t !== "hero");
-      const boardAtk = p.board.reduce((s, m) => s + m.atk, 0), oppAtk = opp.board.reduce((s, m) => s + m.atk, 0);
-      const canFace = E().legalTargets(st, pi).includes("hero");
-      const lethalAtk = p.board.reduce((s, m) => s + (m.sick || m.attacked ? 0 : m.atk), 0);
+      const guards = opp.board.filter((m) => m.card.keywords.includes("Guard"));
+      const boardAtk = p.board.reduce((s, m) => s + contestAtk(m), 0), oppAtk = opp.board.reduce((s, m) => s + contestAtk(m), 0);
+      const ready = p.board.filter((m) => !m.sick && !m.attacked);
+      const canFace = ready.some((m) => E().legalTargets(st, pi, m).includes("hero"));
+      const lethalAtk = ready.reduce((s, m) => s + m.atk, 0);
       if (!canFace && guards.length && lethalAtk >= opp.hp) {
         const spell = bestDamageSpell(st, pi, guards);
         if (spell >= 0) {
@@ -30,12 +34,11 @@
           acted = true; continue;
         }
       }
-
-      const attack = chooseAttack(st, pi, boardAtk, oppAtk);
+      const attack = CB.ai.chooseAttack(st, pi, boardAtk, oppAtk);
       if (attack) {
         const r = E().attack(st, pi, attack.m.uid, attack.target);
         if (r === "pending" || st.pendingAttack) return; // human defender deciding — UI resumes us
-        acted = true; continue;
+        if (r !== false) { acted = true; continue; } // illegal pick (e.g. GUARD_PASSIVE) — fall through, never loop on it
       }
 
       let best = -1, bestCost = -1;
@@ -70,17 +73,19 @@
   }
 
   function chooseAttack(st, pi, boardAtk, oppAtk) {
-    const p = st.players[pi], legal = E().legalTargets(st, pi);
+    const p = st.players[pi];
     const ahead = boardAtk > oppAtk;
     let best = null, bestScore = -Infinity;
     for (const m of p.board) {
       if (m.sick || m.attacked) continue;
+      if (E().GUARD_PASSIVE && m.card.keywords.includes("Guard")) continue;
+      const legal = E().legalTargets(st, pi, m); // per-attacker: Pierce bypasses Guard
       for (const target of legal) {
         const isHero = target === "hero";
         const targetDies = !isHero && target.hp <= m.atk;
         const attackerDies = !isHero && target.atk >= m.hp;
-        const projectedOwn = boardAtk - (attackerDies ? m.atk : 0);
-        const projectedOpp = oppAtk - (targetDies ? target.atk : 0);
+        const projectedOwn = boardAtk - (attackerDies ? contestAtk(m) : 0);
+        const projectedOpp = oppAtk - (targetDies ? contestAtk(target) : 0);
         const flips = boardAtk <= oppAtk && projectedOwn > projectedOpp;
         let score = (flips ? 10000 : 0) + (projectedOwn - projectedOpp) * 10;
         if (isHero) score += m.atk * 0.5;
@@ -122,19 +127,26 @@
     const fromTemp = Math.min(p.tempMana, c.cost);
     p.tempMana -= fromTemp; p.mana -= c.cost - fromTemp;
     const ctx = { attacker, defender, negate: false };
-    E().say(st, `CLASH: P${defPi + 1} plays ${c.name}`);
+    E().say(st, `CLASH: P${defPi + 1} plays ${c.name}`, defPi);
     c.effect(st, defPi, ctx);
     p.discard.push(c);
     return ctx;
   }
 
-  CB.ai = { takeTurn, clashResponse, pickTarget };
+  // AI mulligan rule: toss cards costing ≥5 (mirrors engine autoMulligan).
+  function aiMulligan(st, pi) {
+    const p = st.players[pi];
+    if (p.mulliganDone) return false;
+    const toss = p.hand.reduce((out, c, i) => { if (c.cost >= 5) out.push(i); return out; }, []);
+    return E().mulligan(st, pi, toss);
+  }
 
+  CB.ai = { takeTurn, clashResponse, pickTarget, chooseAttack, bestDamageSpell, mulligan: aiMulligan };
   // Default clash seam: AI defender → heuristic; human defender → UI hook if installed.
   CB.hooks.clashWindow = function (st, defPi, attacker, defender) {
     if (CB.hooks.humanClash && defPi === CB.hooks.humanSeat) {
       return CB.hooks.humanClash(st, defPi, attacker, defender);
     }
-    return clashResponse(st, defPi, attacker, defender);
+    return CB.ai.clashResponse(st, defPi, attacker, defender);
   };
 })(typeof window !== "undefined" ? window : globalThis);

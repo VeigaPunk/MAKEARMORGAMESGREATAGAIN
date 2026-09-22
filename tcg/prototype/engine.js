@@ -11,8 +11,16 @@
   const MAX_MANA = 10;
   const BOARD_CAP = 5;
   const START_HP = 20;
-  const DECK_SIZE = 25;
   const OPEN_HAND = 3;
+  const PUSH_CARD = "the-push";   // P2 compensation; variant harness may null it
+  const SURGE_MANA = 1;           // temp mana when behind on CP
+  const SURGE_AT = 3;             // CP deficit that triggers surge (true comeback, not subsidy)
+  const SURGE_DRAW_AT = 99;       // disabled: surge draw subsidized the stronger deck
+  const SURGE_ODDS_AT = 99;       // disabled
+  const SURGE_ODDS_MANA = 2;
+  const PIERCE_BYPASS = true;     // Pierce attackers may ignore Guard (reach)
+  const GUARD_NO_CONTEST = true;  // Guard ATK excluded from the contest sum
+  const GUARD_PASSIVE = false;    // Guard minions cannot attack
 
   function rng(seed) {
     let a = seed >>> 0;
@@ -39,7 +47,7 @@
       card, owner,
       atk: card.atk, hp: card.hp, maxHp: card.hp,
       sick: !card.keywords.includes("Blitz"),
-      wardUsed: false, attacked: false, tempAtk: 0,
+      wardUsed: false, attacked: false,
     };
   }
 
@@ -49,17 +57,17 @@
       rand, turn: 0, active: 0, phase: "mulligan",
       winner: null, winReason: null, log: [], pendingAttack: null,
       players: [
-        { hero: heroA, hp: START_HP, mana: 0, tempMana: 0, deck: shuffle(deckA.slice(), rand), hand: [], board: [], cp: 0, discard: [], mulliganDone: false },
-        { hero: heroB, hp: START_HP, mana: 0, tempMana: 0, deck: shuffle(deckB.slice(), rand), hand: [], board: [], cp: 0, discard: [], mulliganDone: false },
+        { hero: heroA, hp: CB.engine.START_HP, mana: 0, tempMana: 0, deck: shuffle(deckA.slice(), rand), hand: [], board: [], cp: 0, discard: [], mulliganDone: false },
+        { hero: heroB, hp: CB.engine.START_HP, mana: 0, tempMana: 0, deck: shuffle(deckB.slice(), rand), hand: [], board: [], cp: 0, discard: [], mulliganDone: false },
       ],
     };
-    for (const p of st.players) for (let i = 0; i < OPEN_HAND; i++) drawCard(st, p);
-    st.players[1].hand.push(CB.cards.byId["the-push"]);
+    for (const p of st.players) for (let i = 0; i < CB.engine.OPEN_HAND; i++) drawCard(st, p);
+    if (CB.engine.PUSH_CARD) st.players[1].hand.push(CB.cards.byId[CB.engine.PUSH_CARD]);
     say(st, `Game start. P1 ${heroA.name} vs P2 ${heroB.name}. Mulligan phase.`);
     return st;
   }
 
-  function say(st, msg) { st.log.push(`T${st.turn} P${st.active + 1}: ${msg}`); }
+  function say(st, msg, pi) { st.log.push(`T${st.turn} P${(pi === undefined ? st.active : pi) + 1}: ${msg}`); }
 
   function drawCard(st, p) {
     const c = p.deck.pop();
@@ -105,24 +113,25 @@
     st.turn += st.active === 0 ? 1 : 0;
     const me = st.players[st.active], opp = st.players[1 - st.active];
     me.powerUsed = false;
-    me.mana = Math.min(MAX_MANA, Math.ceil(st.turn));
+    me.mana = Math.min(CB.engine.MAX_MANA, Math.ceil(st.turn));
     me.tempMana = 0;
-    // surge: opponent leads contest points — hero-specific modifiers
+    // surge: opponent leads contest points by ≥SURGE_AT — a true comeback lever,
+    // not a constant subsidy (R2: flat surge amplified the stronger deck's recovery).
     const deficit = opp.cp - me.cp;
-    if (deficit > 0) {
+    if (deficit >= CB.engine.SURGE_AT) {
       const surgeKind = me.hero.surge || "standard";
-      if (surgeKind === "odds" && deficit >= 6) {
-        me.tempMana += 2;
-        say(st, `SURGE(odds): behind ${me.cp}-${opp.cp}, +2 mana`);
+      if (surgeKind === "odds" && deficit >= CB.engine.SURGE_ODDS_AT) {
+        me.tempMana += CB.engine.SURGE_ODDS_MANA;
+        say(st, `SURGE(odds): behind ${me.cp}-${opp.cp}, +${CB.engine.SURGE_ODDS_MANA} mana`);
       } else {
-        me.tempMana += 1;
-        say(st, `SURGE: behind ${me.cp}-${opp.cp}, +1 mana`);
+        me.tempMana += CB.engine.SURGE_MANA;
+        say(st, `SURGE: behind ${me.cp}-${opp.cp}, +${CB.engine.SURGE_MANA} mana`);
       }
-      if (deficit >= 4) {
+      if (deficit >= CB.engine.SURGE_DRAW_AT) {
         drawCard(st, me);
         if (surgeKind === "thorn") {
-          for (const m of me.board) { m.atk += 1; m.tempAtk += 1; }
-          say(st, `SURGE(thorn): +1 draw, minions +1 ATK this turn`);
+          for (const m of me.board) m.atk += 1;
+          say(st, `SURGE(thorn): +1 draw, minions +1 ATK`);
         } else {
           say(st, `SURGE: +1 draw`);
         }
@@ -136,13 +145,13 @@
   }
 
   function endTurn(st) {
+    if (st.phase !== "main" || st.winner !== null) return; // contest only resolves from main phase
     const me = st.players[st.active], opp = st.players[1 - st.active];
-    // expire this-turn resources and buffs
-    me.tempMana = 0;
-    for (const m of me.board) if (m.tempAtk) { m.atk -= m.tempAtk; m.tempAtk = 0; }
-    // contest check: more total ATK on board scores; flipping the lead steals a point
-    const myAtk = me.board.reduce((s, m) => s + m.atk, 0);
-    const opAtk = opp.board.reduce((s, m) => s + m.atk, 0);
+    // contest check: more total ATK on board scores; flipping the lead steals a point.
+    // GUARD_NO_CONTEST: Guard minions hold ground — their ATK doesn't contest.
+    const contestAtk = (m) => (CB.engine.GUARD_NO_CONTEST && m.card.keywords.includes("Guard") ? 0 : m.atk);
+    const myAtk = me.board.reduce((s, m) => s + contestAtk(m), 0);
+    const opAtk = opp.board.reduce((s, m) => s + contestAtk(m), 0);
     if (myAtk > opAtk) {
       if (opp.cp - me.cp >= 2) { opp.cp -= 1; me.cp += 1; say(st, `contest STEAL: ${myAtk}>${opAtk} → CP ${me.cp}-${opp.cp}`); }
       else { me.cp += 1; say(st, `contest: ${myAtk}>${opAtk} → CP ${me.cp}-${opp.cp}`); }
@@ -150,16 +159,16 @@
       if (me.cp - opp.cp >= 2) { me.cp -= 1; opp.cp += 1; say(st, `contest STEAL: ${opAtk}>${myAtk} → CP ${me.cp}-${opp.cp}`); }
       else { opp.cp += 1; say(st, `contest: ${opAtk}>${myAtk} → CP ${me.cp}-${opp.cp}`); }
     }
-    if (me.cp >= CONTEST_TARGET) { st.winner = st.active; st.winReason = "contest"; return; }
-    if (opp.cp >= CONTEST_TARGET) { st.winner = 1 - st.active; st.winReason = "contest"; return; }
+    if (me.cp >= CB.engine.CONTEST_TARGET) { st.winner = st.active; st.winReason = "contest"; return; }
+    if (opp.cp >= CB.engine.CONTEST_TARGET) { st.winner = 1 - st.active; st.winReason = "contest"; return; }
     st.active = 1 - st.active;
   }
 
   function canPlay(st, pi, card) {
     const p = st.players[pi];
     if (totalMana(p) < card.cost) return false;
-    if (card.type === "minion" && p.board.length >= BOARD_CAP) return false;
-    if (card.needsTarget && st.players[1 - pi].board.length === 0) return false;
+    if (card.type === "minion" && p.board.length >= CB.engine.BOARD_CAP) return false;
+    if (card.needsTarget && st.players[card.targetSide === "self" ? pi : 1 - pi].board.length === 0) return false;
     return true;
   }
 
@@ -171,7 +180,7 @@
   function playCard(st, pi, handIdx, target) {
     const p = st.players[pi];
     const card = p.hand[handIdx];
-    if (!card || !canPlay(st, pi, card)) return false;
+    if (!card || !canPlay(st, pi, card) || st.phase !== "main") return false;
     if (card.type === "spell" && card.clashOnly) return false; // clash spells only in defense window
     p.hand.splice(handIdx, 1);
     pay(p, card.cost);
@@ -191,9 +200,11 @@
 
   function guards(board) { return board.filter((m) => m.card.keywords.includes("Guard")); }
 
-  function legalTargets(st, atkPi) {
+  // legalTargets(st, atkPi, attacker?) — a Pierce attacker ignores Guard (reach).
+  function legalTargets(st, atkPi, attacker) {
     const opp = st.players[1 - atkPi];
-    const g = guards(opp.board);
+    const bypass = CB.engine.PIERCE_BYPASS && attacker && attacker.card.keywords.includes("Pierce");
+    const g = bypass ? [] : guards(opp.board);
     return g.length ? g.slice() : opp.board.concat(["hero"]);
   }
 
@@ -220,7 +231,8 @@
     const me = st.players[atkPi], opp = st.players[1 - atkPi];
     const m = me.board.find((x) => x.uid === minionUid);
     if (!m || m.sick || m.attacked) return false;
-    const legal = legalTargets(st, atkPi);
+    if (CB.engine.GUARD_PASSIVE && m.card.keywords.includes("Guard")) return false;
+    const legal = legalTargets(st, atkPi, m);
     const t = target === "hero" ? "hero" : opp.board.find((x) => x.uid === (target && target.uid));
     if (!legal.includes(t === "hero" ? "hero" : t)) return false;
     st.pendingAttack = { atkPi, uid: minionUid, target: t === "hero" ? "hero" : t.uid };
@@ -296,7 +308,9 @@
   }
 
   CB.engine = {
-    CONTEST_TARGET, MAX_MANA, BOARD_CAP, START_HP, DECK_SIZE,
+    CONTEST_TARGET, MAX_MANA, BOARD_CAP, START_HP, OPEN_HAND,
+    PUSH_CARD, SURGE_MANA, SURGE_AT, SURGE_DRAW_AT, SURGE_ODDS_AT, SURGE_ODDS_MANA,
+    PIERCE_BYPASS, GUARD_NO_CONTEST, GUARD_PASSIVE,
     newGame, startTurn, endTurn, playCard, attack, beginAttack, resolveAttack,
     heroPower, canPlay, legalTargets, totalMana, drawCard, say, mulligan,
     dealDamage, hitHero, cleanup, pay,

@@ -1,4 +1,4 @@
-/* Clashbound — v1 card pool (40 cards) + 3 heroes. Original designs; HS is a mechanics
+/* Clashbound — card pool (44 cards) + 3 heroes. Original designs; HS is a mechanics
    reference only — no copied text. Global: CB.cards, CB.heroes.
    Keywords: Guard, Blitz, Pierce, Deathcry, Warcry, Ward (all original names). */
 (function (root) {
@@ -48,7 +48,7 @@
       effect: (st, pi, target) => { if (target && target.hp !== undefined) { E().dealDamage(st, target, 1); E().drawCard(st, st.players[pi]); } } },
     { id: "blood-money",    name: "Blood Money",    type: "spell", cost: 1, text: "Sacrifice your last minion; gain its cost as mana this turn.",
       effect: (st, pi) => { const p = st.players[pi]; const m = p.board.pop(); if (m) { p.discard.push(m.card); p.tempMana += m.card.cost; } } },
-    { id: "second-wind",    name: "Second Wind",    type: "spell", cost: 2, needsTarget: true, text: "Restore 4 HP to a friendly minion.",
+    { id: "second-wind",    name: "Second Wind",    type: "spell", cost: 2, needsTarget: true, targetSide: "self", text: "Restore 4 HP to a friendly minion.",
       effect: (st, pi, target) => { const t = target && target.owner === pi ? target : st.players[pi].board[0]; if (t) { t.hp = Math.min(t.maxHp, t.hp + 4); } } },
     { id: "roar-of-crowd",  name: "Roar of the Crowd", type: "spell", cost: 2, text: "Your minions get +1 ATK.",
       effect: (st, pi) => { for (const m of st.players[pi].board) m.atk += 1; } },
@@ -74,6 +74,13 @@
       effect: (st, pi, ctx) => { if (ctx && ctx.attacker) E().dealDamage(st, ctx.attacker, 3); } },
     { id: "feint",          name: "Feint",          type: "spell", cost: 3, clashOnly: true, text: "Clash: negate the attack.",
       effect: (st, pi, ctx) => { if (ctx) ctx.negate = true; } },
+    // ---- R2 additions ----
+    { id: "pit-fighter",    name: "Pit Fighter",    type: "minion", cost: 4, atk: 4, hp: 4, keywords: [], text: "Warcry: deal 1 to all enemy minions.",
+      warcry: (st, pi) => { for (const m of st.players[1 - pi].board.slice()) E().dealDamage(st, m, 1); } },
+    { id: "crowd-shield",   name: "Crowd Shield",   type: "minion", cost: 1, atk: 0, hp: 4, keywords: ["Guard"], text: "Guard" },
+    { id: "pit-guard",      name: "Pit Guard",      type: "minion", cost: 2, atk: 1, hp: 5, keywords: ["Guard"], text: "Guard" },
+    { id: "crowd-hush",     name: "Crowd Hush",     type: "spell", cost: 2, text: "Enemy minions get -1 ATK.",
+      effect: (st, pi) => { for (const m of st.players[1 - pi].board) m.atk = Math.max(0, m.atk - 1); } },
   ];
 
   const HEROES = [
@@ -83,11 +90,11 @@
     { id: "thorn", name: "Mother Thorn", powerName: "Thick Hide (+0/+2 to a friendly minion)",
       power: (st, pi, target) => { const t = target && target.owner === pi ? target : st.players[pi].board[0]; if (t) { t.hp += 2; t.maxHp += 2; } },
       surge: "thorn" },
-    { id: "odds", name: "The Oddsmaker", powerName: "Fix the Odds (peek top, bottom costly cards)",
+    { id: "odds", name: "The Oddsmaker", powerName: "Shave the Odds (-3 ATK to strongest enemy minion)",
       power: (st, pi) => {
-        const p = st.players[pi];
-        const c = p.deck[p.deck.length - 1]; // deck top; drawCard pops from this end
-        if (c && c.cost >= 6) p.deck.unshift(p.deck.pop()); // AI bottoms cards costing 6+
+        const opp = st.players[1 - pi];
+        const t = opp.board.reduce((a, b) => (b.atk > (a ? a.atk : -1) ? b : a), null);
+        if (t) t.atk = Math.max(0, t.atk - 3);
       },
       surge: "odds" },
   ];
@@ -95,7 +102,7 @@
   const byId = {};
   for (const c of POOL) byId[c.id] = c;
 
-  // v1 stock decks — 25 cards, max 2 copies, legal by construction
+  // v2 stock decks — 25 cards, max 3 copies, legal by construction
   function stockDeck(ids) {
     const d = [];
     for (const id of ids) d.push(byId[id]);
@@ -104,28 +111,28 @@
 
   const DECKS = {
     bruiser: stockDeck([
-      "pit-rat", "pit-rat", "scrap-pup", "scrap-pup", "odds-seller",
+      "pit-rat", "pit-rat", "scrap-pup", "scrap-pup",
       "chain-dog", "chain-dog", "banner-crier", "hook-fighter", "hook-fighter",
       "crowd-favorite", "crowd-favorite", "glass-lancer", "glass-lancer",
-      "corner-brute", "corner-brute", "arena-champion", "the-main-event",
+      "pit-fighter", "pit-fighter", "pit-fighter", "arena-champion", "the-main-event",
       "sucker-punch", "sucker-punch", "sweep-leg", "sweep-leg",
       "last-breath", "last-breath", "throw-sand",
     ]),
     bulwark: stockDeck([
-      "scrap-pup", "odds-seller", "brick-keeper", "brick-keeper",
-      "rust-shaman", "rust-shaman", "pit-medic", "pit-medic",
-      "stubborn-mule", "wall-of-teeth", "wall-of-teeth", "grave-announcer", "grave-announcer",
-      "iron-barker", "iron-barker", "void-bookie", "bone-colossus",
-      "rigged-bout", "rigged-bout", "sweep-leg", "sweep-leg",
-      "last-breath", "cage-door", "cage-door", "feint",
+      "pit-rat", "pit-rat", "scrap-pup", "scrap-pup", "odds-seller", "odds-seller",
+      "brick-keeper", "brick-keeper", "rust-shaman", "rust-shaman",
+      "pit-medic", "pit-medic", "stubborn-mule", "pit-guard",
+      "wall-of-teeth", "wall-of-teeth", "grave-announcer", "grave-announcer",
+      "chain-dog", "chain-dog", "bell-ringer",
+      "corner-cut", "corner-cut", "sucker-punch", "blood-money",
     ]),
     trickster: stockDeck([
-      "pit-rat", "pit-rat", "scrap-pup", "scrap-pup",
-      "odds-seller", "odds-seller", "chain-dog", "chain-dog",
-      "glass-lancer", "glass-lancer", "the-main-event",
-      "rigged-bout", "rigged-bout", "throw-sand", "throw-sand",
-      "cage-door", "cage-door", "spoilers", "spoilers",
-      "feint", "feint", "shank", "shank", "grave-announcer", "crowd-surge",
+      "crowd-shield", "crowd-shield", "scrap-pup", "scrap-pup",
+      "chain-dog", "chain-dog", "chain-dog", "hook-fighter", "hook-fighter",
+      "crowd-favorite", "glass-lancer", "glass-lancer", "spark-twins",
+      "corner-brute", "arena-champion", "pit-fighter", "rigged-bout", "rigged-bout",
+      "sucker-punch", "sucker-punch", "throw-sand", "throw-sand",
+      "cage-door", "spoilers", "crowd-hush",
     ]),
   };
 
