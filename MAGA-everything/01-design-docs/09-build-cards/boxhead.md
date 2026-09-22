@@ -70,3 +70,5 @@ Default P1/P2 keymaps (documented original inverts proposal — DD-25) · weapon
 Networked LAN/online · full room roster · Zombie Wars turrets · HD remaster · cloud accounts · Ruffle/SWF as product · Phaser/Unity/Godot · public deploy.
 
 **Posture:** INTERNAL-NO-PUBLIC — localhost/internal OK; public ship needs written Cooper/Crazy Monkey/Fire Source clearance (SPEC §Meta). **PROOF hook:** `?debug` → `window.__maga` (`src/main.ts:57-60`; DD-62).
+
+**r08 (uncommitted forge burn, DD-94/DD-103):** `'paused'` state now consumes Esc/P (verify D-26 → DD-83 fix in-tree); `gameplayDt` cap 0.05 (verify D-16); `?stress` tops ~100 movers incl. runners (verify D-08 partial); **DM crates enabled** as the D-25 deadlock fix — this *inverts* DD-18 (spec says no DM pickups; code now adds them pending ARCADE ruling → DD-103). Still open in-tree: verify D-19 grenade owner exemption (design ruling owed), DD-01 stage size.

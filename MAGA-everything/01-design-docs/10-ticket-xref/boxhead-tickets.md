@@ -23,7 +23,7 @@
 | BH-1.4 | Wave director escalation | SPEC §Core loop step 4 | PROOF B3 waves 1–3, B4 swarm pressure | **PASS** placeholder (`world.ts` WAVE_TABLES 5/9/14, TBD ARCADE) |
 | BH-1.5 | Ammo crates + barrels | SPEC §Content scope pickups | PROOF B5/B6 | **PASS** (dry-fire block, crate +16, barrel r=55 chain + player damage — BN1) |
 | BH-1.6 | Score/streak + weapon ladder stubs | SPEC §Core loop step 5 | PROOF B7/B8 | **PASS** placeholder (mult ladder 4/8/14 → shotgun/uzi/grenades — `world.ts` ScoreSystem) |
-| BH-1.7 | Death → score → restart | SPEC §Core loop step 6, hook 9 | PROOF B9, A4 ≤~3s | **PASS** (BN1: instant retry <3s) |
+| BH-1.7 | Death → score → restart | SPEC §Core loop step 6, hook 9 | PROOF B9, A4 ≤~3s | **PASS** (BN1: instant retry <3s). ⚠ **Provenance:** signed while player death was unreachable (verify D-01, fixed `fe3ae3e`) — the PASS exercised the restart path, not real death; re-verified live post-fix (verify r01 B9 PASS). Flag per verify D-40 / DD-102 |
 | BH-1.8 | Placeholder chunky art | SPEC §Art needs; ART recipes doc | PROOF B-solo readability; ARCADE art-integrity items | **PASS** placeholder boxes (PIXEL drop zone pending BH-3.1) |
 | BH-1.9 | Placeholder WebAudio SFX | SPEC §Audio needs; AUDIO bible | PROOF A3 audio gate | **PASS** generic presets (shoot/hit/pickup/dry/barrel/death); recipe-id wiring = BH-3.2 (DD-09; scheduling conflict DD-49) |
 
@@ -31,7 +31,7 @@
 
 | Ticket | Work | Spec source | Acceptance item | Code status |
 |---|---|---|---|---|
-| BH-2.1 | Mobile layout C solo | SPEC §Controls layout C | PROOF C1/C2 (≥60s phone) | **PASS-structure** (`touch.ts` stick+FIRE+auto-aim; human phone run pending PROOF) |
+| BH-2.1 | Mobile layout C solo | SPEC §Controls layout C | PROOF C1/C2 (≥60s phone) | **PASS-structure** (`touch.ts` stick+FIRE+auto-aim; human phone run pending PROOF). ⚠ **Provenance:** signed while the touch loop was blocked (verify D-14, fixed `f8449eb`) — structure-only verdict; live touch verified post-fix (verify r02 D-14 FIXED). Flag per verify D-40 / DD-102 |
 | BH-2.2 | Mobile layout A dual pads | SPEC §Controls layout A, hook 7 | PROOF C4 | **WAIVED** (no tablet; deferred BH-3/fidelity) |
 | BH-2.3 | Desktop local co-op | SPEC §Controls P2, hook 2 | PROOF B12 simultaneous | **PASS** (P1 WASD+Space/J, P2 arrows+IJKL/numpad; simultaneous verified headless; evidence `apps/boxhead/proofs/bh2-2p-coop.png`). ⚠ KeyJ/KeyK double-bind defect → DD-21 |
 | BH-2.4 | Local deathmatch | SPEC §Core loop step 7, hook 6 | PROOF B13 | **PASS** (first-to-5 stub, respawn 1.4s, no owner-hit bug; evidence `apps/boxhead/proofs/bh2-2p-deathmatch.png`). Ships no pickups vs spec (DD-18). **r04 live:** B13 PARTIAL — mutual damage/kill counter/respawn verified, but DM ammo economy can deadlock a match (DD-77) and Esc/P pause binding is dead (DD-83) |

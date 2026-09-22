@@ -66,3 +66,5 @@ Skill/stat formulas, damage tables, rage/magic costs · shop price curves/unlock
 Full Emperor's Reign tournament tree/champions/Antares arc · dual ranged ammo + full magic list · ten save slots · Crusader/S&S3 content · Multiplae Ultratus · shipping Redux/AIR as stand-in (DOSSIER §Exact requirements — not acceptable).
 
 **Posture:** INTERNAL-NO-PUBLIC — localhost/internal OK; public ship blocked on the clearance chain above (SPEC §Meta). **DOM-chrome seam:** DOM owns shop/panels/buttons; canvas owns combat view. **Gates:** G0–G5 per STACK §3.
+
+**r08 (uncommitted, DD-94/DD-100):** sas WIP fixes landed in-tree — `validSave` + hub/complete boot (verify D-23), `points=0` on save-load (D-27), `owned[]` persisted + re-buy disabled (D-28), Buckler gate L3→L2 (D-29), `g.name` via `textContent` (D-31). **Still open:** D-30 complete-screen replay exploit (complete→hub→startFight still loops `18+defeated*8` gold). New sibling surface: `prototypes/swords-and-sandals.html` (uncommitted, 5-opponent roster, all combat constants DECLARED GUESSES per spec §Open questions) — no claim card yet (DD-100).
