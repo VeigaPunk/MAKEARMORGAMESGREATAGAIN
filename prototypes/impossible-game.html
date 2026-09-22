@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>PROTO: The Impossible Game — mechanics proof (INTERNAL)</title>
+<style>
+  html,body{margin:0;height:100%;background:#111;display:flex;align-items:center;justify-content:center;font-family:monospace}
+  canvas{background:#e8e8e8;image-rendering:pixelated;max-width:100vw;max-height:100vh}
+</style>
+</head>
+<body>
+<canvas id="c" width="960" height="540"></canvas>
+<script>
+"use strict";
+/* maga-proto: The Impossible Game — core-loop mechanics proof.
+ * Spec: 01-design-docs/02-concept-specs/02-impossible-game.md
+ * Loop: auto-run cube, single input = jump, die -> instant restart, reach end -> clear.
+ * All constants are DECLARED GUESSES (dossier: hitbox/buffer/geometry = TBD from ARCADE).
+ */
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+const W = cv.width, H = cv.height;
+
+// ---- tunables (TBD from ARCADE playtest — declared, not measured) ----
+const DT = 1/120;              // fixed timestep (spec: fixed timestep suggested)
+const SPEED = 360;             // px/s auto-run
+const GRAV = 2600;             // px/s^2
+const JUMP_V = 880;            // fixed impulse — no variable height (spec: no mushy variable height)
+const CUBE = 34;               // hitbox edge (TBD)
+const JUMP_BUFFER = 0.10;      // s — press slightly early still jumps (TBD)
+const COYOTE = 0.06;           // s — leave edge, still jump (TBD)
+const RESPAWN_MS = 160;        // spec: death -> respawn <=200ms feel
+const GROUND_Y = 430;
+
+// ---- level as data: [type, x, w, h?]  spike kills, block lands-on-top/side-kills, gap = no floor ----
+const LEVEL = [
+  ['gap',   1400, 130],
+  ['spike', 1900, 40],
+  ['spike', 2400, 40], ['spike', 2440, 40],          // double spike
+  ['block', 3000, 120, 70],
+  ['spike', 3400, 40],
+  ['gap',   3900, 170],
+  ['block', 4400, 90, 110],
+  ['spike', 5000, 40], ['spike', 5040, 40], ['spike', 5080, 40], // triple
+  ['block', 5600, 200, 50], ['spike', 5650, 40],
+  ['gap',   6300, 150],
+  ['spike', 6900, 40], ['block', 7100, 100, 90], ['spike', 7300, 40],
+  ['gap',   7800, 200],
+  ['spike', 8500, 40], ['spike', 8540, 40],
+  ['block', 9100, 140, 60], ['spike', 9400, 40],
+];
+const LEVEL_END = 9900;
+
+const keys = {};
+let state, cube, particles, camX, attempt, deaths, jumpBuf, coyoteT, deadT, clearT, paused;
+
+function reset(full) {
+  if (full) { attempt = 0; deaths = 0; }
+  attempt++;
+  state = 'running';
+  cube = { x: 0, y: GROUND_Y - CUBE, vy: 0, grounded: true, rot: 0 };
+  particles = [];
+  camX = 0; jumpBuf = 0; coyoteT = 0; deadT = 0; clearT = 0; paused = false;
+}
+reset(true);
+
+function pressJump() { jumpBuf = JUMP_BUFFER; }
+addEventListener('keydown', e => {
+  if (e.repeat) return;
+  if (['Space','ArrowUp','KeyZ'].includes(e.code)) { pressJump(); e.preventDefault(); }
+  if (e.code === 'KeyR') reset(false);
+  if (e.code === 'Escape') paused = !paused;
+});
+cv.addEventListener('pointerdown', e => { pressJump(); e.preventDefault(); });
+
+function floorAt(x) { // highest floor top under point x (ground or block top), or -Infinity in gap
+  let top = -Infinity, inGap = false;
+  for (const [t, ox, ow, oh] of LEVEL) {
+    if (x < ox || x > ox + ow) continue;
+    if (t === 'gap') inGap = true;
+    if (t === 'block') top = Math.max(top, GROUND_Y - oh);
+  }
+  if (top > -Infinity) return top;
+  return inGap ? -Infinity : GROUND_Y;
+}
+function solidSideAt(x, y) { // block side/bottom overlap -> death
+  for (const [t, ox, ow, oh] of LEVEL) {
+    if (t !== 'block') continue;
+    const top = GROUND_Y - oh;
+    if (x > ox && x < ox + ow && y + CUBE > top + 2 && y < GROUND_Y) return true;
+  }
+  return false;
+}
+function spikeAt(x, y) {
+  for (const [t, ox, ow] of LEVEL) {
+    if (t !== 'spike') continue;
+    // triangle approx: kill if cube bottom-center region overlaps spike band
+    const cx = x + CUBE/2, cy = y + CUBE;
+    if (cx > ox + 4 && cx < ox + ow - 4 && cy > GROUND_Y - 26) return true;
+  }
+  return false;
+}
+
+function step(dt) {
+  if (state === 'dead') { deadT += dt*1000; if (deadT >= RESPAWN_MS) reset(false); return; }
+  if (state === 'clear') { clearT += dt; return; }
+  if (paused) return;
+
+  cube.x += SPEED * dt;
+  const footX = cube.x + CUBE/2;
+
+  // vertical
+  const floor = floorAt(footX);
+  if (cube.grounded) {
+    if (floor === -Infinity || cube.y + CUBE < floor - 1) { cube.grounded = false; coyoteT = COYOTE; }
+  } else {
+    coyoteT = Math.max(0, coyoteT - dt);
+    cube.vy += GRAV * dt;
+    cube.y += cube.vy * dt;
+    if (floor > -Infinity && cube.vy >= 0 && cube.y + CUBE >= floor) {
+      cube.y = floor - CUBE; cube.vy = 0; cube.grounded = true; cube.rot = Math.round(cube.rot/(Math.PI/2))*(Math.PI/2);
+    }
+  }
+  if (!cube.grounded) cube.rot += dt * 4.2;
+
+  // jump consume
+  jumpBuf = Math.max(0, jumpBuf - dt);
+  if (jumpBuf > 0 && (cube.grounded || coyoteT > 0)) {
+    cube.vy = -JUMP_V; cube.grounded = false; coyoteT = 0; jumpBuf = 0;
+  }
+
+  // hazards
+  if (spikeAt(cube.x, cube.y) || solidSideAt(cube.x, cube.y) || cube.y > H + 200) return die();
+  if (cube.x >= LEVEL_END) { state = 'clear'; clearT = 0; }
+}
+function die() {
+  state = 'dead'; deadT = 0; deaths++;
+  for (let i = 0; i < 26; i++) particles.push({
+    x: cube.x + CUBE/2, y: cube.y + CUBE/2,
+    vx: (Math.random()-.5)*700, vy: -Math.random()*600 - 100,
+    s: 4 + Math.random()*8, life: .5 + Math.random()*.4
+  });
+}
+
+let acc = 0, last = performance.now();
+function frame(now) {
+  acc += Math.min(0.1, (now - last)/1000); last = now;
+  while (acc >= DT) { step(DT); acc -= DT; }
+  for (const p of particles) { p.x += p.vx*DT; p.y += p.vy*DT; p.vy += GRAV*DT*.6; p.life -= DT; }
+  particles = particles.filter(p => p.life > 0);
+  camX = cube.x - 220;
+  draw();
+  requestAnimationFrame(frame);
+}
+
+function draw() {
+  ctx.fillStyle = '#e8e8e8'; ctx.fillRect(0,0,W,H);
+  ctx.save(); ctx.translate(-camX, 0);
+  // ground
+  ctx.fillStyle = '#2b2b2b';
+  let segStart = 0;
+  const gaps = LEVEL.filter(l => l[0]==='gap');
+  ctx.fillRect(camX - 50, GROUND_Y, W + 100, H - GROUND_Y);
+  ctx.fillStyle = '#e8e8e8';
+  for (const [,gx,gw] of gaps) ctx.fillRect(gx, GROUND_Y, gw, H - GROUND_Y);
+  ctx.strokeStyle = '#2b2b2b'; ctx.lineWidth = 3;
+  for (const [,gx,gw] of gaps) { ctx.strokeRect(gx, GROUND_Y, gw, 4); }
+  // obstacles
+  for (const [t, ox, ow, oh] of LEVEL) {
+    if (t === 'spike') {
+      ctx.fillStyle = '#2b2b2b';
+      ctx.beginPath(); ctx.moveTo(ox, GROUND_Y); ctx.lineTo(ox+ow/2, GROUND_Y-34); ctx.lineTo(ox+ow, GROUND_Y); ctx.fill();
+    } else if (t === 'block') {
+      ctx.fillStyle = '#4a6fa5'; ctx.fillRect(ox, GROUND_Y-oh, ow, oh);
+      ctx.strokeStyle = '#2b2b2b'; ctx.strokeRect(ox, GROUND_Y-oh, ow, oh);
+    }
+  }
+  // finish line
+  ctx.fillStyle = '#2b8a3e'; ctx.fillRect(LEVEL_END, GROUND_Y-160, 8, 160);
+  // particles
+  ctx.fillStyle = '#d6336c';
+  for (const p of particles) ctx.fillRect(p.x, p.y, p.s, p.s);
+  // cube
+  if (state !== 'dead') {
+    ctx.save(); ctx.translate(cube.x + CUBE/2, cube.y + CUBE/2); ctx.rotate(cube.rot);
+    ctx.fillStyle = '#f08c00'; ctx.fillRect(-CUBE/2, -CUBE/2, CUBE, CUBE);
+    ctx.strokeStyle = '#2b2b2b'; ctx.lineWidth = 3; ctx.strokeRect(-CUBE/2, -CUBE/2, CUBE, CUBE);
+    ctx.restore();
+  }
+  ctx.restore();
+  // HUD
+  ctx.fillStyle = '#2b2b2b'; ctx.font = '16px monospace';
+  const prog = Math.min(100, Math.max(0, cube.x / LEVEL_END * 100));
+  ctx.fillText(`ATTEMPT ${attempt}   DEATHS ${deaths}   ${prog.toFixed(0)}%`, 16, 26);
+  ctx.fillStyle = '#2b2b2b'; ctx.fillRect(16, 36, 300, 8);
+  ctx.fillStyle = '#f08c00'; ctx.fillRect(16, 36, 300 * prog/100, 8);
+  ctx.fillStyle = '#666'; ctx.font = '13px monospace';
+  ctx.fillText('SPACE/CLICK jump · R restart · ESC pause — INTERNAL mechanics proof', 16, H - 14);
+  if (paused) banner('PAUSED');
+  if (state === 'dead') banner('DEAD — respawning…');
+  if (state === 'clear') banner('LEVEL CLEAR — press R to run again');
+}
+function banner(t) {
+  ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(0, H/2 - 44, W, 88);
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 30px monospace'; ctx.textAlign = 'center';
+  ctx.fillText(t, W/2, H/2 + 10); ctx.textAlign = 'left';
+}
+requestAnimationFrame(frame);
+
+// verification hook (not gameplay)
+window.__proto = {
+  get state(){return state}, get x(){return cube.x}, get y(){return cube.y},
+  get attempt(){return attempt}, get deaths(){return deaths},
+  get progress(){return cube.x/LEVEL_END},
+  jump: pressJump, reset: () => reset(false),
+  teleport(x){ cube.x = x; }, die,
+  LEVEL_END
+};
+</script>
+</body>
+</html>
