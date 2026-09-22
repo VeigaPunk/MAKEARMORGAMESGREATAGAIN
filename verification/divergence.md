@@ -255,3 +255,122 @@ filing.
 | `apps/chicken-invaders` replica (:5176) | `runtime-verdicts/07-shmup-apps-smoke.md` | PASS — pack correct, loop verified |
 | `apps/chicken-invaders-original` cluck (:5177) | same | PASS — distinct pack, loop verified |
 | `prototypes/chicken-invaders.html` | `proto-verdicts/chicken-invaders.md` | PASS (was FAIL/D-21) |
+
+---
+
+## Round-4 entries (working tree post-`f8449eb` + uncommitted forge apps, live-verified 2026-09-22)
+
+## D-25 · DEFECT — Deathmatch ammo starvation: match can become unfinishable
+
+**Observed (live):** P1 exhausted all 24 ammo reaching 1 kill (`r04-boxhead-dm-end.webp`: `P1 HP 20 AMMO 0`). Bullets deal 10 HP (`game.ts:575`); `DM_TARGET_KILLS=5` needs 50 hits; a life carries 24 rounds → max 2.4 kills/life. Ammo refills ONLY on respawn (`game.ts:407`); crate spawner gated `mode !== 'deathmatch'` (`game.ts:606-610`); grenade AoE kills grant no credit (`game.ts:684` stub). If both players empty magazines without dying, the match can never end — no crates, no melee, no timer, no exit (D-26). B13 "match ends on agreed rule" fails in mutual-exhaustion state.
+**Classification:** built wrong — DM ammo economy never balanced.
+
+## D-26 · NOTE — Pause bound but never consumed in boxhead (Esc/P inert)
+
+`input.ts:30` binds Escape/KeyP → `'pause'`; zero consumers in `apps/boxhead/src/` (grep count 0). Impossible (`main.ts:202`) and shmup-core (`boot.ts:135`) consume it — boxhead is the outlier. No pause state, no mid-run menu exit. Checklist has no explicit pause item → NOTE; combined with D-25 a stuck DM has no escape hatch.
+
+## D-23 · CORRECTED — sas `defeated` IS saved but never restored; reload always lands on CREATE
+
+r3 filing said "save stores gladiator only" — **wrong**: `persist()` at `main.ts:13` saves `{gladiator, defeated}`. Real defect is the load path: `let defeated = 0` (`main.ts:11`) never restores `saveData.defeated`; `mode` always `'create'` (`main.ts:12,29`). Live-verified: post-victory reload → CREATE screen with persisted Gold/XP/Lv, arena gated behind re-allocation.
+
+## D-27 · DEFECT — sas reload double-dip: +6 free stat points per reload
+
+`mode='create'` every boot + points reset to 6 (`main.ts:11-12`) → each reload grants fresh allocation on the persisted gladiator. Infinite stat inflation via refresh.
+
+## D-28 · DEFECT — sas duplicate shop purchases charge full price for no-op
+
+Bought items never disabled (`main.ts:20`); rebuy charges full gold for `Math.max` no-op. Spec copy "buy one item" mismatched; economy hole.
+
+## D-29 · NOTE — sas Imperial Buckler gate unreachable until ladder complete
+
+Buckler requires L3 (`main.ts:9,14,24`), reachable only post-ladder — dead content in current build.
+
+## D-30 · DEFECT — sas endless complete-screen replay, unbounded reward
+
+Complete screen replayable indefinitely; reward `18 + defeated*8` gold each time (`main.ts:21,24`) — unbounded exploit.
+
+## D-31 · NOTE — sas unescaped `g.name` into innerHTML
+
+`main.ts:17-18` — self-XSS via local save; injection vector if saves ever shared. [INFERENCE on exploitability]
+
+## D-32 · DEFECT → FIXED mid-round — shmup virtual stick stuck after pointerup outside canvas
+
+`touch.ts` bound release on canvas only; outside-canvas release left ship moving (live-verified, `r04-ShmupTouch-5176-stuck-pointerup.png`). Forge fixed mid-probe: `touch.ts:89-90` now `window` + capture. Same class as boxhead D-14.
+
+## D-33 · DEFECT (major) — impossible app: gaps not lethal (proto fix not carried)
+
+**Observed (live):** no-jump cube falls 171px into gap@1400, crosses, snaps back at x=1518, continues. `main.ts:185` only fall-kill is `cube.y > 740`; no gap-bottom check. Proto card documented this exact bug + fix (`floor === -Infinity && bottom > ground+margin`) and carry-forward #4 warned forge — missed. 3 of 4 gaps are free passes.
+
+## D-34 · DEFECT (major) — impossible app: block side-kill tests LEFT edge (~34px penetration)
+
+`main.ts:185` → `solidSideAt(cube.x,…)` tests left edge (`main.ts:135-141`); death at x=3003 for block@3000 (proto-fixed ≈2967), ~94ms late at 360px/s. Same proto carry-forward #4 — missed.
+
+## D-35 · NOTE — impossible app: sub-frame pointer taps dropped
+
+`main.ts:199-200` polls press-edge per frame; down+up inside one rAF gap invisible. Real clicks fine; edge case.
+
+## D-36 · NOTE — shmup HUD `WAVE 3/2` during clear/win/gameover banners
+
+`render.ts:201` — waveIdx not clamped post-final-wave. Cosmetic.
+
+## D-37 · NOTE — shmup boss names never rendered
+
+HUD shows generic `BOSS` (`render.ts:201`); `pack.bosses[].name` dead data. Spec 06 "names clearly distinct" partial.
+
+## D-38 · NOTE — replica pack enemyTypes stat-identical
+
+`packs.ts:45-49` — same color/speed/hp; type assignment no-op for replica. Cluck differentiated post-edit (GLIDER 1.15×, BRUISER 0.85×/hp3). Spec asks 2–3 types — replica placeholder.
+
+## D-39 · NOTE — shmup pack gift/food/enemy strings dead; cluck birds carry replica comb/beak accents
+
+`render.ts:114-123` hardcoded pickup visuals; `render.ts:70-71` hardcoded comb/beak colors.
+
+## D-40 · DIVERGENCE (docs) — build-card/ticket-xref claims contradicted by runtime (DocsXref lane)
+
+- Storage keys: docs say `boxhead/highscore`+`boxhead/keymaps`; runtime+code say `maga:boxhead:highscore` (`storage.ts:4` PREFIX='maga:').
+- Integer-scale claim vs shipped fractional downscale (`2e74d55`, RT-02 portrait 390×244).
+- BN1 BH-1.7 PASS signed while death was unreachable (D-01) — acceptance provenance invalid at signing.
+- BH-2.1 PASS-structure signed while touch loop was blocked (D-14).
+- BH-3.2 "no mute button" now false — button shipped, live-verified.
+- 5 build cards say "not yet scaffolded"; all 6 apps now pass runtime smoke.
+- ID-space collision: docs divergence log uses D-01…D-14, verify uses D-01…D-40 — different meanings; namespacing needed.
+- Verify misses imported: docs-D-06 (stale concatenated spec-pack), docs-D-09 (audio recipe ids vs presets — partially stale post-BH-3.2).
+
+## Post-round-4 status board (live-verified 2026-09-22)
+
+| Entry | Status |
+|-------|--------|
+| D-05 stage 640×400 vs docs 640×480 | **OPEN** — doc reconciliation owed |
+| D-06 stale ticket header | **OPEN** |
+| D-08 F3 scenario unreachable | **OPEN** — wave cap 14 |
+| D-16 invuln wall-time | OPEN (edge-case note) |
+| D-18 banner bleed on menus | **OPEN** — cosmetic |
+| D-19 grenade self-damage | **OPEN** — design ruling owed |
+| D-22 proto `__proto.wavesTotal` pre-game throw | **OPEN — re-confirmed live** (TypeError on title screen; mid-game hook fine) |
+| D-23 sas `defeated` persistence | **OPEN — root cause corrected**: saved but never restored; reload → CREATE |
+| D-24 sas opponent HP freeze | WATCH — not reproduced in full bout |
+| D-25 DM ammo starvation | **OPEN — new DEFECT** |
+| D-26 boxhead pause inert | OPEN — new NOTE |
+| D-27 sas reload stat double-dip | **OPEN — new DEFECT** |
+| D-28 sas duplicate shop purchase | **OPEN — new DEFECT** |
+| D-29 sas Buckler gate unreachable | OPEN — new NOTE |
+| D-30 sas complete-screen replay exploit | **OPEN — new DEFECT** |
+| D-31 sas name innerHTML | OPEN — new NOTE |
+| D-32 shmup stick pointerup | **FIXED mid-round (uncommitted)** — window-level release |
+| D-33 impossible gaps non-lethal | **OPEN — new major DEFECT** |
+| D-34 impossible block left-edge | **OPEN — new major DEFECT** |
+| D-35 impossible sub-frame taps | OPEN — new NOTE |
+| D-36/37/38/39 shmup cosmetics | OPEN — new NOTEs |
+| D-40 docs-vs-runtime contradictions | OPEN — reconciliation owed (maga-docs scope) |
+
+## Round-4 coverage added
+
+| Surface | Verdict file | Result |
+|---------|--------------|--------|
+| boxhead modes (B11/B12/B13/A4/E5) | `runtime-verdicts/08-boxhead-modes.md` | PASS + D-25/D-26 |
+| burger-tycoon deep (acc #1/2/3/5/7) | `runtime-verdicts/09-burger-tycoon-deep.md` | PASS all five; collapse chain live |
+| swords-and-sandals deep | `runtime-verdicts/10-swords-and-sandals-deep.md` | PARTIAL — D-23 corrected, D-27/28/30 defects |
+| shmup apps deep (both packs) | `runtime-verdicts/11-shmup-deep.md` | PASS — D-32 found+fixed, D-36–39 notes |
+| impossible app deep | `runtime-verdicts/12-impossible-deep.md` | PARTIAL — D-33/D-34 major |
+| proto claim cards ×3 | `proto-verdicts/claim-cards-r04.md` | impossible mostly verified; burger partial; chicken D-22 open |
+| `prototypes/chicken-invaders.html` | `proto-verdicts/chicken-invaders.md` | PASS (was FAIL/D-21) |
