@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Burger Tycoon — MAGA native replica</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #1a1a1a; height: 100%; overflow: hidden; }
+  #wrap { position: fixed; left: 0; top: 0; }
+  #wrap > * { width: 100%; box-sizing: border-box; }
+  #hud { background: #2b2b2b; color: #eee; font: 13px/1.5 monospace; padding: 6px 12px; display: flex; gap: 14px; flex-wrap: wrap; }
+  #hud b { color: #ffd43b; }
+  #tabs { display: flex; }
+  #tabs button { flex: 1; padding: 10px 4px; font: 14px monospace; border: 0; background: #333; color: #aaa; cursor: pointer; }
+  #tabs button.on { background: #4a6fa5; color: #fff; font-weight: bold; }
+  canvas { display: block; background: #e8e0d0; touch-action: none; image-rendering: pixelated; }
+  #log { height: 64px; overflow: hidden; background: #111; color: #8ce99a; font: 12px/1.4 monospace; padding: 4px 12px; }
+  .badge {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 10;
+    background: repeating-linear-gradient(45deg, #3a1414, #3a1414 12px, #2a0f0f 12px, #2a0f0f 24px);
+    color: #ffb3b3; font: 11px/1.4 monospace; text-align: center; padding: 4px;
+    border-bottom: 1px solid #e33e3e; letter-spacing: 0.06em;
+  }
+  .mute {
+    position: fixed; top: 26px; right: 8px; z-index: 10;
+    background: #1a1a24; color: #f5c542; border: 1px solid #44445c;
+    font: 11px/1 monospace; padding: 4px 8px; cursor: pointer;
+  }
+</style>
+</head>
+<body>
+<div class="badge">INTERNAL-NO-PUBLIC — idea 001 native replica · no ship until written clearance (Molleindustria CC deed + marks review)</div>
+<button id="mute" class="mute" type="button">SOUND ON</button>
+<div id="wrap">
+  <div id="hud"></div>
+  <div id="tabs"></div>
+  <!-- canvas inserted by main.ts -->
+  <div id="log"></div>
+</div>
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>

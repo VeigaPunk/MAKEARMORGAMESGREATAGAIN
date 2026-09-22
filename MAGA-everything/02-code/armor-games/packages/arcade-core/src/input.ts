@@ -123,7 +123,7 @@ export class Input {
       this.pointer.seen = true;
       this.pointer.x = p.x; this.pointer.y = p.y;
       this.pointer.tapped = false;
-      canvas.setPointerCapture(e.pointerId);
+      try { canvas.setPointerCapture(e.pointerId); } catch { /* synthetic/edge pointers */ }
     });
     canvas.addEventListener('pointermove', (e) => {
       const p = toLocal(e);
@@ -143,11 +143,13 @@ export class Input {
   isDown(a: Action): boolean { return this.p1.down.has(a); }
   /** true only on the frame the action went down */
   wasPressed(a: Action): boolean { return this.p1.pressed.has(a); }
-  /** 8-way movement vector from keys or pointer drag, normalized */
-  moveAxis(centerX: number, centerY: number, dragRadius: number): { x: number; y: number } {
+  /** 8-way movement vector from keys or pointer drag, normalized.
+   *  `pointerDrag=false` disables the drag fallback — touch games with a
+   *  virtual stick pass false so field taps never move the player (D-15). */
+  moveAxis(centerX: number, centerY: number, dragRadius: number, pointerDrag = true): { x: number; y: number } {
     let x = (this.isDown('right') ? 1 : 0) - (this.isDown('left') ? 1 : 0);
     let y = (this.isDown('down') ? 1 : 0) - (this.isDown('up') ? 1 : 0);
-    if (x === 0 && y === 0 && this.pointer.active) {
+    if (x === 0 && y === 0 && pointerDrag && this.pointer.active) {
       const dx = this.pointer.x - centerX;
       const dy = this.pointer.y - centerY;
       const d = Math.hypot(dx, dy);

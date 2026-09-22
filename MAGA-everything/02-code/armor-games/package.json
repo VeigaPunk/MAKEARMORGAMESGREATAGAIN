@@ -9,6 +9,7 @@
   ],
   "scripts": {
     "dev:boxhead": "npm run dev -w @maga/boxhead",
-    "dev:impossible": "npm run dev -w @maga/impossible"
+    "dev:impossible": "npm run dev -w @maga/impossible",
+    "dev:burger": "npm run dev -w @maga/burger-tycoon"
   }
 }

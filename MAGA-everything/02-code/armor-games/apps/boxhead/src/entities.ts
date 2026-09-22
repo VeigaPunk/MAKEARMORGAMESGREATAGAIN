@@ -140,8 +140,13 @@ export class Projectile {
   g = new Graphics();
   life = 1.4;
 
-  constructor(public pos: Vec, public vel: Vec) {
-    this.g.rect(-2, -1, 5, 2).fill(0xf5c542);
+  constructor(public pos: Vec, public vel: Vec, kind: 'bullet' | 'grenade' = 'bullet') {
+    if (kind === 'grenade') {
+      // lobbed shell — bigger, darker, reads as AoE ordnance not a tracer
+      this.g.circle(0, 0, 4).fill(0x3a5f2a).stroke({ width: 1, color: 0x000000 });
+    } else {
+      this.g.rect(-2, -1, 5, 2).fill(0xf5c542);
+    }
     this.g.x = pos.x;
     this.g.y = pos.y;
   }

@@ -34,7 +34,7 @@ Recorded 2026-09-22 by maga-forge (L1).
    Replace with captured original 2P layout.
 3. **Stage size 640×400** — provisional, UNVERIFIED (checklist says 640×480
    provisional; both unmeasured — ARCADE to adjudicate).
-4. **Grenade tier** fires a single projectile (stub).
+4. **Grenade tier** — FIXED R03: lobbed AoE shell (detonate-on-contact, radius 60, costs 2 ammo). Was a single slow bullet (D-03).
 5. **Deathmatch barrel kills** award no credit (stub).
 6. **Touch layout A** (dual pads) waived — no tablet in lab.
 7. **Menu pointer hit-zones** basic (whole-screen tap semantics).

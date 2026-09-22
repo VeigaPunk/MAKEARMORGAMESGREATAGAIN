@@ -66,6 +66,7 @@ export class Game {
 
   private hudText!: Text;
   private banner!: Text;
+  private menuChip = new Container();
 
   constructor(
     private app: Application,
@@ -99,6 +100,18 @@ export class Game {
     this.banner.y = STAGE_H / 2 - 30;
     this.hud.addChild(this.banner);
 
+    // touch MENU chip for end screens (D-14): phones have no M key.
+    const chipBg = new Graphics()
+      .roundRect(-64, -18, 128, 36, 6)
+      .fill({ color: 0x1a1a24, alpha: 0.92 })
+      .stroke({ width: 1, color: 0xf5c542 });
+    const chipText = new Text({ text: 'MENU', style: { fill: 0xf5c542, fontSize: 14, fontFamily: 'monospace' } });
+    chipText.anchor = 0.5;
+    this.menuChip.addChild(chipBg, chipText);
+    this.menuChip.x = STAGE_W / 2;
+    this.menuChip.y = STAGE_H - 44;
+    this.menuChip.visible = false;
+    this.hud.addChild(this.menuChip);
     this.showTitle();
   }
 
@@ -207,6 +220,7 @@ export class Game {
 
     this.scoreSys = new ScoreSystem();
     this.wave = 0;
+    this.crateTimer = 8; // D-10: stale timer carried an instant crate into retries
     this.state = 'playing';
     this.banner.text = '';
     // BH-3.2 music slot: placeholder combat bed — MAESTRO replaces the pattern.
@@ -227,7 +241,7 @@ export class Game {
       this.banner.text =
         `WAVE ${MAX_WAVE} CLEARED (${this.mode === 'coop' ? 'CO-OP' : 'SOLO'})\n` +
         `SCORE ${this.scoreSys.score} · BEST ${this.high}\n` +
-        `SPACE — run it again · M — menu`;
+        `SPACE / tap — run it again · M — menu`;
       this.sfx.preset('pickup');
       return;
     }
@@ -245,7 +259,7 @@ export class Game {
     this.banner.text =
       `OVERRUN ON WAVE ${this.wave} (${this.room.name})\n` +
       `SCORE ${this.scoreSys.score} · BEST ${this.high}\n` +
-      `SPACE — retry · M — menu`;
+      `SPACE / tap — retry · M — menu`;
   }
 
   private dmEnd(winner: number): void {
@@ -254,7 +268,7 @@ export class Game {
     this.banner.text =
       `P${winner + 1} WINS THE DEATHMATCH ${this.slots[winner].kills}–${this.slots[1 - winner].kills}\n` +
       `(scoring rule is a STUB — TBD ARCADE)\n` +
-      `SPACE — rematch · M — menu`;
+      `SPACE / tap — rematch · M — menu`;
   }
 
   private persistHigh(): void {
@@ -281,6 +295,9 @@ export class Game {
 
   // --- main tick -----------------------------------------------------------------
   tick(dt: number): void {
+    // touch zones exist only during gameplay — menus/end screens get raw taps
+    this.touch.setActive(this.state === 'playing');
+    this.menuChip.visible = this.state === 'dead' || this.state === 'victory';
     switch (this.state) {
       case 'title':
         if (this.input.wasPressed('fire') || this.input.wasPressed('action') || this.input.pointer.tapped) this.showModeSelect();
@@ -305,10 +322,14 @@ export class Game {
         this.tickPlaying(dt);
         break;
       case 'dead':
-      case 'victory':
-        if (this.input.wasPressed('fire')) this.startRun(ROOMS.indexOf(this.room));
-        if (this.input.wasPressed('action')) this.showModeSelect();
+      case 'victory': {
+        // D-14: touch has no keys — tap retries, MENU chip tap exits
+        const p = this.input.pointer;
+        const chipTap = p.tapped && Math.abs(p.x - STAGE_W / 2) < 64 && Math.abs(p.y - (STAGE_H - 44)) < 20;
+        if (this.input.wasPressed('action') || chipTap) this.showModeSelect();
+        else if (this.input.wasPressed('fire') || p.tapped) this.startRun(ROOMS.indexOf(this.room));
         break;
+      }
     }
     this.touch.tick();
     this.input.endFrame();
@@ -344,9 +365,12 @@ export class Game {
       }
       slot.p.tickFlash(dt);
 
+      const coarse = matchMedia('(pointer: coarse)').matches;
       let axis: Vec;
       if (idx === 0) {
-        axis = this.touch.stick ?? this.input.moveAxis(slot.p.pos.x, slot.p.pos.y, 30);
+        // keyboard or virtual stick; on touch the stick owns movement — field
+        // taps must not drag the player (D-15)
+        axis = this.touch.stick ?? this.input.moveAxis(slot.p.pos.x, slot.p.pos.y, 30, !coarse);
       } else {
         axis = this.input.moveAxis2();
       }
@@ -358,12 +382,13 @@ export class Game {
         // optional mouse aim on desktop (last pointer position wins for 2s)
         const p = this.input.pointer;
         slot.pointerAimAge += dt;
-        const coarse = matchMedia('(pointer: coarse)').matches;
         if (!coarse && p.seen && (p.active || dist(p, slot.p.pos) > 24)) {
           slot.lastPointerAim = { x: p.x, y: p.y };
           slot.pointerAimAge = 0;
         }
-        const wantsFire = this.input.isDown('fire') || (this.touch.fire && coarse) || (p.active && coarse);
+        // D-15: on touch only the FIRE button shoots — any-canvas-touch firing
+        // made the movement stick drain ammo
+        const wantsFire = this.input.isDown('fire') || this.touch.fire;
         if (wantsFire && slot.cooldown <= 0) this.tryFire(slot, idx);
       } else {
         const fa = this.input.fireAxis2();
@@ -421,17 +446,24 @@ export class Game {
     const dir = this.aimDir(slot);
     const from = { x: slot.p.pos.x + dir.x * 14, y: slot.p.pos.y + dir.y * 14 };
     const speed = 340;
-    const shoot = (d: Vec) => {
-      const b = new Projectile({ ...from }, { x: d.x * speed, y: d.y * speed });
+    const shoot = (d: Vec, kind: 'bullet' | 'grenade' = 'bullet') => {
+      const b = new Projectile({ ...from }, { x: d.x * speed, y: d.y * speed }, kind);
       (b as Projectile & { owner?: number }).owner = owner;
+      if (kind === 'grenade') (b as Projectile & { grenade?: boolean }).grenade = true;
       this.bullets.push(b);
       this.world.addChild(b.g);
     };
-    shoot(dir);
-    if (weapon === 'shotgun') {
-      const a = Math.atan2(dir.y, dir.x);
-      for (const off of [-0.24, 0.24]) {
-        shoot({ x: Math.cos(a + off), y: Math.sin(a + off) });
+    if (weapon === 'grenades') {
+      // lobbed AoE shell — detonates on first contact/expiry (D-03: was a
+      // single slow bullet, strictly worse than uzi)
+      shoot(dir, 'grenade');
+    } else {
+      shoot(dir);
+      if (weapon === 'shotgun') {
+        const a = Math.atan2(dir.y, dir.x);
+        for (const off of [-0.24, 0.24]) {
+          shoot({ x: Math.cos(a + off), y: Math.sin(a + off) });
+        }
       }
     }
     this.sfx.preset('shoot');
@@ -561,6 +593,8 @@ export class Game {
       }
 
       if (dead) {
+        // grenades detonate on ANY termination — hit, wall, or expiry (D-03)
+        if ((b as Projectile & { grenade?: boolean }).grenade) this.detonate(b.pos, 60);
         b.destroy();
         this.bullets.splice(i, 1);
       }
@@ -616,14 +650,20 @@ export class Game {
 
   private explodeBarrel(barrel: Barrel): void {
     barrel.explode();
-    const ring = new BlastRing(barrel.pos, BARREL_RADIUS);
+    this.detonate(barrel.pos, BARREL_RADIUS);
+  }
+
+  /** shared AoE: barrels and grenade shells (D-03). Kills zombies in radius,
+   *  damages players in 0.8×radius, chains unlit barrels. */
+  private detonate(pos: Vec, radius: number): void {
+    const ring = new BlastRing(pos, radius);
     this.blasts.push(ring);
     this.world.addChild(ring.g);
     this.sfx.blip({ wave: 'sawtooth', freq: 90, freqEnd: 30, duration: 0.35, volume: 0.9 });
 
     for (let j = this.zombies.length - 1; j >= 0; j--) {
       const z = this.zombies[j];
-      if (dist(z.pos, barrel.pos) < BARREL_RADIUS) {
+      if (dist(z.pos, pos) < radius) {
         this.scoreSys.kill();
         z.destroy();
         this.zombies.splice(j, 1);
@@ -631,7 +671,7 @@ export class Game {
     }
     for (const s of this.slots) {
       if (!s.alive || s.p.invuln > 0) continue;
-      if (dist(s.p.pos, barrel.pos) < BARREL_RADIUS * 0.8) {
+      if (dist(s.p.pos, pos) < radius * 0.8) {
         s.p.hp -= BARREL_PLAYER_DAMAGE;
         s.p.invuln = 0.8;
         if (this.mode !== 'deathmatch') this.scoreSys.playerHit();
@@ -641,7 +681,7 @@ export class Game {
           s.p.g.visible = false;
           this.sfx.preset('death');
           if (this.mode === 'deathmatch') {
-            // no kill credit for barrels (stub) — just respawn
+            // no kill credit for AoE (stub) — just respawn
             s.respawnTimer = DM_RESPAWN;
           }
         }
@@ -649,7 +689,7 @@ export class Game {
     }
     // chain other barrels
     for (const other of this.barrels) {
-      if (!other.exploded && other.fuse < 0 && dist(other.pos, barrel.pos) < BARREL_RADIUS) {
+      if (!other.exploded && other.fuse < 0 && dist(other.pos, pos) < radius) {
         other.fuse = 0;
       }
     }

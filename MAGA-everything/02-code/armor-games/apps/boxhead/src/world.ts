@@ -121,5 +121,5 @@ export function fireDelay(w: WeaponTier): number {
 }
 
 export function ammoPerShot(w: WeaponTier): number {
-  return w === 'uzi' ? 1 : 1; // TBD ARCADE
+  return w === 'grenades' ? 2 : 1; // TBD ARCADE — AoE costs more per lob
 }

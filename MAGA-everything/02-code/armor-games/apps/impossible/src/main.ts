@@ -22,6 +22,9 @@ const GROUND_Y = 430;
 const W = 960;
 const H = 540;
 const BADGE_H = 22;
+// measured live — the badge wraps on narrow screens (RT-3/RT-4)
+const badgeEl = document.querySelector<HTMLElement>('.badge');
+const muteBtn = document.getElementById('mute');
 
 // ---- level as data: [type, x, w, h?] — spike kills, block lands-on-top/side-kills, gap = no floor ----
 // Declared-guess geometry (proto vocabulary); ARCADE replaces with measured Lite layout.
@@ -56,7 +59,10 @@ const toLogical = (cx: number, cy: number) => ({ x: cx / cachedScale, y: cy / ca
 
 function layout(): void {
   const vp = viewport();
-  const avail = { width: vp.width, height: vp.height - BADGE_H };
+  // badge wraps on narrow screens — measure, don't hardcode (RT-3/RT-4)
+  const badgeH = badgeEl?.offsetHeight ?? BADGE_H;
+  if (muteBtn) muteBtn.style.top = `${badgeH + 4}px`;
+  const avail = { width: vp.width, height: vp.height - badgeH };
   const s = fitIntegerScale(W, H, avail, 4);
   const off = letterboxOffset(W, H, s, avail);
   cachedScale = s;
@@ -64,7 +70,7 @@ function layout(): void {
   cv.style.height = `${H * s}px`;
   // fixed canvas + explicit left/top — no flex-centering + translate double-count
   cv.style.left = `${off.x}px`;
-  cv.style.top = `${off.y + BADGE_H}px`;
+  cv.style.top = `${off.y + badgeH}px`;
 }
 window.addEventListener('resize', layout);
 layout();
@@ -74,7 +80,6 @@ const input = new Input();
 input.attach(cv, toLogical);
 const sfx = new Sfx();
 
-const muteBtn = document.getElementById('mute');
 if (muteBtn) {
   const paint = () => { muteBtn.textContent = sfx.muted ? 'SOUND OFF' : 'SOUND ON'; };
   muteBtn.addEventListener('click', () => { sfx.muted = !sfx.muted; paint(); });

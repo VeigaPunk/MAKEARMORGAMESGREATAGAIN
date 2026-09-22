@@ -24,6 +24,8 @@ export class TouchControls {
 
   private shown = false;
   private coarse = false;
+  /** zones only exist during gameplay — menus must see raw taps (D-14) */
+  private active = false;
   private stickPointer = -1;
   private stickOrigin = { x: 0, y: 0 };
   private firePointer = -1;
@@ -54,16 +56,20 @@ export class TouchControls {
         this.stickPointer = e.pointerId;
         this.stickOrigin = { x: p.x, y: p.y };
         this.stick = { x: 0, y: 0 };
-        canvas.setPointerCapture(e.pointerId);
+        try { canvas.setPointerCapture(e.pointerId); } catch { /* synthetic/edge pointers */ }
+        // zone owns this pointer — Input must not see it as aim/tap/drag (D-15)
+        e.stopImmediatePropagation();
       } else if (this.inFireZone(p)) {
         this.firePointer = e.pointerId;
         this.fire = true;
-        canvas.setPointerCapture(e.pointerId);
+        try { canvas.setPointerCapture(e.pointerId); } catch { /* synthetic/edge pointers */ }
+        e.stopImmediatePropagation();
       }
       this.applyVisibility();
     });
     canvas.addEventListener('pointermove', (e) => {
       if (e.pointerId === this.stickPointer) {
+        e.stopImmediatePropagation();
         const p = toLocal(e);
         const dx = p.x - this.stickOrigin.x;
         const dy = p.y - this.stickOrigin.y;
@@ -79,11 +85,13 @@ export class TouchControls {
     });
     const release = (e: PointerEvent) => {
       if (e.pointerId === this.stickPointer) {
+        e.stopImmediatePropagation();
         this.stickPointer = -1;
         this.stick = null;
         this.drawStick();
       }
       if (e.pointerId === this.firePointer) {
+        e.stopImmediatePropagation();
         this.firePointer = -1;
         this.fire = false;
         this.drawFire();
@@ -91,6 +99,12 @@ export class TouchControls {
     };
     canvas.addEventListener('pointerup', release);
     canvas.addEventListener('pointercancel', release);
+  }
+
+  /** gameplay gate — menus/end screens leave every touch to Input (D-14) */
+  setActive(v: boolean): void {
+    this.active = v;
+    this.applyVisibility();
   }
 
   private stickHome() { return { x: 78, y: this.stageH - 74 }; }
@@ -107,7 +121,7 @@ export class TouchControls {
   }
 
   private visibleTarget(): boolean {
-    return this.coarse;
+    return this.coarse && this.active;
   }
 
   private build(): void {
