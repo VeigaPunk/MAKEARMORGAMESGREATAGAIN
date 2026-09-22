@@ -6,7 +6,7 @@
 <title>PROTO: Burger Tycoon — mechanics proof (INTERNAL)</title>
 <style>
   html,body{margin:0;height:100%;background:#1a1a1a;font-family:monospace;color:#eee;display:flex;flex-direction:column;align-items:center}
-  #hud{width:960px;max-width:100vw;box-sizing:border-box;padding:8px 12px;background:#2b2b2b;display:flex;gap:18px;flex-wrap:wrap;font-size:14px}
+  #hud{width:960px;max-width:100vw;box-sizing:border-box;padding:8px 12px;background:#2b2b2b;display:flex;gap:16px;flex-wrap:wrap;font-size:13px}
   #hud b{color:#ffd43b}
   #tabs{display:flex;width:960px;max-width:100vw}
   #tabs button{flex:1;padding:10px;font-family:monospace;font-size:14px;border:0;background:#333;color:#aaa;cursor:pointer}
@@ -27,6 +27,9 @@
  * Loop: 4 panes share one economy; throughput under board pressure; dirty options
  * trade short-term gain for backlash; cash<=0 or rep<=0 -> game over. Sim runs idle.
  * All numbers DECLARED GUESSES (dossier: thresholds/formulas TBD from ARCADE).
+ * Causal chain: Farm grows crops -> cattle eat crops & are SLAUGHTERED into patties
+ * (cattle consumed) -> Restaurant sells patties for cash -> overhead drains cash ->
+ * board punishes low profit. Overspend or stall = bankruptcy; backlash = rep death.
  */
 const cv = document.getElementById('c'), ctx = cv.getContext('2d');
 const hud = document.getElementById('hud'), tabsEl = document.getElementById('tabs'), logEl = document.getElementById('log');
@@ -34,88 +37,95 @@ const hud = document.getElementById('hud'), tabsEl = document.getElementById('ta
 const PANES = ['FARMLAND','FEEDLOT','RESTAURANT','HQ'];
 let pane = 0;
 
-// ---- economy state (all rates per second; constants TBD) ----
+// ---- economy state (rates per second; constants TBD) ----
 const S = {
   cash: 500, rep: 70, backlash: 0,
-  crops: 20, cattle: 8, patties: 10, burgers: 0,
-  demand: 1.0,            // marketing raises
-  boardPressure: 0,       // rises; eased by profit
-  disease: 0,             // cheap-feed risk accumulator
-  over: false, won: false, t: 0,
-  rates: { crop: 1.2, herd: 0.25, patty: 0.8, sell: 1.0, profitPerBurger: 4 },
-  dirty: { deforest:0, cheapFeed:0, cutCorners:0, bribes:0 }, // 0/1 toggles
+  crops: 20, cattle: 10, patties: 10,
+  demand: 1.0, boardPressure: 0, disease: 0,
+  over: false, t: 0,
+  rates: { crop: 1.2, herd: 0.3, patty: 0.9, sell: 1.0, profitPerBurger: 5, overhead: 4 },
+  dirty: { deforest:0, cheapFeed:0, cutCorners:0 },
   lastProfit: 0,
 };
 function log(m){ const d=document.createElement('div'); d.textContent=`[${S.t.toFixed(0)}s] ${m}`; logEl.prepend(d); while(logEl.children.length>14) logEl.lastChild.remove(); }
 
-// ---- tick ----
 function tick(dt) {
   if (S.over) return;
   S.t += dt;
   const d = S.dirty;
-  // FARMLAND: crops grow; cattle herd grows slowly eating crops
+  // FARMLAND: crops grow (deforest multiplies); herd grows while crops feed it
   const cropRate = S.rates.crop * (d.deforest ? 2.2 : 1);
   S.crops += cropRate * dt;
-  if (S.crops > 1) { S.cattle += S.rates.herd * dt; S.crops -= 0.15 * S.rates.herd * dt * S.cattle; }
-  // FEEDLOT: cattle+crops -> patties
-  const pattyRate = Math.min(S.cattle, S.crops/2, S.rates.patty * (d.cheapFeed ? 1.8 : 1));
-  if (pattyRate > 0) { S.patties += pattyRate * dt; S.crops -= pattyRate * 0.5 * dt; }
+  if (S.crops > 1 && S.cattle > 0) {
+    const graze = Math.min(S.crops, S.rates.herd * dt * 2);
+    S.crops -= graze; S.cattle += S.rates.herd * dt;
+  }
+  // FEEDLOT: slaughter cattle -> patties (CATTLE CONSUMED); needs crop feed too
+  const capacity = S.rates.patty * (d.cheapFeed ? 1.8 : 1);
+  const pattyRate = Math.min(S.cattle * 0.5, S.crops * 0.5, capacity);
+  if (pattyRate > 0) {
+    S.patties += pattyRate * dt;
+    S.cattle -= pattyRate * 0.5 * dt;   // slaughter consumes the herd
+    S.crops  -= pattyRate * 0.5 * dt;   // feed consumed
+  }
   if (d.cheapFeed) S.disease += 0.6 * dt;
-  // disease outbreak
   if (S.disease > 20) { S.disease = 0; S.cattle *= 0.5; S.rep -= 12; S.backlash += 15; log('DISEASE OUTBREAK: herd culled, rep -12'); }
-  // RESTAURANT: patties -> burgers -> cash
+  // RESTAURANT: patties -> cash at demand-limited rate
   const sellRate = Math.min(S.patties, S.rates.sell * S.demand * (d.cutCorners ? 1.5 : 1));
   if (sellRate > 0) {
-    S.patties -= sellRate * dt; S.burgers += sellRate * dt;
+    S.patties -= sellRate * dt;
     const margin = S.rates.profitPerBurger * (d.cutCorners ? 1.6 : 1);
-    const earn = sellRate * margin * dt; S.cash += earn; S.lastProfit = earn/dt;
-    S.burgers = Math.max(0, S.burgers - sellRate * dt);
+    const earn = sellRate * margin * dt;
+    S.cash += earn; S.lastProfit = earn / dt;
   } else S.lastProfit = 0;
-  // HQ: board pressure + backlash dynamics
-  S.boardPressure += (0.5 - Math.min(0.5, S.lastProfit * 0.05)) * dt * 2;
+  // OVERHEAD: wages + rent always drain — the real loss pressure
+  S.cash -= S.rates.overhead * dt;
+  // HQ: board pressure — rises fast when profit stalls; interventions cost cash
+  const stall = S.lastProfit <= S.rates.overhead ? 1.4 : 0.4;
+  S.boardPressure += stall * dt * (S.lastProfit > S.rates.overhead * 2 ? -1 : 1);
+  S.boardPressure = Math.max(0, S.boardPressure);
   if (S.boardPressure > 100) { S.cash -= 60; S.boardPressure = 40; log('BOARD INTERVENTION: emergency loan cost -$60'); }
+  // backlash dynamics
   let bl = 0;
   if (d.deforest) bl += 1.2; if (d.cheapFeed) bl += 0.8; if (d.cutCorners) bl += 1.0;
   S.backlash += (bl - 0.35) * dt; S.backlash = Math.max(0, Math.min(100, S.backlash));
   if (S.backlash > 60) S.rep -= 1.5 * dt;
-  if (S.backlash > 85) { S.rep -= 3 * dt; }
+  if (S.backlash > 85) S.rep -= 3 * dt;
   S.rep = Math.max(0, Math.min(100, S.rep));
   if (S.rep <= 0) return gameOver('REPUTATION COLLAPSE — activists shut you down');
-  if (S.cash <= 0) return gameOver('BANKRUPT — the board fires you');
+  if (S.cash <= 0) { S.cash = 0; return gameOver('BANKRUPT — overhead + board ate the company'); }
 }
 function gameOver(why){ S.over = true; log('GAME OVER: ' + why); }
 
-// ---- actions (buttons rendered on canvas; hit list rebuilt each draw) ----
+// ---- actions ----
 let hits = [];
-function action(name, fn){ fn(); log(name); }
 const ACTIONS = {
   farm: [
-    ['Sow soy field (+crops)', () => { S.crops += 15; }],
+    ['Sow soy field (+15 crops)', () => { S.crops += 15; }],
     ['Buy cattle (+5 head, -$80)', () => { if (S.cash>=80){S.cash-=80;S.cattle+=5;} }],
     ['DIRTY: Bulldoze rainforest (2.2x crops, +backlash)', () => { S.dirty.deforest = S.dirty.deforest?0:1; }],
   ],
   feed: [
-    ['Process patties now (+4, -$10)', () => { if (S.cash>=10 && S.cattle>=1){S.cash-=10;S.cattle-=1;S.patties+=4;} }],
+    ['Emergency slaughter (+4 patties, -2 cattle)', () => { if (S.cattle>=2){S.cattle-=2;S.patties+=4;} }],
     ['DIRTY: Cheap feed (1.8x patties, disease risk)', () => { S.dirty.cheapFeed = S.dirty.cheapFeed?0:1; }],
   ],
   rest: [
-    ['Promo push (+demand, -$40)', () => { if (S.cash>=40){S.cash-=40;S.demand=Math.min(3,S.demand+0.3);} }],
+    ['Promo push (+0.3 demand, -$40)', () => { if (S.cash>=40){S.cash-=40;S.demand=Math.min(3,S.demand+0.3);} }],
     ['DIRTY: Cut corners (1.6x margin, +backlash)', () => { S.dirty.cutCorners = S.dirty.cutCorners?0:1; }],
   ],
   hq: [
-    ['Marketing campaign (+demand, -$120)', () => { if (S.cash>=120){S.cash-=120;S.demand=Math.min(3,S.demand+0.6);} }],
+    ['Marketing campaign (+0.6 demand, -$120)', () => { if (S.cash>=120){S.cash-=120;S.demand=Math.min(3,S.demand+0.6);} }],
     ['PR spin (-15 backlash, -$100)', () => { if (S.cash>=100){S.cash-=100;S.backlash=Math.max(0,S.backlash-15);} }],
-    ['DIRTY: Bribe officials (-25 backlash, -$200, +rep risk)', () => { if (S.cash>=200){S.cash-=200;S.backlash=Math.max(0,S.backlash-25);S.rep-=4;} }],
+    ['DIRTY: Bribe officials (-25 backlash, -$200, -4 rep)', () => { if (S.cash>=200){S.cash-=200;S.backlash=Math.max(0,S.backlash-25);S.rep-=4;} }],
   ],
 };
 const PANE_KEY = ['farm','feed','rest','hq'];
 
-// ---- UI ----
 PANES.forEach((p,i)=>{ const b=document.createElement('button'); b.textContent=`${i+1} ${p}`; b.onclick=()=>{pane=i;draw();}; tabsEl.appendChild(b); });
 addEventListener('keydown', e=>{ const n=parseInt(e.key); if(n>=1&&n<=4){pane=n-1;draw();} });
 cv.addEventListener('click', e=>{
   const r=cv.getBoundingClientRect(), x=(e.clientX-r.left)*(cv.width/r.width), y=(e.clientY-r.top)*(cv.height/r.height);
-  for (const h of hits) if (x>h.x&&x<h.x+h.w&&y>h.y&&y<h.y+h.h){ action(h.label, h.fn); draw(); return; }
+  for (const h of hits) if (x>h.x&&x<h.x+h.w&&y>h.y&&y<h.y+h.h){ h.fn(); log(h.label); draw(); return; }
 });
 
 function meter(x,y,w,v,max,col,label){
@@ -125,21 +135,19 @@ function meter(x,y,w,v,max,col,label){
 }
 function draw() {
   [...tabsEl.children].forEach((b,i)=>b.className=i===pane?'on':'');
-  hud.innerHTML = `<span>CASH <b>$${S.cash.toFixed(0)}</b></span><span>REP <b>${S.rep.toFixed(0)}</b></span><span>BACKLASH <b>${S.backlash.toFixed(0)}</b></span><span>BOARD <b>${S.boardPressure.toFixed(0)}</b></span><span>DEMAND <b>${S.demand.toFixed(1)}x</b></span><span>PROFIT <b>$${S.lastProfit.toFixed(1)}/s</b></span>`;
+  hud.innerHTML = `<span>CASH <b>$${S.cash.toFixed(0)}</b></span><span>REP <b>${S.rep.toFixed(0)}</b></span><span>BACKLASH <b>${S.backlash.toFixed(0)}</b></span><span>BOARD <b>${S.boardPressure.toFixed(0)}</b></span><span>DEMAND <b>${S.demand.toFixed(1)}x</b></span><span>PROFIT <b>$${S.lastProfit.toFixed(1)}/s</b></span><span>OVERHEAD <b>-$${S.rates.overhead}/s</b></span>`;
   ctx.fillStyle='#e8e0d0';ctx.fillRect(0,0,cv.width,cv.height);
   ctx.fillStyle='#222';ctx.font='bold 22px monospace';ctx.fillText(PANES[pane],24,40);
   hits = [];
-  const acts = ACTIONS[PANE_KEY[pane]];
-  acts.forEach(([label,fn],i)=>{
+  ACTIONS[PANE_KEY[pane]].forEach(([label,fn],i)=>{
     const y=80+i*64, dirty=label.startsWith('DIRTY');
     ctx.fillStyle=dirty?'#8b2c2c':'#4a6fa5';ctx.fillRect(24,y,560,48);
     ctx.fillStyle='#fff';ctx.font='15px monospace';ctx.fillText(label,40,y+30);
     hits.push({x:24,y,w:560,h:48,label,fn});
   });
-  // pane-specific meters
   ctx.font='14px monospace';ctx.fillStyle='#222';
   if (pane===0){ meter(620,80,300,S.crops,100,'#2b8a3e','CROPS'); meter(620,110,300,S.cattle,50,'#a0522d','CATTLE'); if(S.dirty.deforest)ctx.fillText('rainforest burning…',620,160); }
-  if (pane===1){ meter(620,80,300,S.patties,60,'#d6336c','PATTIES'); meter(620,110,300,S.disease,20,'#e8590c','DISEASE RISK'); }
+  if (pane===1){ meter(620,80,300,S.patties,60,'#d6336c','PATTIES'); meter(620,110,300,S.cattle,50,'#a0522d','CATTLE'); meter(620,140,300,S.disease,20,'#e8590c','DISEASE RISK'); }
   if (pane===2){ meter(620,80,300,S.patties,60,'#d6336c','PATTY STOCK'); meter(620,110,300,S.demand,3,'#1971c2','DEMAND'); }
   if (pane===3){ meter(620,80,300,S.backlash,100,'#e8590c','BACKLASH'); meter(620,110,300,S.boardPressure,100,'#c2255c','BOARD PRESSURE'); }
   ctx.fillStyle='#666';ctx.font='12px monospace';
@@ -152,11 +160,9 @@ function frame(now){ const dt=Math.min(0.25,(now-last)/1000); last=now; tick(dt)
 requestAnimationFrame(frame);
 log('Burger Tycoon proto started — four panes, one economy.');
 
+// read-only verification hook — proof comes through real clicks, not mutation
 window.__proto = {
   get S(){return S}, get pane(){return pane},
-  setPane(i){pane=i;draw();}, act(k,i){ACTIONS[k][i][1]();},
-  tick:(dt)=>tick(dt), log,
-  setCash(v){S.cash=v}, setRep(v){S.rep=v},
 };
 </script>
 </body>
