@@ -6,7 +6,7 @@
 |-------|-------|
 | **Slug** | `clashbound` |
 | **Working title** | Clashbound — an arena trading-card game |
-| **Status** | R2 — balance pass landed; comparison scored vs recovered intel |
+| **Status** | R3 — balance + seat-equity landed; all gates green; K3 visuals-polish handoff next |
 | **Rights** | **INTERNAL-NO-PUBLIC** — original IP; Hearthstone is a mechanics reference only (no copied card text, names, or assets) |
 | **Ship path** | Dependency-free HTML5 prototype (`tcg/prototype/`), file://-safe |
 | **Language** | English only |
@@ -27,7 +27,7 @@ Every superiority claim in this doc scores against these axes — vs **both** re
 ## Core loop (v1)
 
 1. **Deck** — 25 cards, max 3 copies, from a 44-card pool (R2: +Pit Fighter, Crowd Shield, Pit Guard, Crowd Hush). One hero per deck; hero sets power + surge flavor.
-2. **Open** — each player draws 3, mulligans any number once. Player 2 gets **The Push** (a 0-cost spell: "+1 mana this turn").
+2. **Open** — each player draws 3, mulligans any number once. Player 2 gets **The Push** (a 0-cost spell: "+1 mana this turn. Draw a card." — R3: draw added; +1 mana alone left a ~10pp P1 seat skew).
 3. **Turn** — *Refresh* (mana = turn number, cap 10) → *Draw* → *Main* (play cards, hero power, attacks in any order) → *Contest check* → end.
 4. **Board** — 5 minion slots per side. Minions have ATK/HP, summoning sickness, and attack enemy minions or the enemy hero directly.
 5. **Contest track** — the arena has a center **Contest Zone**. At each turn's end, the side with more total ATK on board scores 1 **Contest Point** (ties: no point). **Contest steal:** if the loser led by ≥2 CP, the winner steals a point instead (−1/+1 swing). **Guard minions hold ground — their ATK does not count toward the contest sum** (R2: prevents walls from double-dipping as both defense and contest offense). First to **8 Contest Points** wins *or* reduce enemy hero from **20 → 0**.
@@ -47,14 +47,14 @@ Every superiority claim in this doc scores against these axes — vs **both** re
   - **Ward**: ignores the first damage each turn.
 - **Heroes (v1: 3)** — each: 20 HP, one 2-mana hero power, one passive surge modifier:
   - **Vex the Pitwright** — power: deal 1 damage to a minion. Surge: +1 mana when behind (standard).
-  - **Mother Thorn** — power: give a minion +0/+2. Surge: standard (+1 mana when behind by ≥3).
+  - **Mother Thorn** — power: give a minion +0/+1. Surge: standard (+1 mana when behind by ≥3). (R3: +0/+2 power + board-wide surge ATK was the bulwark skew's biggest single lever.)
   - **The Oddsmaker** — power: **Shave the Odds** — enemy minion with highest ATK gets −3 ATK. Surge: standard.
 
 ## Economy
 
 - Mana: +1 crystal/turn to 10 (proven curve — readability anchor).
 - Cards: 1/turn draw; Rigged Bout and Warcry/Deathcry draws are the only extras — keeps card economy legible.
-- The Push (P2 compensation) replaces HS's Coin+extra-card double compensation — single lever, easier to reason about.
+- The Push (P2 compensation) replaces HS's Coin+extra-card double compensation — single lever, easier to reason about. R3 sizing: +1 mana + 1 card ≈ HS's Coin+card combined into one spell.
 - Deck-out = loss (not fatigue): forces proactive decks, caps game length.
 
 ## Differentiator thesis (scored vs recovered intel + HS)
@@ -80,32 +80,32 @@ Thursday Arena is an **auto-battler**: all agency lives in a 10-token shop; batt
 
 Honest concessions: TA wins readability and pace outright — it's simpler and shorter. Our claim is **depth-per-decision + comeback + agency** at *acceptable* readability/pace cost, not a sweep. HS loses on pace and comeback but matches depth.
 
-## R2 balance pass (sim-verified)
+## R3 balance + seat-equity pass (sim-verified)
 
-Baseline R1 matrix was degenerate: bulwark won 92–99% of non-mirror games; trickster won 4–10%. A 16-lane variant search isolated the causes and landed a mechanic + decklist fix:
+R2 left two violations: bulwark>bruiser symmetrized ≈64% (ordered 72/46) and a ~10pp P1 seat skew (mirrors 58–62%). A 16-lane variant search (m_kcode quota died mid-wave; L1 completed the search directly) tested 11 variants + 3 combos; the accepted combo:
 
 | Change | Rationale (evidence) |
 |---|---|
-| **Guard ATK excluded from contest sum** | Walls double-dipped: they blocked attacks AND scored contest points. Excluding Guard ATK moved bruiser→bulwark 28→45–48% and bulwark→bruiser 92→73%. |
-| **Pierce ignores Guard** | Card-only Pierce failed (27%) because `legalTargets` still forced Guard targets. Reach gives bruiser/trickster a real anti-wall line. |
-| **Surge requires ≥3 CP deficit, no draw** | Flat surge subsidized the stronger deck's recovery (surge-off moved bruiser→bulwark 28→50%). The ≥3 threshold keeps it a comeback lever without feeding the leader. |
-| **Decklist rebuilds** | Bulwark trimmed (no more 6+ cost guards, lower curve); trickster rebuilt around cheap board + draw + clash + Oddsmaker's new power; bruiser gained Pit Fighter sweepers. |
-| **Oddsmaker power → Shave the Odds (−3 ATK)** | Peek/bottom was too weak to matter; −3 ATK directly contests the sum and gives trickster a signature answer. |
+| **The Push: +1 mana → +1 mana + draw 1** | Pure +2 mana did nothing for seat equity (mirrors unchanged 57–58%); +mana+draw lands mirrors at 45–53% P1 and pulls bulwark>bruiser sym to 62.5% as a side effect. |
+| **Guard minions −1 HP (all six)** | Walls were over-efficient: brick-keeper 4→3, pit-guard 5→4, wall-of-teeth 6→5, iron-barker 5→4, last-bell 7→6, bone-colossus 8→7. Alone: bulwark>bruiser sym 63→52% but bulwark>trickster slides to 36% floor. |
+| **Mother Thorn: power +0/+2 → +0/+1; surge 'thorn' → 'standard'** | Thorn's board-wide surge ATK + fat power was the bulwark leg's biggest single lever (thorn-nerf alone: bulwark>bruiser 72→69% ordered). |
 
-**R2 matrix (300 games/pair, seed 1000+):**
+**R3 matrix (300 games/pair, seed 1000+, integrated):**
 
 | P1 \ P2 | bruiser | bulwark | trickster |
 |---|---|---|---|
-| bruiser | 58% | 46% | 61% |
-| bulwark | **72%** | 62% | 54% |
-| trickster | 60% | 67% | 61% |
+| bruiser | 46% | 41% | 56% |
+| bulwark | 53% | 46% | 44% |
+| trickster | 47% | 58% | 53% |
 
-Rock-paper-scissors spread: bulwark still counters bruiser (72%), trickster counters bulwark (67%), bruiser counters trickster (61%). Worst non-mirror pair improved from 4% → 46%. Avg turns 8.1–10.0, decisions/game ~45–57, comeback rate ~0.50–0.66 (300 games/pair, seed 1000+; post-fix matrix — Pierce bypass + contest-true AI landed after the first R2 table).
+Symmetrized non-mirror legs: bulwark>bruiser **53%**, trickster>bulwark **51%**, bruiser>trickster **53.5%** — all inside 35–65% and centered near 50. Mirrors 45–53% P1 (seat skew fixed). Avg turns 8.4–9.9, decisions/game 49–58, comeback rate 0.56–0.65, CP-lead reversals ~1.1/game.
+
+Rejected in R3: contest target 7 (mirrors worsen, lethal gutted) and 9 (bulwark entrenches, pace out of band); Push +2 mana (no seat effect); Push +extra card (over-corrects 2 mirrors to 44% P1); bulwark curve rebuild (bulwark>trickster collapses to 15%); bruiser Pierce/burn packages (bulwark leg worsens — the problem was wall efficiency + Thorn, not bruiser's tools).
 
 ## Open questions
 
-- Bulwark→bruiser (73%) remains the outlier — bruiser's early pressure can't out-race walls. Candidates for R3: a bruiser-side anti-wall minion with Pierce + Blitz, or a 'your minions ignore Guard this turn' spell.
 - Whether Clash spells need a mana-reserve rule (hold-back cost) — prototype will tell.
 - Ghost-board async PvP is TA's killer feature; our answer (if any) is a later-round decision — v1 is local-vs-AI only.
+- Card art: 44 cards still text-only in hand/board (hero portraits + card back + keyword strip exist). K3 polish owns this — see `.ufo/handoff/clashbound-k3-handoff.md`.
 
 **Do not invent poteto-game mechanics** — everything above cites `tcg/intel/poteto-arena-tcg.md` or the rules page directly.
