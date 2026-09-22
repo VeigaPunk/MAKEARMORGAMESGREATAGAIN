@@ -61,4 +61,30 @@ export class Sfx {
       case 'ui': this.blip({ wave: 'square', freq: 520, freqEnd: 700, duration: 0.05, volume: 0.6 }); break;
     }
   }
+
+  // --- music slot (BH-3.2 MAESTRO drop zone) ----------------------------------
+  private musicTimer: number | null = null;
+  private musicStep = 0;
+
+  /**
+   * Loop a step sequence of notes (Hz; 0 = rest). This is the music SLOT —
+   * MAESTRO replaces the pattern per title; games only call start/stop.
+   * Honors `muted` live: muting silences the next scheduled step.
+   */
+  startMusic(notes: number[], stepMs = 140, opts: BlipOptions = {}): void {
+    this.stopMusic();
+    this.musicStep = 0;
+    this.musicTimer = setInterval(() => {
+      const f = notes[this.musicStep % notes.length];
+      this.musicStep += 1;
+      if (f > 0) this.blip({ wave: 'triangle', freq: f, duration: stepMs / 1000 * 0.9, volume: 0.35, ...opts });
+    }, stepMs);
+  }
+
+  stopMusic(): void {
+    if (this.musicTimer !== null) {
+      clearInterval(this.musicTimer);
+      this.musicTimer = null;
+    }
+  }
 }

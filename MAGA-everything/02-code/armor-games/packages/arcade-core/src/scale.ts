@@ -5,10 +5,13 @@
 
 export interface Viewport { width: number; height: number }
 
-/** largest integer factor that fits the viewport (>= 1) */
+/** largest integer factor that fits the viewport; sub-1x viewports get a
+ *  uniform fractional downscale so the stage never crops (D-04: a 640px
+ *  stage on a 390px portrait phone must shrink, not clip controls). */
 export function fitIntegerScale(stageW: number, stageH: number, vp: Viewport, maxFactor = 4): number {
-  const f = Math.floor(Math.min(vp.width / stageW, vp.height / stageH));
-  return Math.max(1, Math.min(f, maxFactor));
+  const fit = Math.min(vp.width / stageW, vp.height / stageH);
+  if (fit < 1) return fit;
+  return Math.min(Math.floor(fit), maxFactor);
 }
 
 /** centered letterbox offsets for the scaled stage */

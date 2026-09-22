@@ -129,6 +129,7 @@ export class Game {
 
   private showTitle(): void {
     this.state = 'title';
+    this.sfx.stopMusic();
     this.clearMenu();
     this.world.visible = false;
     this.hud.visible = false;
@@ -208,6 +209,8 @@ export class Game {
     this.wave = 0;
     this.state = 'playing';
     this.banner.text = '';
+    // BH-3.2 music slot: placeholder combat bed — MAESTRO replaces the pattern.
+    this.sfx.startMusic([110, 0, 110, 0, 131, 0, 98, 0], 160);
     if (this.mode === 'deathmatch') {
       this.spawnQueue = 0;
     } else {
@@ -220,6 +223,7 @@ export class Game {
     if (this.wave > MAX_WAVE) {
       this.state = 'victory';
       this.persistHigh();
+      this.sfx.stopMusic();
       this.banner.text =
         `WAVE ${MAX_WAVE} CLEARED (${this.mode === 'coop' ? 'CO-OP' : 'SOLO'})\n` +
         `SCORE ${this.scoreSys.score} · BEST ${this.high}\n` +
@@ -237,7 +241,7 @@ export class Game {
   private gameOver(): void {
     this.state = 'dead';
     this.persistHigh();
-    this.sfx.preset('death');
+    this.sfx.stopMusic();
     this.banner.text =
       `OVERRUN ON WAVE ${this.wave} (${this.room.name})\n` +
       `SCORE ${this.scoreSys.score} · BEST ${this.high}\n` +
@@ -246,7 +250,7 @@ export class Game {
 
   private dmEnd(winner: number): void {
     this.state = 'victory';
-    this.sfx.preset('pickup');
+    this.sfx.stopMusic();
     this.banner.text =
       `P${winner + 1} WINS THE DEATHMATCH ${this.slots[winner].kills}–${this.slots[1 - winner].kills}\n` +
       `(scoring rule is a STUB — TBD ARCADE)\n` +

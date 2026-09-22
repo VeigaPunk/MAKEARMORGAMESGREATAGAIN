@@ -66,8 +66,10 @@ function layout(): void {
   const cvs = app.canvas as HTMLCanvasElement;
   cvs.style.width = `${STAGE_W * s}px`;
   cvs.style.height = `${STAGE_H * s}px`;
-  cvs.style.transform = `translate(${cachedOffset.x}px, ${cachedOffset.y}px)`;
-  document.body.style.flexDirection = 'column';
+  // single positioning mechanism: fixed canvas + explicit left/top.
+  // (flex-centering + translate double-counted the offset — D1/D3 defect)
+  cvs.style.left = `${cachedOffset.x}px`;
+  cvs.style.top = `${cachedOffset.y}px`;
 }
 window.addEventListener('resize', layout);
 layout();

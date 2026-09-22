@@ -8,6 +8,7 @@
     "packages/*"
   ],
   "scripts": {
-    "dev:boxhead": "npm run dev -w @maga/boxhead"
+    "dev:boxhead": "npm run dev -w @maga/boxhead",
+    "dev:impossible": "npm run dev -w @maga/impossible"
   }
 }
