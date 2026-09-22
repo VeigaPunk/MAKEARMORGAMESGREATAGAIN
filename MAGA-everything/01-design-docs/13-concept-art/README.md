@@ -1,24 +1,21 @@
-# 13-concept-art — generated key art (maga-docs additive layer, r10)
+# 13-concept-art — hand-authored key art (maga-docs additive layer, r10)
 
-**Source:** Grok Imagine via `scripts/grok-imagine.sh` (SuperGrok web entitlement, no API credits). ~4 images per title, 1408×1408 JPEG, basename `<title>-keyart-<n>.jpg`.
-**Purpose:** visual reference for `maga-forge`/`maga-proto` art direction — palette, silhouette, mood. Not final assets; post-process (crop/downscale/palette-reduce) before any in-game use.
-**L0 art directive (2026-09-22):** real generated art for every game *unless deliberately simple/minimal* — **Impossible Game** and **World's Hardest Game** (`hardest/`) are exempt by style (flat-color minimalism is the aesthetic).
-**INTERNAL-NO-PUBLIC:** generated art is reference material; do not ship raw outputs publicly.
+**Source:** hand-authored SVG written directly by maga-docs — no external image generator (L0 order 2026-09-22: all art authored directly — SVG, canvas, pixel data).
+**Files:** one `<title>-keyart.svg` per title; flat-color vector scenes tuned to each game's palette and mood.
+**Purpose:** visual reference for `maga-forge`/`maga-proto` art direction — palette, silhouette, composition. SVGs are resolution-free: rasterize at target size (`rsvg-convert`/`inkscape`/`ffmpeg`) or trace the shapes into sprite/pixel work.
+**L0 art directive (2026-09-22):** real art for every game *unless deliberately simple/minimal* — **Impossible Game** and **World's Hardest Game** (`hardest/`) are exempt by style (flat-color minimalism is the aesthetic).
+**INTERNAL-NO-PUBLIC:** reference material; do not ship raw outputs publicly.
 
-## Prompts used (verbatim)
+## Inventory
 
-| Title | Dir | Prompt |
+| Title | File | Scene |
 |---|---|---|
-| Boxhead | `boxhead/` | "Top-down pixel-art zombie survival game scene: a lone blocky hero with a shotgun stands in a dark city street at night, surrounded by a horde of green pixel zombies closing in from all sides, muzzle flash, crates and barrels, blood splatters on asphalt, retro Flash-game aesthetic, moody purple-black sky, dramatic rim light" |
-| Burger Tycoon | `burger-tycoon/` | "Satirical isometric fast-food empire management game scene: a cheerful but sinister burger restaurant with golden arches, behind it a feedlot with cows, a soy field being cleared, and an angry protest sign, bright saturated colors hiding dark satire, retro Flash tycoon game style" |
-| Chicken Invaders | `chicken-invaders/` | "Retro vertical shoot-em-up game scene: a small starfighter at the bottom firing upward at an enormous cartoon chicken boss in a space helmet, waves of smaller chickens in formation dropping egg projectiles, starfield background, vibrant arcade colors, Chicken Invaders style" |
-| Swords & Sandals 2 | `swords-and-sandals/` | "Cartoon gladiator arena game scene: a scarred champion gladiator with mismatched armor raising a battered sword in victory, roaring crowd in a sandy colosseum pit, a defeated opponent dropping coins, warm desert palette, exaggerated proportions, Swords and Sandals Flash-game style" |
-| Cluck Horizon | `cluck-horizon/` | "Colorful vertical shmup game scene: a heroic chicken pilot in a tiny egg-shaped starfighter soaring through a pastel sky, dodging corn-kernel bullets from fox-piloted interceptor ships, a giant zeppelin hen-house boss looming above, bright original-IP cartoon style" |
+| Boxhead | `boxhead/boxhead-keyart.svg` | Top-down night street: lone shotgun hero + muzzle flash vs zombie horde ring; crates, barrels, blood, purple-black sky |
+| Burger Tycoon | `burger-tycoon/burger-tycoon-keyart.svg` | Satirical tycoon: golden-arches restaurant fronting feedlot, cleared soy field, protest sign, smog stack |
+| Chicken Invaders | `chicken-invaders/chicken-keyart.svg` | Vertical shmup: starfighter firing up at giant helmeted chicken boss, formation chickens, egg projectiles, starfield |
+| Swords & Sandals 2 | `swords-and-sandals/sas-keyart.svg` | Arena: scarred champion with mismatched armor raising battered sword, crowd tiers, defeated opponent + coins, desert palette |
+| Cluck Horizon | `cluck-horizon/cluck-keyart.svg` | Original-IP shmup: chicken pilot in egg-shaped fighter, pastel sky, corn-kernel bullets, fox interceptors, HEN-ZEPPELIN boss |
 
-## Regenerate / extend
+## Extend
 
-```bash
-scripts/grok-imagine.sh "<prompt>" MAGA-everything/01-design-docs/13-concept-art/<title>/ <basename> 420 image
-```
-
-Record any new prompt in this table. Sibling lanes generating their own art (e.g. `tcg/design/art-direction.md` HS-legendary map) keep assets inside their own scope.
+Author new SVGs directly in this tree (one per title/scene) and record them in the inventory. No external generators.

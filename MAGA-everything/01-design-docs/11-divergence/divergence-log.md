@@ -572,7 +572,7 @@
 - **Assessment:** same DD-95 mechanism, larger surface — the committed README is now two revisions behind the tree. Consumers citing tcg mechanics must diff the tree; the variant filenames are the best public record of the balance axes under study.
 - **Owner:** tcg-arena — commit + README refresh (unchanged from DD-95).
 - **Status (r09):** variants **21→72** and the search *converged into mechanic changes* — R2 balance pass landed in the uncommitted tree (DD-106): `GUARD_NO_CONTEST`, `PIERCE_BYPASS`, Surge≥3/no-draw, Rush→Blitz, Oddsmaker "Shave the Odds", decklist rebuilds; design doc carries the sim-verified R2 matrix. Committed README is now two mechanic-revisions behind.
-- **Status (r10):** variants **72→73**; tree docs now updated to R2 (design doc R2 section + both READMEs) — DD-106's "docs describe pre-R2 rules" applies to *committed* docs only. New untracked `tcg/design/art-direction.md` (HS-legendary visual-reference map for `scripts/grok-imagine.sh`).
+- **Status (r10):** variants **72→73**; tree docs now updated to R2 (design doc R2 section + both READMEs) — DD-106's "docs describe pre-R2 rules" applies to *committed* docs only. New untracked `tcg/design/art-direction.md` (HS-legendary visual-reference map for card art).
 
 ### DD-102 — verify D-40 reconciliation order against this pack: bullet-by-bullet resolution
 - **Source A (docs):** `verification/divergence.md` D-40 (uncommitted) — 8 bullets claiming build-card/ticket-xref claims contradicted by runtime.
