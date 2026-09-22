@@ -164,3 +164,43 @@ Badge wraps to ~55px at 390px wide; layout reserves 22px (`main.ts` `BADGE_H`) �
 | D-15/RT-5 any-touch-fires | **OPEN (suspect)** — `game.ts:366` unchanged; needs real-device check |
 | D-16 invuln wall-time | OPEN (edge-case note) |
 | D-17 badge/mute overlap | **OPEN — confirmed live**: badge 55px vs `BADGE_H=22`; on landscape badge overlaps HUD top line |
+
+---
+
+## Round-2 entries (working tree post-`2e74d55` + uncommitted forge fixes, live-verified 2026-09-22)
+
+## D-18 · DEFECT (cosmetic) — End-of-run banner bleeds onto menu screens
+
+**Observed (live):** after M/chip exit from `dead`, the "OVERRUN ON WAVE 1 …" banner renders on top of SELECT MODE text (`r02-desktop-dead.png`). `showModeSelect`/`showRoomSelect`/`showTitle` call `clearMenu()` but never reset `banner.text`; only `startRun` clears it (`game.ts:225`). Same family as D-13 (fixed on restart path) — this instance is the menu-exit path. Cosmetic, not loop-blocking.
+
+## D-19 · DEFECT (design gap) — Grenade AoE damages the shooter (and co-op partner)
+
+**Observed (live):** `detonate(pos, 60)` damages ALL players within `radius*0.8` = 48px for 25 HP (`game.ts:672-688`). Verified: detonation 30px from shooter → HP 100→75. A grenade hitting a zombie at melee range self-damages; in co-op it friendly-fires. Barrels sharing this code path is spec-plausible (explosions hurt), but the spec never states grenades carry self-damage — and the tier is now a *downgrade trap* at close range (uzi has no self-risk). In deathmatch, AoE kills grant no kill credit (comment: "stub"). Needs a design ruling: keep (consistent with barrels) or exempt owner.
+
+## D-20 · DEFECT (minor) — Held key bleeds across mode→room transition
+
+**Observed (live):** one Digit1 press on SELECT MODE both picks solo AND starts room 1 — `pressed` survives the `mode→room` state change within the same hold (`game.ts:306-319`), so SELECT ROOM never appears. Keyboard players cannot reach room 2 without a precisely-timed short tap. Tap-to-pick unaffected. Minor: workaround exists (tap), but the room screen is effectively skipped for held keys.
+
+## D-21 · BLOCKER (proto) — chicken-invaders.html dead on arrival
+
+**Observed (live):** `spawnWave` throws `ReferenceError: ox is not defined` (line 91; `ox/oy/cw/ch2` never declared). First throw kills the rAF loop permanently — game freezes in `mode='play'` with 0 chickens, no boss, stale title pixels. Core loop unverifiable; see `proto-verdicts/chicken-invaders.md`. Schedule fact for proto lane, not a forge defect.
+
+---
+
+## Post-round-2 status board (live-verified 2026-09-22, uncommitted forge fixes)
+
+| Entry | Status |
+|-------|--------|
+| D-03 grenade downgrade | **FIXED (uncommitted)** — lobbed AoE shell, detonates on hit/wall/expiry, radius-60 kill zone; live-verified 3 kills/1 shell. New concern → D-19 self-damage |
+| D-05 stage 640×400 vs docs 640×480 | **OPEN** — doc reconciliation owed |
+| D-06 stale ticket header | **OPEN** |
+| D-08 F3 scenario unreachable | **OPEN** — wave cap 14 |
+| D-10 crateTimer not reset | **FIXED (uncommitted)** — `crateTimer=8` on `startRun`; live-verified no instant crate |
+| D-14 touch end-screen trap | **FIXED (uncommitted)** — tap retries, MENU chip exits; live-verified dead+victory paths |
+| D-15/RT-5 any-touch-fires | **FIXED (uncommitted)** — `wantsFire = isDown('fire') || touch.fire`; field tap inert, FIRE zone fires, stick moves; live-verified under coarse emulation |
+| D-16 invuln wall-time | OPEN (edge-case note) |
+| D-17 badge/mute overlap | **FIXED (uncommitted)** — live badge height measured, mute at badgeH+4; verified 55px badge → mute top 59px |
+| D-18 banner bleed on menus | **OPEN** — new, cosmetic |
+| D-19 grenade self-damage | **OPEN** — new, needs design ruling |
+| D-20 held-key bleed mode→room | **OPEN** — new, minor |
+| D-21 chicken-invaders ReferenceError | **OPEN — BLOCKER** for proto lane |
