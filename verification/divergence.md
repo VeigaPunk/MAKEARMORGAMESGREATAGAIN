@@ -204,3 +204,54 @@ Badge wraps to ~55px at 390px wide; layout reserves 22px (`main.ts` `BADGE_H`) �
 | D-19 grenade self-damage | **OPEN** — new, needs design ruling |
 | D-20 held-key bleed mode→room | **OPEN** — new, minor |
 | D-21 chicken-invaders ReferenceError | **OPEN — BLOCKER** for proto lane |
+
+---
+
+## Round-3 entries (working tree post-`f8449eb` + uncommitted forge apps, live-verified 2026-09-22)
+
+## D-22 · NOTE — `__proto.wavesTotal` throws pre-game (proto verification hook)
+
+**Observed (live):** reading `window.__proto` wholesale on the title screen
+throws `TypeError` from `get wavesTotal` — `CHAPTERS[chapter-1]` with
+`chapter` still `undefined` (`prototypes/chicken-invaders.html:481`).
+Gameplay unaffected; probe hazard only. Proto lane may want a `?? 0` guard.
+
+## D-23 · NOTE — sas ladder progress (`defeated`) not persisted
+
+**Observed (live):** after victory + reload, gold/XP/stats/name restore but
+`defeated` resets to 0 → hub offers "Start First Bout" again
+(`apps/swords-and-sandals/src/main.ts:12` — save stores `gladiator` only).
+Minor design gap vs the complete screen's "your save remains safe" claim.
+
+## D-24 · NOTE — sas opponent HP line froze once (unreproduced)
+
+**Observed (live, once):** bout 1 showed `Opponent HP 34/34` static across
+multiple confirmed hits while player HP updated; bouts 2+ decremented
+correctly (34→19→9→0). `renderArena` re-renders each `act`/`enemyTurn`, so a
+single missed render is suspected. Recorded without a repro — not a defect
+filing.
+
+## Post-round-3 status board (live-verified 2026-09-22)
+
+| Entry | Status |
+|-------|--------|
+| D-05 stage 640×400 vs docs 640×480 | **OPEN** — doc reconciliation owed |
+| D-06 stale ticket header | **OPEN** |
+| D-08 F3 scenario unreachable | **OPEN** — wave cap 14 |
+| D-16 invuln wall-time | OPEN (edge-case note) |
+| D-18 banner bleed on menus | **OPEN — re-confirmed live**: after M-exit from `dead`, "OVERRUN ON WAVE 1 …" banner + stale HUD (WAVE 1/3 · HP 0 · AMMO 24) render over SELECT MODE (`r03-boxhead-menubleed.png`); `banner.text` cleared only in `startRun` (`game.ts:225`) |
+| D-19 grenade self-damage | **OPEN** — `detonate` still damages all players in 0.8×radius, no owner exemption (`game.ts:674`); design ruling still owed |
+| D-20 held-key bleed mode→room | **FIXED (uncommitted tree)** — held Digit1 now stops at `state='room'`; second press required to start play; live-verified |
+| D-21 chicken-invaders ReferenceError | **FIXED (proto, uncommitted)** — `ox/oy/cw/ch2` declared at line 90; full loop live-verified (spawn→kill→score→die→respawn); proto-verdict flipped to PASS |
+| D-22 `__proto.wavesTotal` pre-game throw | OPEN (probe hazard, proto lane) |
+| D-23 sas `defeated` not persisted | OPEN (minor design gap) |
+| D-24 sas opponent HP freeze | OPEN (unreproduced, watch item) |
+
+## New-surface coverage added round 3
+
+| Surface | Verdict file | Result |
+|---------|--------------|--------|
+| `apps/swords-and-sandals` (:5178) | `runtime-verdicts/06-swords-and-sandals-smoke.md` | PASS — create→hub→bout→victory/defeat→shop→save |
+| `apps/chicken-invaders` replica (:5176) | `runtime-verdicts/07-shmup-apps-smoke.md` | PASS — pack correct, loop verified |
+| `apps/chicken-invaders-original` cluck (:5177) | same | PASS — distinct pack, loop verified |
+| `prototypes/chicken-invaders.html` | `proto-verdicts/chicken-invaders.md` | PASS (was FAIL/D-21) |
