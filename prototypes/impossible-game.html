@@ -130,7 +130,9 @@ function step(dt) {
   }
 
   // hazards
-  if (spikeAt(cube.x, cube.y) || solidSideAt(cube.x, cube.y) || cube.y > H + 200) return die();
+  if (spikeAt(cube.x, cube.y) || solidSideAt(cube.x + CUBE, cube.y)) return die();
+  if (floor === -Infinity && cube.y + CUBE > GROUND_Y + 8) return die(); // fell into gap
+  if (cube.y > H + 200) return die();
   if (cube.x >= LEVEL_END) { state = 'clear'; clearT = 0; }
 }
 function die() {
@@ -211,10 +213,9 @@ requestAnimationFrame(frame);
 window.__proto = {
   get state(){return state}, get x(){return cube.x}, get y(){return cube.y},
   get attempt(){return attempt}, get deaths(){return deaths},
+  get grounded(){return cube.grounded},
   get progress(){return cube.x/LEVEL_END},
-  jump: pressJump, reset: () => reset(false),
-  teleport(x){ cube.x = x; }, die,
-  LEVEL_END
+  LEVEL, LEVEL_END
 };
 </script>
 </body>
