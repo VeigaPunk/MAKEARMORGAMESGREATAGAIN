@@ -6,7 +6,7 @@
 <title>PROTO: The Impossible Game — mechanics proof (INTERNAL)</title>
 <style>
   html,body{margin:0;height:100%;background:#111;display:flex;align-items:center;justify-content:center;font-family:monospace}
-  canvas{background:#e8e8e8;image-rendering:pixelated;max-width:100vw;max-height:100vh}
+  canvas{background:#e8e8e8;image-rendering:pixelated;max-width:100vw;max-height:100vh;touch-action:none}
 </style>
 </head>
 <body>
@@ -50,28 +50,58 @@ const LEVEL = [
   ['block', 9100, 140, 60], ['spike', 9400, 40],
 ];
 const LEVEL_END = 9900;
+// practice-mode checkpoint flags (spec §Core loop 4: "include if cheap") — respawn at last passed flag
+const CHECKPOINTS = [2600, 4800, 6600, 8400];
 
 const keys = {};
-let state, cube, particles, camX, attempt, deaths, jumpBuf, coyoteT, deadT, clearT, paused;
+let mode = 'title';                 // 'title' | 'run'
+let state, cube, particles, camX, attempt, deaths, jumpAt, coyoteT, deadT, clearT, paused;
+let practice = false;               // spec §Core loop 4: optional practice mode with checkpoint flags
+let lastCp = 0;                     // furthest checkpoint x passed this run
+let inputOffsetMs = +(localStorage.getItem('ig_proto_offset') || 0);  // spec §Mobile: input-offset calibration
 
 function reset(full) {
-  if (full) { attempt = 0; deaths = 0; }
+  if (full) { attempt = 0; deaths = 0; lastCp = 0; }
   attempt++;
   state = 'running';
-  cube = { x: 0, y: GROUND_Y - CUBE, vy: 0, grounded: true, rot: 0 };
+  const sx = practice ? lastCp : 0;
+  cube = { x: sx, y: GROUND_Y - CUBE, vy: 0, grounded: true, rot: 0 };
   particles = [];
-  camX = 0; jumpBuf = 0; coyoteT = 0; deadT = 0; clearT = 0; paused = false;
+  camX = sx - 220; jumpAt = 0; coyoteT = 0; deadT = 0; clearT = 0; paused = false;
 }
-reset(true);
+function startGame() { mode = 'run'; reset(true); }
+reset(true);   // init cube/particles so frame() is safe before START
 
-function pressJump() { jumpBuf = JUMP_BUFFER; }
+function pressJump() { jumpAt = performance.now(); }
+const TB = {start:{x:W/2-110,y:300,w:220,h:46}, practice:{x:W/2-160,y:360,w:320,h:34},
+            minus:{x:W/2-160,y:406,w:60,h:32}, plus:{x:W/2+100,y:406,w:60,h:32}};
+const inR = (p,r) => p.x>r.x && p.x<r.x+r.w && p.y>r.y && p.y<r.y+r.h;
+function setOffset(ms) { inputOffsetMs = Math.max(0, Math.min(200, ms)); localStorage.setItem('ig_proto_offset', inputOffsetMs); }
+function titleClick(x, y) {
+  const p = {x, y};
+  if (inR(p, TB.start)) return startGame();
+  if (inR(p, TB.practice)) return void (practice = !practice);
+  if (inR(p, TB.minus)) return setOffset(inputOffsetMs - 10);
+  if (inR(p, TB.plus)) return setOffset(inputOffsetMs + 10);
+}
 addEventListener('keydown', e => {
   if (e.repeat) return;
+  if (mode === 'title') {
+    if (e.code === 'Enter' || e.code === 'Space') startGame();
+    if (e.code === 'KeyP') practice = !practice;
+    if (e.code === 'Minus') setOffset(inputOffsetMs - 10);
+    if (e.code === 'Equal') setOffset(inputOffsetMs + 10);
+    return;
+  }
   if (['Space','ArrowUp','KeyZ'].includes(e.code)) { pressJump(); e.preventDefault(); }
-  if (e.code === 'KeyR') reset(false);
+  if (e.code === 'KeyR') reset(true);
   if (e.code === 'Escape') paused = !paused;
 });
-cv.addEventListener('pointerdown', e => { pressJump(); e.preventDefault(); });
+cv.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  if (mode === 'title') { const r = cv.getBoundingClientRect(); titleClick((e.clientX-r.left)*W/r.width, (e.clientY-r.top)*H/r.height); return; }
+  pressJump();   // spec §Mobile: touch-down registers jump on press, not release
+});
 
 function floorAt(x) { // highest floor top under point x (ground or block top), or -Infinity in gap
   let top = -Infinity, inGap = false;
@@ -102,6 +132,7 @@ function spikeAt(x, y) {
 }
 
 function step(dt) {
+  if (mode !== 'run') return;
   if (state === 'dead') { deadT += dt*1000; if (deadT >= RESPAWN_MS) reset(false); return; }
   if (state === 'clear') { clearT += dt; return; }
   if (paused) return;
@@ -124,10 +155,16 @@ function step(dt) {
   if (!cube.grounded) cube.rot += dt * 4.2;
 
   // jump consume
-  jumpBuf = Math.max(0, jumpBuf - dt);
-  if (jumpBuf > 0 && (cube.grounded || coyoteT > 0)) {
-    cube.vy = -JUMP_V; cube.grounded = false; coyoteT = 0; jumpBuf = 0;
+  // jump consume — input-offset calibration delays the effective press (spec §Mobile mitigation)
+  const now = performance.now();
+  if (jumpAt > 0 && now - jumpAt >= inputOffsetMs && now - jumpAt <= inputOffsetMs + JUMP_BUFFER*1000
+      && (cube.grounded || coyoteT > 0)) {
+    cube.vy = -JUMP_V; cube.grounded = false; coyoteT = 0; jumpAt = 0;
   }
+  if (jumpAt > 0 && now - jumpAt > inputOffsetMs + JUMP_BUFFER*1000) jumpAt = 0; // stale press expires
+
+  // checkpoint flags (practice mode)
+  if (practice) for (const cx of CHECKPOINTS) if (cube.x >= cx && lastCp < cx) lastCp = cx;
 
   // hazards
   if (spikeAt(cube.x, cube.y) || solidSideAt(cube.x + CUBE, cube.y)) return die();
@@ -156,6 +193,7 @@ function frame(now) {
 }
 
 function draw() {
+  if (mode === 'title') return drawTitle();
   ctx.fillStyle = '#e8e8e8'; ctx.fillRect(0,0,W,H);
   ctx.save(); ctx.translate(-camX, 0);
   // ground
@@ -197,7 +235,16 @@ function draw() {
   ctx.fillStyle = '#2b2b2b'; ctx.fillRect(16, 36, 300, 8);
   ctx.fillStyle = '#f08c00'; ctx.fillRect(16, 36, 300 * prog/100, 8);
   ctx.fillStyle = '#666'; ctx.font = '13px monospace';
-  ctx.fillText('SPACE/CLICK jump · R restart · ESC pause — INTERNAL mechanics proof', 16, H - 14);
+  ctx.fillText(`SPACE/CLICK jump · R restart · ESC pause · practice ${practice?'ON':'OFF'} · offset ${inputOffsetMs}ms — INTERNAL mechanics proof`, 16, H - 14);
+  if (practice) { // checkpoint flags
+    ctx.save(); ctx.translate(-camX, 0);
+    for (const cx of CHECKPOINTS) {
+      ctx.fillStyle = lastCp >= cx ? '#2b8a3e' : '#868e96';
+      ctx.fillRect(cx, GROUND_Y-56, 4, 56);
+      ctx.beginPath(); ctx.moveTo(cx+4, GROUND_Y-56); ctx.lineTo(cx+26, GROUND_Y-48); ctx.lineTo(cx+4, GROUND_Y-40); ctx.fill();
+    }
+    ctx.restore();
+  }
   if (paused) banner('PAUSED');
   if (state === 'dead') banner('DEAD — respawning…');
   if (state === 'clear') banner('LEVEL CLEAR — press R to run again');
@@ -207,15 +254,38 @@ function banner(t) {
   ctx.fillStyle = '#fff'; ctx.font = 'bold 30px monospace'; ctx.textAlign = 'center';
   ctx.fillText(t, W/2, H/2 + 10); ctx.textAlign = 'left';
 }
+function drawTitle() {
+  ctx.fillStyle = '#e8e8e8'; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle = '#2b2b2b'; ctx.font = 'bold 44px monospace'; ctx.textAlign = 'center';
+  ctx.fillText('THE IMPOSSIBLE GAME', W/2, 140);
+  ctx.font = '15px monospace'; ctx.fillStyle = '#667';
+  ctx.fillText('— INTERNAL mechanics proof · not for public ship —', W/2, 172);
+  const b = (r, t, on) => {
+    ctx.fillStyle = on ? '#f08c00' : '#d0d0d0'; ctx.fillRect(r.x, r.y, r.w, r.h);
+    ctx.strokeStyle = '#2b2b2b'; ctx.strokeRect(r.x, r.y, r.w, r.h);
+    ctx.fillStyle = '#2b2b2b'; ctx.font = 'bold 16px monospace';
+    ctx.fillText(t, r.x + r.w/2, r.y + r.h/2 + 6);
+  };
+  b(TB.start, '▶ START', true);
+  b(TB.practice, 'PRACTICE CHECKPOINTS: ' + (practice ? 'ON' : 'OFF'), practice);
+  b(TB.minus, '−', false); b(TB.plus, '+', false);
+  ctx.font = '14px monospace';
+  ctx.fillText(`INPUT OFFSET ${inputOffsetMs}ms`, W/2, 428);
+  ctx.font = '12px monospace'; ctx.fillStyle = '#889';
+  ctx.fillText('ENTER start · P practice · −/+ offset (touch-latency calibration, persisted)', W/2, 470);
+  ctx.fillText('practice: death respawns at last flag passed · offset delays effective jump press', W/2, 490);
+  ctx.textAlign = 'left';
+}
 requestAnimationFrame(frame);
 
 // verification hook (not gameplay)
 window.__proto = {
-  get state(){return state}, get x(){return cube.x}, get y(){return cube.y},
+  get mode(){return mode}, get state(){return state}, get x(){return cube ? cube.x : null}, get y(){return cube ? cube.y : null},
   get attempt(){return attempt}, get deaths(){return deaths},
-  get grounded(){return cube.grounded},
-  get progress(){return cube.x/LEVEL_END},
-  LEVEL, LEVEL_END
+  get grounded(){return cube ? cube.grounded : null},
+  get progress(){return cube ? cube.x/LEVEL_END : 0},
+  get practice(){return practice}, get inputOffset(){return inputOffsetMs}, get lastCp(){return lastCp},
+  LEVEL, LEVEL_END, CHECKPOINTS
 };
 </script>
 </body>

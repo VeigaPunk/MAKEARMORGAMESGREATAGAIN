@@ -27,8 +27,8 @@ These proto findings were re-discovered as monorepo defects D-33/D-34 — the ca
 
 | Title | Desktop (proven) | Touch (proven) |
 |---|---|---|
-| impossible | Space/click jump, buffer 0.10s + coyote 0.06s | tap = jump (same path) |
-| CI / Cluck | WASD/arrows + Space/Z/LMB fire + X/Shift/RMB missile + Esc pause | **Layout B one-thumb**: relative drag moves ship (finger delta → ship delta, velocity zeroed while dragging), auto-fire ON, 64px MISSILE edge button checked before drag-start. Wave 1 cleared touch-only (spec 06 #4). Layout A (twin-thumb) still unproven — same plumbing: left-half pointer → stick vector, right-half → fire/missile. |
+| impossible | Space/click jump, buffer 0.10s + coyote 0.06s | tap = jump on press (same path) + persisted input-offset calibration 0–200ms (spec §Mobile mitigation); practice checkpoints = respawn-address table (`CHECKPOINTS[]` + `lastCp` + `reset(spawnX)`) |
+| CI / Cluck | WASD/arrows + Space/Z/LMB fire + X/Shift/RMB missile + Esc pause | **Layout A twin-thumb** (left-half virtual stick → velocity vector, right-half → hold-fire, missile above fire; wave 1 cleared touch-only, spec 04 #5) AND **layout B one-thumb** (relative drag, auto-fire, edge missile; spec 06 #4). Toggle persisted. **`touch-action:none` is load-bearing** — without it the second finger gets pointercancel'd. |
 | burger | pane click actions | n/a (UI title — DOM buttons recommended) |
 | S&S | canvas hit-regions ≥48px | full champion fight via `touchscreen.tap` only (spec hook #3) |
 
@@ -48,7 +48,7 @@ These proto findings were re-discovered as monorepo defects D-33/D-34 — the ca
 
 ## 6. Known-unproven (frontier, not claims)
 
-- CI mobile layout A (twin-thumb) — spec'd, unbuilt.
 - `AudioSyncClock` (impossible) — the real remaining risk per its card; no proto coverage.
 - All numeric constants — declared guesses pending ARCADE playtest (dossiers mark combat tables, wave scripts, economy rates TBD).
 - S&S thumb-arc layout — spec §Controls suggests bottom-right arc; proto used a bottom strip (functional, touch-verified, not the spec's shape).
+- Burger exact timings — mechanism verified end-to-end (dirty→backlash→rep collapse); card's exact figures (72s collapse) source-confirmed, not re-timed this round.

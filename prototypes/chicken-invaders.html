@@ -6,7 +6,7 @@
 <title>PROTO: Chicken Invaders / Cluck Horizon — mechanics proof (INTERNAL)</title>
 <style>
   html,body{margin:0;height:100%;background:#050510;display:flex;align-items:center;justify-content:center;font-family:monospace}
-  canvas{max-width:100vw;max-height:100vh}
+  canvas{max-width:100vw;max-height:100vh;touch-action:none}
 </style>
 </head>
 <body>
@@ -71,7 +71,13 @@ let mode, ship, bullets, missiles, eggs, pickups, chickens, boss, parts;
 let chapter, waveIdx, score, lives, missileN, weaponLv, killsInChapter;
 let waveT, eggT, diveT, clearT, deadT, jokeT, paused, fireHeld, fireT, lastDeath;
 let drag = null, touchMode = false;   // layout B: one-thumb relative drag + auto-fire (spec 04 §Controls B)
-const MISSILE_BTN = {x: W-92, y: H-92, w: 64, h: 64};
+let stick = null;                     // layout A: left-half virtual stick {id,ox,oy,x,y} (spec 04 §Controls A)
+const firePtrs = new Set();           // layout A: right-half held pointers = fire
+let layout = localStorage.getItem('ci_proto_layout') || 'A';  // spec 04 §Mobile: A twin-thumb recommended, B one-thumb
+const MISSILE_BTN_B = {x: W-92, y: H-92, w: 64, h: 64};       // B: edge button bottom-right
+const MISSILE_BTN_A = {x: W-92, y: H-172, w: 64, h: 64};      // A: above fire button
+const FIRE_BTN_A = {x: W-92, y: H-92, w: 64, h: 64};          // A: hold-fire (whole right half fires)
+const missileBtn = () => layout === 'A' ? MISSILE_BTN_A : MISSILE_BTN_B;
 let unlocked = +(localStorage.getItem('ci_proto_unlock_' + pack.id) || 1);
 
 const stars = [];
@@ -140,6 +146,7 @@ addEventListener('keydown', e => {
   if (e.repeat) return;
   if (mode === 'title') {
     if (e.code === 'KeyT') setPack(pack.id === 'replica' ? 'cluck' : 'replica');
+    if (e.code === 'KeyL') setLayout(layout === 'A' ? 'B' : 'A');
     if (e.code === 'Digit1') titleSel = 1;
     if (e.code === 'Digit2' && unlocked >= 2) titleSel = 2;
     if (e.code === 'Enter' || e.code === 'Space') startGame(titleSel);
@@ -161,19 +168,36 @@ cv.addEventListener('pointerdown', e => {
   if (mode === 'title') { titleClick(p.x, p.y); return; }
   if (mode === 'play') {
     if (e.button === 2) { fireMissile(); return; }
-    const b = MISSILE_BTN;
+    const b = missileBtn();
     if (p.x >= b.x && p.x <= b.x+b.w && p.y >= b.y && p.y <= b.y+b.h) { fireMissile(); return; }
+    if (e.pointerType === 'touch' && layout === 'A') {
+      // twin-thumb: left half = virtual stick, right half = hold-fire
+      if (p.x < W/2) { if (!stick) stick = {id: e.pointerId, ox: p.x, oy: p.y, x: p.x, y: p.y}; }
+      else { firePtrs.add(e.pointerId); fireHeld = true; }
+      return;
+    }
     fireHeld = true;
-    drag = {ox: p.x, oy: p.y, x: p.x, y: p.y, sx: ship.x, sy: ship.y};
+    drag = {id: e.pointerId, ox: p.x, oy: p.y, x: p.x, y: p.y, sx: ship.x, sy: ship.y};
   }
   else if (['gameover','win'].includes(mode)) mode = 'title';
 });
 cv.addEventListener('pointermove', e => {
-  if (!drag) return;
   const p = cvPos(e);
-  drag.x = p.x; drag.y = p.y;
+  if (stick && e.pointerId === stick.id) { stick.x = p.x; stick.y = p.y; }
+  if (drag && e.pointerId === drag.id) { drag.x = p.x; drag.y = p.y; }
 });
-addEventListener('pointerup', () => { fireHeld = false; drag = null; });
+addEventListener('pointerup', e => {
+  firePtrs.delete(e.pointerId);
+  if (stick && e.pointerId === stick.id) stick = null;
+  if (drag && e.pointerId === drag.id) drag = null;
+  if (!firePtrs.size) fireHeld = false;
+});
+addEventListener('pointercancel', e => {
+  firePtrs.delete(e.pointerId);
+  if (stick && e.pointerId === stick.id) stick = null;
+  if (drag && e.pointerId === drag.id) drag = null;
+  if (!firePtrs.size) fireHeld = false;
+});
 cv.addEventListener('contextmenu', e => e.preventDefault());
 function cvPos(e) {
   const r = cv.getBoundingClientRect();
@@ -185,13 +209,20 @@ function setPack(id) {
   unlocked = +(localStorage.getItem('ci_proto_unlock_' + pack.id) || 1);
   if (titleSel > unlocked) titleSel = 1;
 }
+function setLayout(l) {
+  layout = l;
+  localStorage.setItem('ci_proto_layout', l);
+  stick = null; drag = null; firePtrs.clear(); fireHeld = false;
+}
 // title hit regions (canvas-space rects)
 const BTN = {start:{x:W/2-110,y:330,w:220,h:44}, pack:{x:W/2-160,y:392,w:320,h:34},
-             ch1:{x:W/2-120,y:284,w:110,h:32}, ch2:{x:W/2+10,y:284,w:110,h:32}};
+             ch1:{x:W/2-120,y:284,w:110,h:32}, ch2:{x:W/2+10,y:284,w:110,h:32},
+             layout:{x:W/2-160,y:434,w:320,h:30}};
 const inR = (p,r) => p.x>r.x && p.x<r.x+r.w && p.y>r.y && p.y<r.y+r.h;
 function titleClick(x, y) {
   const p = {x, y};
   if (inR(p, BTN.pack)) return setPack(pack.id === 'replica' ? 'cluck' : 'replica');
+  if (inR(p, BTN.layout)) return setLayout(layout === 'A' ? 'B' : 'A');
   if (inR(p, BTN.ch1)) return void (titleSel = 1);
   if (inR(p, BTN.ch2) && unlocked >= 2) return void (titleSel = 2);
   if (inR(p, BTN.start)) startGame(titleSel);
@@ -205,7 +236,13 @@ function step(dt) {
 
   // ship: inertial movement (feel target: float, not tank)
   if (ship.alive) {
-    if (drag) { // one-thumb drag: ship follows finger delta, velocity zeroed
+    if (stick) { // layout A: virtual stick sets velocity directly (arcade float preserved via damp)
+      const dx = stick.x - stick.ox, dy = stick.y - stick.oy;
+      const m = Math.hypot(dx, dy), k = m > 4 ? Math.min(1, m/48) : 0;
+      ship.vx = m ? dx/m*SHIP_MAXV*k : 0; ship.vy = m ? dy/m*SHIP_MAXV*k : 0;
+      ship.x = Math.max(20, Math.min(W-20, ship.x + ship.vx*dt));
+      ship.y = Math.max(H-220, Math.min(H-30, ship.y + ship.vy*dt));
+    } else if (drag) { // layout B / mouse: ship follows pointer delta, velocity zeroed
       ship.x = Math.max(20, Math.min(W-20, drag.sx + (drag.x - drag.ox)));
       ship.y = Math.max(H-220, Math.min(H-30, drag.sy + (drag.y - drag.oy)));
       ship.vx = ship.vy = 0;
@@ -221,7 +258,7 @@ function step(dt) {
     }
     ship.invuln = Math.max(0, ship.invuln - dt);
     fireT -= dt;
-    if ((fireHeld || touchMode) && fireT <= 0) { fireGuns(); fireT = FIRE_EVERY; }
+    if ((fireHeld || (touchMode && layout === 'B')) && fireT <= 0) { fireGuns(); fireT = FIRE_EVERY; }
   } else {
     deadT += dt;
     if (deadT >= RESPAWN_S) {
@@ -455,14 +492,31 @@ function drawHUD() {
   ctx.fillText(`[${pack.id.toUpperCase()}]`, W-14, 42);
   ctx.textAlign = 'left';
   ctx.fillStyle = '#889'; ctx.font = '11px monospace';
-  ctx.fillText(touchMode ? 'DRAG move · auto-fire ON · MISSILE btn bottom-right — INTERNAL mechanics proof'
-                         : 'ARROWS/WASD move · SPACE/Z/LMB fire · X/SHIFT/RMB missile · ESC pause — INTERNAL mechanics proof', 14, H-10);
+  ctx.fillText(touchMode
+    ? (layout === 'A' ? 'LAYOUT A: LEFT-half stick move · RIGHT-half hold fire · MISSILE above — INTERNAL mechanics proof'
+                      : 'LAYOUT B: DRAG move · auto-fire ON · MISSILE btn bottom-right — INTERNAL mechanics proof')
+    : 'ARROWS/WASD move · SPACE/Z/LMB fire · X/SHIFT/RMB missile · ESC pause — INTERNAL mechanics proof', 14, H-10);
   if (touchMode && mode === 'play') {
-    const b = MISSILE_BTN;
+    const b = missileBtn();
     ctx.fillStyle = 'rgba(255,212,59,.18)'; ctx.fillRect(b.x, b.y, b.w, b.h);
     ctx.strokeStyle = '#ffd43b'; ctx.strokeRect(b.x, b.y, b.w, b.h);
     ctx.fillStyle = '#ffd43b'; ctx.font = '11px monospace'; ctx.textAlign = 'center';
-    ctx.fillText('MISSILE', b.x+b.w/2, b.y+b.h/2+4); ctx.textAlign = 'left';
+    ctx.fillText('MISSILE', b.x+b.w/2, b.y+b.h/2+4);
+    if (layout === 'A') {
+      const f = FIRE_BTN_A;
+      ctx.fillStyle = firePtrs.size ? 'rgba(140,233,154,.35)' : 'rgba(140,233,154,.15)';
+      ctx.fillRect(f.x, f.y, f.w, f.h);
+      ctx.strokeStyle = '#8ce99a'; ctx.strokeRect(f.x, f.y, f.w, f.h);
+      ctx.fillStyle = '#8ce99a';
+      ctx.fillText('FIRE', f.x+f.w/2, f.y+f.h/2+4);
+      if (stick) {
+        ctx.strokeStyle = 'rgba(255,255,255,.5)';
+        ctx.beginPath(); ctx.arc(stick.ox, stick.oy, 48, 0, 7); ctx.stroke();
+        ctx.fillStyle = 'rgba(255,255,255,.6)';
+        ctx.beginPath(); ctx.arc(stick.x, stick.y, 14, 0, 7); ctx.fill();
+      }
+    }
+    ctx.textAlign = 'left';
   }
 }
 function banner(t) {
@@ -483,8 +537,9 @@ function drawTitle() {
   btn(BTN.ch2, unlocked >= 2 ? 'CH 2' : 'CH 2 🔒', titleSel === 2 && unlocked >= 2);
   btn(BTN.start, '▶ START', true);
   btn(BTN.pack, 'PACK: ' + pack.id.toUpperCase() + '  (T / click to swap)', false);
-  center2('ENTER start · 1/2 chapter · T swap pack', 460, '#889', 13);
-  center2('replica = CI2-era formula · cluck = original IP (Cluck Horizon)', 482, '#667', 12);
+  btn(BTN.layout, 'TOUCH LAYOUT: ' + layout + '  (L / click to swap)', false);
+  center2('ENTER start · 1/2 chapter · T swap pack · L touch layout', 478, '#889', 13);
+  center2('replica = CI2-era formula · cluck = original IP (Cluck Horizon) · layout A twin-thumb / B one-thumb', 500, '#667', 12);
 }
 function btn(r, t, on) {
   ctx.fillStyle = on ? pack.accent : '#223'; ctx.fillRect(r.x, r.y, r.w, r.h);
@@ -518,6 +573,9 @@ window.__proto = {
   get bossHp(){return boss ? boss.hp : null}, get bossMax(){return boss ? boss.max : null},
   get bossX(){return boss ? boss.x : null}, get bossWarn(){return boss ? boss.warn : 0},
   get unlocked(){return unlocked}, get paused(){return paused},
+  get layout(){return layout}, get touchMode(){return touchMode},
+  get stick(){return stick ? {ox:stick.ox, oy:stick.oy, x:stick.x, y:stick.y} : null},
+  get firePtrs(){return firePtrs.size},
   get eggList(){return eggs ? eggs.map(e => ({x:e.x, y:e.y})) : []},
   BTN, PACKS: Object.keys(PACKS)
 };
