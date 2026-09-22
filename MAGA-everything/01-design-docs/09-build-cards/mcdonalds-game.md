@@ -1,7 +1,7 @@
 # BUILD CARD — Burger Tycoon (McDonald's Game twin)
-**Slug:** `mcdonalds-game` · **Priority:** 3 (FORGE STACK-LOCKED) · **Renderer:** Canvas2D (+ DOM chrome OK) · **App:** `02-code/armor-games/apps/burger-tycoon` (not yet scaffolded)
+**Slug:** `mcdonalds-game` · **Priority:** 3 (FORGE STACK-LOCKED) · **Renderer:** Canvas2D (+ DOM chrome OK) · **App:** `02-code/armor-games/apps/burger-tycoon` (scaffolded — forge R03 `f8449eb`; ⚠ slug ≠ app dir, DD-32) · SPEC feel: §Feel targets
 **Card sources:** `02-concept-specs/03-mcdonalds-game.md` (SPEC), `05-dossiers/mcdonalds-game.md` (DOSSIER), `03-stack-and-tickets/001-native-stack-and-plan.md` (STACK), `04-research/deep-dive.md` §2 (RESEARCH)
-**Build state:** not started. No tickets exist yet.
+**Build state:** sim port + DOM chrome landed (`src/main.ts` 219 ln + `src/sim.ts` 158 ln, `f8449eb`); INTERNAL badge ships. Burger-tycoon tickets still to mint. Mechanics proof `prototypes/burger-tycoon.html` verified (dirty→backlash→rep collapse @72s, `3a8fa4f`).
 **Branding rule:** ship twin = **Burger Tycoon** (marks scrubbed); McDonald's-branded original is authenticity reference only (SPEC §Meta; DOSSIER §Target versions).
 
 ## 1. Core loop (SPEC §Core loop)
@@ -16,7 +16,7 @@ Session: **~15–40 min** (SPEC §Core loop; DOSSIER §Controls).
 ## 2. Controls
 ### Desktop (SPEC §Controls)
 - **Mouse-primary:** click panes, map tiles, action buttons.
-- Optional pane hotkeys 1–4 (**TBD ARCADE**). No combat keys.
+- Optional pane hotkeys 1–4 (**TBD ARCADE**). No combat keys. ⚠ `Input.attach` preventDefaults bound keys at window level — DOM panels/text entry get hijacked (DD-37); gate or attach to canvas before hotkeys land.
 ### Mobile (SPEC §Controls)
 - **Tabbed panes + map:** top/side tabs switch Farm/Livestock/Restaurant/HQ; tappable map/buttons.
 - One-handed portrait: bottom tabs, large action buttons — enlarge Flash-era hit targets **without** changing sim rules.
@@ -47,7 +47,7 @@ UI-heavy, not particle-heavy; lightweight.
 - Soft corporate Muzak bed (original-inspired).
 - Click UI; alarm on backlash rise; fail sting.
 - Low SFX count OK — prioritize UI clarity.
-- No MAESTRO bible yet — author per `06-audio/README.md` schema.
+- No MAESTRO bible yet — author per `06-audio/README.md` schema. Shipped audio contract today = 5 `Sfx.preset` names + note-array music slot (DD-09).
 
 ## 8. Acceptance criteria (SPEC §Acceptance hooks)
 1. All four panes reachable + affect shared economy within first 2 min.
@@ -62,3 +62,5 @@ Exact numeric thresholds (activist/media/disease triggers, board curves) · pane
 
 ## 10. Out of scope (SPEC §Deferred)
 Branded McDonald's marks / Ronald analogues · exact Flash pixel UI clone · deep save campaigns / meta unlocks · multiplayer.
+
+**Posture:** INTERNAL-NO-PUBLIC — localhost/internal OK; public ship needs Molleindustria CC deed verification + marks review (SPEC §Meta; shipped badge `index.html:32`). **DOM-chrome seam:** DOM owns panels/buttons (a11y, ≥44px targets); canvas owns the sim view (proto verdict). **Gates:** G0–G5 per STACK §3.
