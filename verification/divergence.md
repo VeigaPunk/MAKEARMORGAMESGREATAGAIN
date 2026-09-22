@@ -167,7 +167,7 @@ Badge wraps to ~55px at 390px wide; layout reserves 22px (`main.ts` `BADGE_H`) �
 
 ---
 
-## Round-2 entries (working tree post-`2e74d55` + uncommitted forge fixes, live-verified 2026-09-22)
+## Round-2 entries (working tree post-`2e74d55` + forge `f8449eb`, live-verified 2026-09-22)
 
 ## D-18 · DEFECT (cosmetic) — End-of-run banner bleeds onto menu screens
 
@@ -187,19 +187,19 @@ Badge wraps to ~55px at 390px wide; layout reserves 22px (`main.ts` `BADGE_H`) �
 
 ---
 
-## Post-round-2 status board (live-verified 2026-09-22, uncommitted forge fixes)
+## Post-round-2 status board (live-verified 2026-09-22, forge `f8449eb`)
 
 | Entry | Status |
 |-------|--------|
-| D-03 grenade downgrade | **FIXED (uncommitted)** — lobbed AoE shell, detonates on hit/wall/expiry, radius-60 kill zone; live-verified 3 kills/1 shell. New concern → D-19 self-damage |
+| D-03 grenade downgrade | **FIXED (f8449eb)** — lobbed AoE shell, detonates on hit/wall/expiry, radius-60 kill zone; live-verified 3 kills/1 shell. New concern → D-19 self-damage |
 | D-05 stage 640×400 vs docs 640×480 | **OPEN** — doc reconciliation owed |
 | D-06 stale ticket header | **OPEN** |
 | D-08 F3 scenario unreachable | **OPEN** — wave cap 14 |
-| D-10 crateTimer not reset | **FIXED (uncommitted)** — `crateTimer=8` on `startRun`; live-verified no instant crate |
-| D-14 touch end-screen trap | **FIXED (uncommitted)** — tap retries, MENU chip exits; live-verified dead+victory paths |
-| D-15/RT-5 any-touch-fires | **FIXED (uncommitted)** — `wantsFire = isDown('fire') || touch.fire`; field tap inert, FIRE zone fires, stick moves; live-verified under coarse emulation |
+| D-10 crateTimer not reset | **FIXED (f8449eb)** — `crateTimer=8` on `startRun`; live-verified no instant crate |
+| D-14 touch end-screen trap | **FIXED (f8449eb)** — tap retries, MENU chip exits; live-verified dead+victory paths |
+| D-15/RT-5 any-touch-fires | **FIXED (f8449eb)** — `wantsFire = isDown('fire') || touch.fire`; field tap inert, FIRE zone fires, stick moves; live-verified under coarse emulation |
 | D-16 invuln wall-time | OPEN (edge-case note) |
-| D-17 badge/mute overlap | **FIXED (uncommitted)** — live badge height measured, mute at badgeH+4; verified 55px badge → mute top 59px |
+| D-17 badge/mute overlap | **FIXED (f8449eb)** — live badge height measured, mute at badgeH+4; verified 55px badge → mute top 59px |
 | D-18 banner bleed on menus | **OPEN** — new, cosmetic |
 | D-19 grenade self-damage | **OPEN** — new, needs design ruling |
 | D-20 held-key bleed mode→room | **OPEN** — new, minor |

@@ -1,6 +1,6 @@
 # RT-03 — boxhead touch-mode probes (coarse pointer, 390×844 portrait)
 
-**Build:** working tree post-`2e74d55` + uncommitted forge fixes (D-14/D-15/D-03/D-10/D-17)
+**Build:** working tree post-`2e74d55` + forge `f8449eb` (D-14/D-15/D-03/D-10/D-17)
 **Method:** Chromium headless, `matchMedia('(pointer: coarse)')` patched via init script,
 real CDP touch events (`page.touchscreen`), `?debug` → `window.__maga` state reads.
 **Date:** 2026-09-22 (round 2)
