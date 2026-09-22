@@ -38,6 +38,7 @@ UI-heavy; low entity count; keep payload light.
 - Win fight → gold + XP → shop → next opponent.
 - Lose → return to hub without corrupted save (SPEC hook 7).
 - v1 ends after ~3–5 scripted opponents; no tournament completion.
+- **Shipped facts (r04 live probe, `src/main.ts`):** `persist()` saves `{gladiator, defeated}` but load path drops `defeated` and always boots `mode='create'` — saved ladder unreachable (DD-78); each reload grants +6 free stat points (DD-79); duplicate shop buys charge full price for a no-op (DD-80); Imperial Buckler L3-gate unreachable pre-ladder-complete (DD-81); complete screen replayable for unbounded gold (DD-90); `g.name` raw into innerHTML (DD-84); opponent HP freeze unreproduced — watch item (DD-85); mouse-only, no keyboard controls; `'shoot'` SFX on sword hit; potions finite, never restocked.
 
 ## 6. Art direction (SPEC §Art needs)
 - Cartoon vector-like gladiators (clean shapes); arena BG; shop keepers; radial icons; hit particles.

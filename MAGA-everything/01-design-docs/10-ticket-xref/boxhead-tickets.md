@@ -34,7 +34,7 @@
 | BH-2.1 | Mobile layout C solo | SPEC §Controls layout C | PROOF C1/C2 (≥60s phone) | **PASS-structure** (`touch.ts` stick+FIRE+auto-aim; human phone run pending PROOF) |
 | BH-2.2 | Mobile layout A dual pads | SPEC §Controls layout A, hook 7 | PROOF C4 | **WAIVED** (no tablet; deferred BH-3/fidelity) |
 | BH-2.3 | Desktop local co-op | SPEC §Controls P2, hook 2 | PROOF B12 simultaneous | **PASS** (P1 WASD+Space/J, P2 arrows+IJKL/numpad; simultaneous verified headless; evidence `apps/boxhead/proofs/bh2-2p-coop.png`). ⚠ KeyJ/KeyK double-bind defect → DD-21 |
-| BH-2.4 | Local deathmatch | SPEC §Core loop step 7, hook 6 | PROOF B13 | **PASS** (first-to-5 stub, respawn 1.4s, no owner-hit bug; evidence `apps/boxhead/proofs/bh2-2p-deathmatch.png`). Ships no pickups vs spec (DD-18) |
+| BH-2.4 | Local deathmatch | SPEC §Core loop step 7, hook 6 | PROOF B13 | **PASS** (first-to-5 stub, respawn 1.4s, no owner-hit bug; evidence `apps/boxhead/proofs/bh2-2p-deathmatch.png`). Ships no pickups vs spec (DD-18). **r04 live:** B13 PARTIAL — mutual damage/kill counter/respawn verified, but DM ammo economy can deadlock a match (DD-77) and Esc/P pause binding is dead (DD-83) |
 | BH-2.5 | Rebind stub | SPEC §Controls rebinds | PROOF E3 | **PASS** (localStorage `maga:boxhead:keymaps` JSON merge; no UI yet — downgrade unrecorded, DD-67) |
 | BH-2.6 | High score persist | SPEC §Content scope persist | PROOF B10 | **PASS** (`maga:boxhead:highscore` survives refresh) |
 

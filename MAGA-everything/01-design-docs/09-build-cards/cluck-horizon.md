@@ -58,4 +58,4 @@ Comedy tone vs serious shmup (João call) · shared codebase vs fork (recommende
 ## 10. Out of scope (SPEC §Deferred)
 Long campaign (8+ sectors) · local multiplayer · roguelike meta tree · seasonal packs · cutscenes >15s · any InterAction assets/marks.
 
-**Posture:** INTERNAL-NO-PUBLIC — new IP; public clearance limited to own music/fonts/title; no InterAction silhouettes/logos/names/OST (SPEC §Meta/§Feel targets). **Gates:** G0–G5 per STACK §3 — G2 reads as **originality/differentiation audit** for this title, not fidelity (DD-60).
+**Posture:** INTERNAL-NO-PUBLIC — new IP; public clearance limited to own music/fonts/title; no InterAction silhouettes/logos/names/OST (SPEC §Meta/§Feel targets). **r04 live (verify):** `PACKS.cluck` ships SOUP LASER→WHISK BARRAGE + MOTHER GOOSE boss but not yet the spec's "3 enemy types + 2 bosses" (DD-87); shared `touch.ts` pointerup-outside-canvas defect applies here too (DD-82). **Gates:** G0–G5 per STACK §3 — G2 reads as **originality/differentiation audit** for this title, not fidelity (DD-60).

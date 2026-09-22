@@ -61,4 +61,4 @@ Fixed timestep: **FORGE decided** — 1/120s accumulator (`main.ts` DT); declare
 ## 10. Out of scope (SPEC §Deferred)
 Full five levels + all medals · level editor · practice checkpoints (if not v1) · sequel features · expanding Lite slice into "full game" while calling it Lite (SPEC §Notes for FORGE — explicit prohibition).
 
-**Posture:** INTERNAL-NO-PUBLIC — localhost/internal OK; public ship needs written Fluke Games clearance (SPEC §Meta). **PROOF hook:** `?debug` → `window.__maga` (`src/main.ts:264-274`; DD-62). **Gates:** G0–G5 per STACK §3 apply to every title.
+**Posture:** INTERNAL-NO-PUBLIC — localhost/internal OK; public ship needs written Fluke Games clearance (SPEC §Meta). **PROOF hook:** `?debug` → `window.__maga` (`src/main.ts:264-274`; DD-62). **Sibling:** `hardest/` (maga-hardest) owns the full World's Hardest Game build — `engine.js` pure-logic + `levels/` corpus; this spec is its input, read-only for forge. **Gates:** G0–G5 per STACK §3 apply to every title.

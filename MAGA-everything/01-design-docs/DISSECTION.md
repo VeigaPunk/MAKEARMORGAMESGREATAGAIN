@@ -105,9 +105,9 @@
 | 1. Boxhead: 2Play Rooms | `02-concept-specs/01-boxhead.md` | `05-dossiers/boxhead.md` | visual-direction, placeholder-recipes, `06-audio/*`, `07-acceptance/*`, tickets | `09-build-cards/boxhead.md` | `apps/boxhead` |
 | 2. Impossible Game | `02-concept-specs/02-impossible-game.md` | `05-dossiers/impossible-game.md` | stack plan, `06-audio/README.md` (schema), `prototypes/impossible-game.html` | `09-build-cards/impossible-game.md` | `apps/impossible` |
 | 3. Burger Tycoon | `02-concept-specs/03-mcdonalds-game.md` | `05-dossiers/mcdonalds-game.md` | `prototypes/burger-tycoon.html` | `09-build-cards/mcdonalds-game.md` | `apps/burger-tycoon` (slug ≠ dir — DD-32) |
-| 4. Chicken Invaders | `02-concept-specs/04-chicken-invaders.md` | `05-dossiers/chicken-invaders.md` | `prototypes/chicken-invaders.html` (unverified) | `09-build-cards/chicken-invaders.md` | `apps/chicken-invaders` |
+| 4. Chicken Invaders | `02-concept-specs/04-chicken-invaders.md` | `05-dossiers/chicken-invaders.md` | `prototypes/chicken-invaders.html` (verified — proto-verdict PASS) | `09-build-cards/chicken-invaders.md` | `apps/chicken-invaders` |
 | 5. Swords & Sandals 2 | `02-concept-specs/05-swords-and-sandals.md` | `05-dossiers/swords-and-sandals.md` | — | `09-build-cards/swords-and-sandals.md` | `apps/swords-and-sandals` |
-| 6. Cluck Horizon | `02-concept-specs/06-chicken-invaders-original.md` | (none — new IP; CI dossier is reference only) | `prototypes/chicken-invaders.html` (unverified) | `09-build-cards/cluck-horizon.md` | `apps/chicken-invaders-original` |
+| 6. Cluck Horizon | `02-concept-specs/06-chicken-invaders-original.md` | (none — new IP; CI dossier is reference only) | `prototypes/chicken-invaders.html` (verified — proto-verdict PASS) | `09-build-cards/cluck-horizon.md` | `apps/chicken-invaders-original` |
 
 ## 3. Stale path map (docs cite `/workspace/…` — actual locations here)
 
@@ -150,5 +150,7 @@ Docs were written on a different machine layout. Translate citations:
 | Surface | What it holds | Consumer note |
 |---|---|---|
 | `02-code/armor-games/` | Shipped monorepo: `apps/{boxhead,impossible,burger-tycoon,chicken-invaders,chicken-invaders-original,swords-and-sandals}` (all six scaffolded by `50665ba`), `packages/{arcade-core,shmup-core}`, `boxhead-2play-spike/` (gitignored, tarball-only) | Current build state; contradicts docs → `11-divergence/` |
-| `prototypes/` | maga-proto mechanics proofs: `impossible-game.html` (verified `991c648`), `burger-tycoon.html` (verified `3a8fa4f`), `chicken-invaders.html` (two-pack shmup skeleton — **unverified, no proto card**) | Port, don't re-derive (cards cite them) |
-| `verification/` | maga-verify live probes: `divergence.md` (`D-01…D-24` register), `doc-audit.md`, `evidence/*.webp`, `proto-verdicts/` | Lane-local + dated; its `D-NN` ids are NOT this log's `DD-NN` (DD-75) |
+| `prototypes/` | maga-proto mechanics proofs: `impossible-game.html` (verified `991c648`), `burger-tycoon.html` (verified `3a8fa4f`), `chicken-invaders.html` (verified — proto-verdict PASS, D-21 fixed; two-pack shmup skeleton, ancestor of `packages/shmup-core`) | Port, don't re-derive (cards cite them) |
+| `verification/` | maga-verify live probes: `divergence.md` (`D-01…D-32` register; r04 entries D-25…D-32 live in `runtime-verdicts/08…11` pending register update), `doc-audit.md`, `evidence/*.png`, `proto-verdicts/`, `runtime-verdicts/` (12 files) | Lane-local + dated; its `D-NN` ids are NOT this log's `DD-NN` (DD-75) |
+| `hardest/` | maga-hardest full World's Hardest Game build: `engine.js` (228 ln pure logic, DOM-free, Node+browser) + `levels/` (level corpus, empty at r03) | Impossible-Game sibling — spec `02-impossible-game.md` is its input |
+| `tcg/` | tcg-arena arena-TCG: `intel/` (Thursday Arena dossier + JSON captures), `design/arena-tcg-design.md`, `prototype/` (dependency-free HTML5 + `sim.js` headless) | Independent of the monorepo; style refs only |

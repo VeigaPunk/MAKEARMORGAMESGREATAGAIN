@@ -77,4 +77,4 @@ Exact wave scripts/formation data (10 waves/chapter default — RESEARCH §5) ·
 ## 10. Out of scope (SPEC §Deferred)
 Full CI2 Pluto→Sun campaign · CI3 4P co-op/overheat/full modifiers · holiday reskins · Universe MMO · any InterAction ripped art/audio · online multiplayer.
 
-**Posture:** INTERNAL-NO-PUBLIC (above). **Skeleton:** `packages/shmup-core` shared with #6 Cluck Horizon (shipped `50665ba`, proto's normalized vocabulary — DD-34 resolved-in-code; spec docs still need the vocabulary decision). **Gates:** G0–G5 per STACK §3.
+**Posture:** INTERNAL-NO-PUBLIC (above). **Skeleton:** `packages/shmup-core` shared with #6 Cluck Horizon (shipped `50665ba`, proto's normalized vocabulary — DD-34 resolved-in-code; spec docs still need the vocabulary decision). **r04 live (verify):** virtual stick sticks after pointerup outside canvas — `touch.ts:84-90` canvas-only listeners (DD-82); proto `chicken-invaders.html` now verified PASS (D-21 fixed). **Gates:** G0–G5 per STACK §3.
