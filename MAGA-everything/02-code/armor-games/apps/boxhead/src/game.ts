@@ -481,6 +481,11 @@ export class Game {
           s.p.invuln = 0.8;
           this.scoreSys.playerHit();
           this.sfx.preset('hit');
+          if (s.p.hp <= 0) {
+            s.alive = false;
+            s.p.g.visible = false;
+            this.sfx.preset('death');
+          }
         }
       }
     }
@@ -627,12 +632,14 @@ export class Game {
         s.p.invuln = 0.8;
         if (this.mode !== 'deathmatch') this.scoreSys.playerHit();
         this.sfx.preset('hit');
-        if (this.mode === 'deathmatch' && s.p.hp <= 0) {
-          // no kill credit for barrels (stub) — just respawn
+        if (s.p.hp <= 0) {
           s.alive = false;
           s.p.g.visible = false;
-          s.respawnTimer = DM_RESPAWN;
           this.sfx.preset('death');
+          if (this.mode === 'deathmatch') {
+            // no kill credit for barrels (stub) — just respawn
+            s.respawnTimer = DM_RESPAWN;
+          }
         }
       }
     }

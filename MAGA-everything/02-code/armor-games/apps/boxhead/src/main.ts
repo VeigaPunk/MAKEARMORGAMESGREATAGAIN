@@ -27,12 +27,23 @@ document.body.appendChild(app.canvas);
 
 const input = new Input();
 const sfx = new Sfx();
+// BH-3.2 MAESTRO drop zone: mute toggle lives in page chrome, not the stage,
+// so it stays reachable on every screen including menus.
+const muteBtn = document.getElementById('mute');
+if (muteBtn) {
+  const paint = () => { muteBtn.textContent = sfx.muted ? 'SOUND OFF' : 'SOUND ON'; };
+  muteBtn.addEventListener('click', () => { sfx.muted = !sfx.muted; paint(); });
+  paint();
+}
 
 let cachedScale = 1;
 let cachedOffset = { x: 0, y: 0 };
+// getBoundingClientRect() already includes the CSS translate() letterbox
+// offset — divide by scale only. Subtracting cachedOffset here would
+// double-count it and shift every pointer/touch position off-target.
 const toLogical = (cx: number, cy: number) => ({
-  x: (cx - cachedOffset.x) / cachedScale,
-  y: (cy - cachedOffset.y) / cachedScale,
+  x: cx / cachedScale,
+  y: cy / cachedScale,
 });
 input.attach(app.canvas, toLogical);
 
