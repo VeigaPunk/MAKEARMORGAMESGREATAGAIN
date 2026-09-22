@@ -70,6 +70,8 @@ let pack = PACKS.replica;
 let mode, ship, bullets, missiles, eggs, pickups, chickens, boss, parts;
 let chapter, waveIdx, score, lives, missileN, weaponLv, killsInChapter;
 let waveT, eggT, diveT, clearT, deadT, jokeT, paused, fireHeld, fireT, lastDeath;
+let drag = null, touchMode = false;   // layout B: one-thumb relative drag + auto-fire (spec 04 §Controls B)
+const MISSILE_BTN = {x: W-92, y: H-92, w: 64, h: 64};
 let unlocked = +(localStorage.getItem('ci_proto_unlock_' + pack.id) || 1);
 
 const stars = [];
@@ -155,11 +157,23 @@ addEventListener('keyup', e => {
 });
 cv.addEventListener('pointerdown', e => {
   const p = cvPos(e);
+  if (e.pointerType === 'touch') touchMode = true;
   if (mode === 'title') { titleClick(p.x, p.y); return; }
-  if (mode === 'play') { if (e.button === 2) fireMissile(); else fireHeld = true; }
+  if (mode === 'play') {
+    if (e.button === 2) { fireMissile(); return; }
+    const b = MISSILE_BTN;
+    if (p.x >= b.x && p.x <= b.x+b.w && p.y >= b.y && p.y <= b.y+b.h) { fireMissile(); return; }
+    fireHeld = true;
+    drag = {ox: p.x, oy: p.y, x: p.x, y: p.y, sx: ship.x, sy: ship.y};
+  }
   else if (['gameover','win'].includes(mode)) mode = 'title';
 });
-addEventListener('pointerup', () => { fireHeld = false; });
+cv.addEventListener('pointermove', e => {
+  if (!drag) return;
+  const p = cvPos(e);
+  drag.x = p.x; drag.y = p.y;
+});
+addEventListener('pointerup', () => { fireHeld = false; drag = null; });
 cv.addEventListener('contextmenu', e => e.preventDefault());
 function cvPos(e) {
   const r = cv.getBoundingClientRect();
@@ -191,17 +205,23 @@ function step(dt) {
 
   // ship: inertial movement (feel target: float, not tank)
   if (ship.alive) {
-    const ax = (keys.ArrowRight||keys.KeyD?1:0) - (keys.ArrowLeft||keys.KeyA?1:0);
-    const ay = (keys.ArrowDown||keys.KeyS?1:0) - (keys.ArrowUp||keys.KeyW?1:0);
-    ship.vx += ax*SHIP_ACC*dt; ship.vy += ay*SHIP_ACC*dt;
-    ship.vx -= ship.vx*SHIP_DAMP*dt; ship.vy -= ship.vy*SHIP_DAMP*dt;
-    ship.vx = Math.max(-SHIP_MAXV, Math.min(SHIP_MAXV, ship.vx));
-    ship.vy = Math.max(-SHIP_MAXV, Math.min(SHIP_MAXV, ship.vy));
-    ship.x = Math.max(20, Math.min(W-20, ship.x + ship.vx*dt));
-    ship.y = Math.max(H-220, Math.min(H-30, ship.y + ship.vy*dt));
+    if (drag) { // one-thumb drag: ship follows finger delta, velocity zeroed
+      ship.x = Math.max(20, Math.min(W-20, drag.sx + (drag.x - drag.ox)));
+      ship.y = Math.max(H-220, Math.min(H-30, drag.sy + (drag.y - drag.oy)));
+      ship.vx = ship.vy = 0;
+    } else {
+      const ax = (keys.ArrowRight||keys.KeyD?1:0) - (keys.ArrowLeft||keys.KeyA?1:0);
+      const ay = (keys.ArrowDown||keys.KeyS?1:0) - (keys.ArrowUp||keys.KeyW?1:0);
+      ship.vx += ax*SHIP_ACC*dt; ship.vy += ay*SHIP_ACC*dt;
+      ship.vx -= ship.vx*SHIP_DAMP*dt; ship.vy -= ship.vy*SHIP_DAMP*dt;
+      ship.vx = Math.max(-SHIP_MAXV, Math.min(SHIP_MAXV, ship.vx));
+      ship.vy = Math.max(-SHIP_MAXV, Math.min(SHIP_MAXV, ship.vy));
+      ship.x = Math.max(20, Math.min(W-20, ship.x + ship.vx*dt));
+      ship.y = Math.max(H-220, Math.min(H-30, ship.y + ship.vy*dt));
+    }
     ship.invuln = Math.max(0, ship.invuln - dt);
     fireT -= dt;
-    if (fireHeld && fireT <= 0) { fireGuns(); fireT = FIRE_EVERY; }
+    if ((fireHeld || touchMode) && fireT <= 0) { fireGuns(); fireT = FIRE_EVERY; }
   } else {
     deadT += dt;
     if (deadT >= RESPAWN_S) {
@@ -435,7 +455,15 @@ function drawHUD() {
   ctx.fillText(`[${pack.id.toUpperCase()}]`, W-14, 42);
   ctx.textAlign = 'left';
   ctx.fillStyle = '#889'; ctx.font = '11px monospace';
-  ctx.fillText('ARROWS/WASD move · SPACE/Z/LMB fire · X/SHIFT/RMB missile · ESC pause — INTERNAL mechanics proof', 14, H-10);
+  ctx.fillText(touchMode ? 'DRAG move · auto-fire ON · MISSILE btn bottom-right — INTERNAL mechanics proof'
+                         : 'ARROWS/WASD move · SPACE/Z/LMB fire · X/SHIFT/RMB missile · ESC pause — INTERNAL mechanics proof', 14, H-10);
+  if (touchMode && mode === 'play') {
+    const b = MISSILE_BTN;
+    ctx.fillStyle = 'rgba(255,212,59,.18)'; ctx.fillRect(b.x, b.y, b.w, b.h);
+    ctx.strokeStyle = '#ffd43b'; ctx.strokeRect(b.x, b.y, b.w, b.h);
+    ctx.fillStyle = '#ffd43b'; ctx.font = '11px monospace'; ctx.textAlign = 'center';
+    ctx.fillText('MISSILE', b.x+b.w/2, b.y+b.h/2+4); ctx.textAlign = 'left';
+  }
 }
 function banner(t) {
   ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(0, H/2-40, W, 80);
@@ -480,7 +508,7 @@ requestAnimationFrame(frame);
 // ---------------- verification hook (read-only; not gameplay) ----------------
 window.__proto = {
   get mode(){return mode}, get pack(){return pack.id}, get chapter(){return chapter},
-  get wave(){return waveIdx+1}, get wavesTotal(){return CHAPTERS[chapter-1].length},
+  get wave(){return waveIdx === undefined ? null : waveIdx+1}, get wavesTotal(){return chapter ? CHAPTERS[chapter-1].length : null},
   get score(){return score}, get lives(){return lives}, get missiles(){return missileN},
   get weapon(){return weaponLv}, get weaponName(){return pack.weapons[weaponLv]},
   get shipX(){return ship ? ship.x : null}, get shipY(){return ship ? ship.y : null},
@@ -490,7 +518,7 @@ window.__proto = {
   get bossHp(){return boss ? boss.hp : null}, get bossMax(){return boss ? boss.max : null},
   get bossX(){return boss ? boss.x : null}, get bossWarn(){return boss ? boss.warn : 0},
   get unlocked(){return unlocked}, get paused(){return paused},
-  get eggs(){return eggs ? eggs.length : 0}, get eggList(){return eggs ? eggs.map(e => ({x:e.x, y:e.y})) : []}, get pickups(){return pickups ? pickups.map(p => ({x:p.x, y:p.y, kind:p.kind})) : []},
+  get eggList(){return eggs ? eggs.map(e => ({x:e.x, y:e.y})) : []},
   BTN, PACKS: Object.keys(PACKS)
 };
 </script>
