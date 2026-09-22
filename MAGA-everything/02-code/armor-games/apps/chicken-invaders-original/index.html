@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Cluck Horizon — MAGA original</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #001a1a; height: 100%; overflow: hidden; }
+  canvas { position: fixed; left: 0; top: 0; touch-action: none; image-rendering: pixelated; }
+  .badge {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 10;
+    background: repeating-linear-gradient(45deg, #0f2a2a, #0f2a2a 12px, #0a1f1f 12px, #0a1f1f 24px);
+    color: #b3ffe3; font: 11px/1.4 monospace; text-align: center; padding: 4px;
+    border-bottom: 1px solid #20c997; letter-spacing: 0.06em;
+  }
+  .mute {
+    position: fixed; top: 26px; right: 8px; z-index: 10;
+    background: #1a1a24; color: #f5c542; border: 1px solid #44445c;
+    font: 11px/1 monospace; padding: 4px 8px; cursor: pointer;
+  }
+</style>
+</head>
+<body>
+<div class="badge">INTERNAL-NO-PUBLIC — idea 001 original IP (Cluck Horizon) · trademark search open before any public ship</div>
+<button id="mute" class="mute" type="button">SOUND ON</button>
+<script type="importmap">
+  { "imports": { "pixi.js": "./vendor/pixi.min.mjs" } }
+</script>
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>
