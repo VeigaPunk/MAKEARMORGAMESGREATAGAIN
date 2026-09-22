@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Swords &amp; Sandals 2 — mechanics proof (INTERNAL)</title>
+<style>
+  html,body{margin:0;background:#1a120b;height:100%;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif}
+  canvas{background:#2a1d10;box-shadow:0 0 40px #000;touch-action:none}
+</style>
+</head>
+<body>
+<canvas id="c" width="960" height="600"></canvas>
+<script>
+"use strict";
+/* Swords & Sandals 2: Emperor's Reign — v1 loop-slice mechanics proof.
+   Spec: 01-design-docs/02-concept-specs/05-swords-and-sandals.md
+   ALL combat constants are DECLARED GUESSES — spec §Open questions marks
+   formulas/damage tables/shop prices TBD from ARCADE playtest. */
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+const W=960,H=600,SAVE_KEY='sas_proto_save';
+
+/* ---------- declared-guess combat constants (TBD from ARCADE) ---------- */
+const BASE_HIT=.75, AGI_HIT=.03, HIT_MIN=.5, HIT_MAX=.97;
+const CRIT_P=.10, CRIT_MUL=1.5, DMG_VAR=.25;
+const HEAVY_MUL=1.7, HEAVY_HIT=-.10, HEAVY_COST=30;
+const STAM_REGEN=12, TAUNT_STAM=18, POTION_HEAL=35, POTION_PRICE=40, MAX_POTIONS=3;
+const XP_TABLE=[0,40,100,180,280,400];          // level i needs XP_TABLE[i]
+const LVL_HP=4, LVL_STR=1, LVL_STAM=4;
+const DEFEAT_GOLD_LOSS=.10;
+
+const OPPONENTS=[ // scripted v1 roster (spec: 3-5 opponents)
+  {name:'BRUTUS THE FEEBLE', hp:60, str:4, agi:3, def:0, gold:60,  xp:40,  skin:'#c9a06b',weapon:'club'},
+  {name:'DECIMUS',           hp:80, str:6, agi:5, def:2, gold:90,  xp:60,  skin:'#a8b0b8',weapon:'sword'},
+  {name:'GAIUS THE WALL',    hp:110,str:7, agi:3, def:5, gold:130, xp:80,  skin:'#8a6f4d',weapon:'shield'},
+  {name:'SWIFT CASSIA',      hp:90, str:9, agi:10,def:2, gold:170, xp:110, skin:'#d4b48c',weapon:'dagger'},
+  {name:'EMPEROR ANTAEUS',   hp:150,str:11,agi:7, def:6, gold:300, xp:200, skin:'#7a4a3a',weapon:'axe',champion:true},
+];
+const WEAPONS=[
+  {name:'Rusty Gladius',    dmg:8,  price:0,   lvl:1},
+  {name:'Legionnaire Sword',dmg:14, price:120, lvl:2},
+  {name:'War Cleaver',      dmg:20, price:260, lvl:3},
+  {name:"Emperor's Edge",   dmg:28, price:450, lvl:5},
+];
+const ARMORS=[
+  {name:'Cloth Rags',   def:0, price:0,   lvl:1},
+  {name:'Leather Hide', def:3, price:100, lvl:1},
+  {name:'Legion Plate', def:6, price:240, lvl:3},
+  {name:'Champion Plate',def:10,price:420,lvl:5},
+];
+const LOOKS=[{skin:'#e8b88a',hair:'#3a2a1a'},{skin:'#c98a5a',hair:'#111'},{skin:'#8a5a3a',hair:'#5a3a1a'}];
+const NAMES=['MAXIMUS','SPARTACUS','CRIXUS','FLAMMA','VERUS','TIGRIS'];
+
+/* ---------- state ---------- */
+let S={screen:'title',glad:null,gold:0,xp:0,level:1,nextOpp:0,potions:1,
+       inventory:{weapon:0,armor:0,ownedW:[0],ownedA:[0]},combat:null,shopMsg:'',champion:false};
+let hits=[],anims=[],floats=[],shake=0,typing=null;
+
+function newGlad(name,look,st){return{name,look,str:st.str,agi:st.agi,vit:st.vit,sta:st.sta};}
+function maxHp(g){return 40+g.vit*6+(S.level-1)*LVL_HP;}
+function maxStam(g){return 40+g.sta*4+(S.level-1)*LVL_STAM;}
+function save(){if(!S.glad)return;localStorage.setItem(SAVE_KEY,JSON.stringify({glad:S.glad,gold:S.gold,xp:S.xp,level:S.level,nextOpp:S.nextOpp,potions:S.potions,inventory:S.inventory,champion:S.champion}));}
+function load(){try{const d=JSON.parse(localStorage.getItem(SAVE_KEY));if(d&&d.glad){Object.assign(S,d);return true;}}catch(e){}return false;}
+function hasSave(){try{return!!JSON.parse(localStorage.getItem(SAVE_KEY)||'null');}catch(e){return false;}}
+
+/* ---------- combat ---------- */
+function startFight(){
+  const o=OPPONENTS[S.nextOpp];
+  S.combat={opp:o,php:maxHp(S.glad),ehp:o.hp,pstam:maxStam(S.glad),estam:40,
+            phase:'player',log:['A wild '+o.name+' appears!'],oppPotion:true,t:0};
+  S.screen='combat';
+}
+function hitChance(atk,def,mod){return Math.max(HIT_MIN,Math.min(HIT_MAX,BASE_HIT+(atk-def)*AGI_HIT+mod));}
+function rollDmg(str,wdmg,def,mul){
+  const base=(wdmg+str*2)*mul, v=base*(1-DMG_VAR/2+Math.random()*DMG_VAR);
+  return Math.max(1,Math.round(v-def));
+}
+function clog(m){S.combat.log.push(m);if(S.combat.log.length>6)S.combat.log.shift();}
+function anim(kind,who){anims.push({kind,who,t:0,dur:kind==='lunge'?28:18});}
+function float(txt,x,y,c){floats.push({txt,x,y,c,t:0});}
+function strike(attacker){ // 'p' or 'e'
+  const c=S.combat,o=c.opp,g=S.glad;
+  if(attacker==='p'){
+    const hc=hitChance(g.agi,o.agi,0);
+    anim('lunge','p');
+    if(Math.random()<hc){
+      const crit=Math.random()<CRIT_P;
+      const d=rollDmg(g.str,WEAPONS[S.inventory.weapon].dmg,o.def,crit?CRIT_MUL:1);
+      c.ehp-=d;anim('hit','e');shake=6;
+      float((crit?'CRIT ':'')+d,700,220,crit?'#ffd23a':'#fff');
+      clog(S.glad.name+(crit?' CRITS':' hits')+' '+o.name+' for '+d);
+    }else{float('MISS!',700,220,'#bbb');clog(S.glad.name+' misses!');}
+  }else{
+    const hc=hitChance(o.agi,g.agi,0);
+    anim('lunge','e');
+    if(Math.random()<hc){
+      const crit=Math.random()<CRIT_P;
+      const d=rollDmg(o.str,8,ARMORS[S.inventory.armor].def,crit?CRIT_MUL:1);
+      c.php-=d;anim('hit','p');shake=6;
+      float((crit?'CRIT ':'')+d,260,220,crit?'#ffd23a':'#ff6a5a');
+      clog(o.name+(crit?' CRITS':' hits')+' '+S.glad.name+' for '+d);
+    }else{float('MISS!',260,220,'#bbb');clog(o.name+' misses!');}
+  }
+}
+function playerAction(a){
+  const c=S.combat;if(!c||c.phase!=='player')return;
+  if(a==='attack'){strike('p');}
+  else if(a==='heavy'){
+    if(c.pstam<HEAVY_COST)return;
+    c.pstam-=HEAVY_COST;anim('lunge','p');
+    if(Math.random()<hitChance(S.glad.agi,c.opp.agi,HEAVY_HIT)){
+      const d=rollDmg(S.glad.str,WEAPONS[S.inventory.weapon].dmg,c.opp.def,HEAVY_MUL);
+      c.ehp-=d;anim('hit','e');shake=9;float(d,700,220,'#ffd23a');clog('HEAVY BLOW for '+d+'!');
+    }else{float('MISS!',700,220,'#bbb');clog('Heavy swing misses!');}
+  }
+  else if(a==='potion'){
+    if(S.potions<=0)return;
+    S.potions--;c.php=Math.min(maxHp(S.glad),c.php+POTION_HEAL);
+    float('+'+POTION_HEAL,260,220,'#7dff8a');clog(S.glad.name+' quaffs a potion (+'+POTION_HEAL+')');
+  }
+  else if(a==='taunt'){c.pstam=Math.min(maxStam(S.glad),c.pstam+TAUNT_STAM);float('HA!',260,180,'#ffd23a');clog(S.glad.name+' taunts the crowd (+'+TAUNT_STAM+' stamina)');}
+  else if(a==='end'){clog(S.glad.name+' holds.');}
+  c.pstam=Math.min(maxStam(S.glad),c.pstam+STAM_REGEN);
+  if(c.ehp<=0){endFight(true);return;}
+  c.phase='enemy';c.t=0;
+}
+function enemyTurn(){
+  const c=S.combat,o=c.opp;
+  if(c.ehp<=0)return;
+  if(c.ehp<o.hp*.35&&c.oppPotion){c.oppPotion=false;c.ehp=Math.min(o.hp,c.ehp+POTION_HEAL);float('+'+POTION_HEAL,700,220,'#7dff8a');clog(o.name+' drinks a vile potion');}
+  else if(c.estam>=HEAVY_COST&&(c.ehp<o.hp*.5||Math.random()<.25)){
+    c.estam-=HEAVY_COST;anim('lunge','e');
+    if(Math.random()<hitChance(o.agi,S.glad.agi,HEAVY_HIT)){
+      const d=rollDmg(o.str,8,ARMORS[S.inventory.armor].def,HEAVY_MUL);
+      c.php-=d;anim('hit','p');shake=9;float(d,260,220,'#ff6a5a');clog(o.name+' lands a HEAVY BLOW for '+d+'!');
+    }else{float('MISS!',260,220,'#bbb');clog(o.name+' heavy swing misses!');}
+  }
+  else strike('e');
+  c.estam=Math.min(60,c.estam+STAM_REGEN);
+  if(c.php<=0){endFight(false);return;}
+  c.phase='player';
+}
+function endFight(won){
+  const c=S.combat,o=c.opp;
+  if(won){
+    S.gold+=o.gold;S.xp+=o.xp;
+    while(S.level<XP_TABLE.length&&S.xp>=XP_TABLE[S.level])S.level++;
+    S.nextOpp++;
+    if(o.champion){S.champion=true;S.screen='champion';}
+    else{S.screen='victory';}
+    clog('');save();
+  }else{
+    S.gold=Math.max(0,Math.round(S.gold*(1-DEFEAT_GOLD_LOSS)));
+    S.screen='defeat';save();
+  }
+  S.combat.result=won;
+}
+
+/* ---------- input: canvas hit-regions (>=48px targets, spec §Controls) ---------- */
+function btn(id,x,y,w,h,label,sub,dis){
+  hits.push({id,x,y,w,h,dis:!!dis});
+  ctx.fillStyle=dis?'#3a3028':'#6b4a2a';ctx.strokeStyle=dis?'#555':'#d8b36a';ctx.lineWidth=2;
+  rrect(x,y,w,h,8);ctx.fill();ctx.stroke();
+  ctx.fillStyle=dis?'#777':'#ffe9b8';ctx.font='bold 18px Georgia';ctx.textAlign='center';
+  ctx.fillText(label,x+w/2,y+(sub?h/2-4:h/2+6));
+  if(sub){ctx.font='12px Georgia';ctx.fillStyle=dis?'#666':'#c9a86a';ctx.fillText(sub,x+w/2,y+h/2+16);}
+}
+function rrect(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+function text(t,x,y,size,col,align){ctx.fillStyle=col||'#ffe9b8';ctx.font=(size>=20?'bold ':'')+size+'px Georgia';ctx.textAlign=align||'center';ctx.fillText(t,x,y);}
+function bar(x,y,w,h,frac,col,bg){ctx.fillStyle=bg||'#3a2418';ctx.fillRect(x,y,w,h);ctx.fillStyle=col;ctx.fillRect(x,y,w*Math.max(0,Math.min(1,frac)),h);ctx.strokeStyle='#000';ctx.strokeRect(x,y,w,h);}
+
+cv.addEventListener('pointerdown',e=>{
+  const r=cv.getBoundingClientRect(),mx=(e.clientX-r.left)*W/r.width,my=(e.clientY-r.top)*H/r.height;
+  for(let i=hits.length-1;i>=0;i--){const b=hits[i];
+    if(!b.dis&&mx>=b.x&&mx<=b.x+b.w&&my>=b.y&&my<=b.y+b.h){onBtn(b.id);return;}}
+});
+document.addEventListener('keydown',e=>{
+  if(typing==='name'){
+    if(e.key==='Enter'){typing=null;}
+    else if(e.key==='Backspace'){create.name=create.name.slice(0,-1);}
+    else if(/^[a-zA-Z ]$/.test(e.key)&&create.name.length<14){create.name+=e.key.toUpperCase();}
+    e.preventDefault();return;
+  }
+  if(e.key==='Enter'){onBtn(S.screen==='title'?'new':'confirm');}
+});
+
+/* ---------- create screen state ---------- */
+let create={name:'MAXIMUS',look:0,pts:15,st:{str:5,agi:5,vit:5,sta:5}};
+const STAT_KEYS=['str','agi','vit','sta'],STAT_LABEL={str:'STR — damage',agi:'AGI — hit/dodge',vit:'VIT — health',sta:'STA — stamina'};
+
+function onBtn(id){
+  if(S.screen==='title'){
+    if(id==='new'){S.screen='create';create={name:NAMES[Math.floor(Math.random()*NAMES.length)],look:0,pts:15,st:{str:5,agi:5,vit:5,sta:5}};}
+    if(id==='continue'&&load()){S.screen='hub';}
+  }
+  else if(S.screen==='create'){
+    if(id==='name')typing='name';
+    if(id==='look-')create.look=(create.look+LOOKS.length-1)%LOOKS.length;
+    if(id==='look+')create.look=(create.look+1)%LOOKS.length;
+    if(id.startsWith('st+')){const k=id.slice(3);if(create.pts>0){create.st[k]++;create.pts--;}}
+    if(id.startsWith('st-')){const k=id.slice(3);if(create.st[k]>1){create.st[k]--;create.pts++;}}
+    if(id==='begin'&&create.name.length>0){
+      S.glad=newGlad(create.name,create.look,create.st);S.gold=80;S.xp=0;S.level=1;S.nextOpp=0;S.potions=1;
+      S.inventory={weapon:0,armor:0,ownedW:[0],ownedA:[0]};S.champion=false;save();S.screen='hub';
+    }
+  }
+  else if(S.screen==='hub'){
+    if(id==='fight')startFight();
+    if(id==='shop'){S.screen='shop';S.shopMsg='';}
+    if(id==='quit'){save();S.screen='title';}
+  }
+  else if(S.screen==='combat'){
+    if(id.startsWith('act:'))playerAction(id.slice(4));
+    if(id==='confirm'){S.screen='hub';S.combat=null;}
+  }
+  else if(S.screen==='shop'){
+    if(id==='back'){save();S.screen='hub';}
+    if(id.startsWith('buyW:'))buy(WEAPONS,+id.slice(5),'W');
+    if(id.startsWith('buyA:'))buy(ARMORS,+id.slice(5),'A');
+    if(id==='buyP'){
+      if(S.potions>=MAX_POTIONS)S.shopMsg='Potion belt full ('+MAX_POTIONS+')';
+      else if(S.gold<POTION_PRICE)S.shopMsg='Not enough gold';
+      else{S.gold-=POTION_PRICE;S.potions++;S.shopMsg='Bought a potion';}
+    }
+    if(id.startsWith('eqW:'))S.inventory.weapon=+id.slice(4);
+    if(id.startsWith('eqA:'))S.inventory.armor=+id.slice(4);
+  }
+  else if(S.screen==='victory'||S.screen==='defeat'||S.screen==='champion'){
+    if(id==='confirm'){S.screen='hub';S.combat=null;}
+  }
+}
+function buy(list,i,kind){
+  const it=list[i],owned=kind==='W'?S.inventory.ownedW:S.inventory.ownedA;
+  if(owned.includes(i)){S.shopMsg='Already owned';return;}
+  if(S.level<it.lvl){S.shopMsg='Requires level '+it.lvl;return;}
+  if(S.gold<it.price){S.shopMsg='Not enough gold';return;}
+  S.gold-=it.price;owned.push(i);
+  if(kind==='W')S.inventory.weapon=i;else S.inventory.armor=i;
+  S.shopMsg='Bought + equipped '+it.name;
+}
+
+/* ---------- render ---------- */
+function drawGlad(x,y,g,look,flip,hurt,lunge){
+  const sk=LOOKS[look!==undefined?look:g.look];
+  ctx.save();ctx.translate(x+(lunge?(flip?-30:30):0),y);if(flip)ctx.scale(-1,1);
+  if(hurt)ctx.globalAlpha=.5+Math.sin(Date.now()/40)*.3;
+  ctx.fillStyle=sk.skin;ctx.fillRect(-14,-70,28,40);          // torso
+  ctx.fillStyle='#5a3a20';ctx.fillRect(-16,-32,32,10);        // belt
+  ctx.fillStyle=sk.skin;ctx.fillRect(-12,-30,9,30);ctx.fillRect(3,-30,9,30); // legs
+  ctx.fillStyle=sk.skin;ctx.beginPath();ctx.arc(0,-84,14,0,7);ctx.fill();    // head
+  ctx.fillStyle=sk.hair;ctx.fillRect(-12,-98,24,8);           // hair
+  ctx.fillStyle='#888';ctx.fillRect(14,-66,26,5);             // sword arm
+  ctx.restore();
+}
+function render(){
+  hits=[];ctx.save();
+  if(shake>0){ctx.translate((Math.random()-.5)*shake,(Math.random()-.5)*shake);shake*=.9;if(shake<.5)shake=0;}
+  ctx.fillStyle='#2a1d10';ctx.fillRect(-20,-20,W+40,H+40);
+  // arena backdrop
+  ctx.fillStyle='#3d2a16';ctx.fillRect(0,380,W,220);
+  ctx.fillStyle='#54401f';for(let i=0;i<12;i++)ctx.fillRect(i*84,360,60,20);
+  text('· INTERNAL MECHANICS PROOF — NOT FOR PUBLIC RELEASE ·',W/2,592,11,'#7a6a4a');
+
+  if(S.screen==='title'){
+    text('SWORDS & SANDALS II',W/2,150,52,'#ffd23a');
+    text('Emperor\'s Reign — v1 loop slice',W/2,190,20,'#c9a86a');
+    drawGlad(380,330,S.glad||{look:0},0,false,false,false);
+    drawGlad(580,330,{look:2},2,true,false,false);
+    btn('new',W/2-140,420,280,56,'NEW GLADIATOR');
+    if(hasSave())btn('continue',W/2-140,490,280,56,'CONTINUE','saved gladiator found');
+  }
+  else if(S.screen==='create'){
+    text('CREATE YOUR GLADIATOR',W/2,60,34,'#ffd23a');
+    text('name:',240,120,16,'#c9a86a','right');
+    btn('name',260,92,240,48,create.name+(typing==='name'?'_':''),'click to type');
+    btn('look-',560,92,56,48,'<');btn('look+',760,92,56,48,'>');
+    drawGlad(680,240,{look:create.look},create.look,false,false,false);
+    text('look '+(create.look+1)+'/'+LOOKS.length,688,290,14,'#c9a86a');
+    text('skill points: '+create.pts,240,180,20,'#ffd23a','right');
+    STAT_KEYS.forEach((k,i)=>{
+      const y=210+i*56;
+      text(STAT_LABEL[k],240,y+30,16,'#ffe9b8','right');
+      text(''+create.st[k],300,y+30,22,'#ffd23a');
+      btn('st-'+k,340,y,56,48,'-','',create.st[k]<=1);
+      btn('st+'+k,410,y,56,48,'+','',create.pts<=0);
+    });
+    const g={vit:create.st.vit,sta:create.st.sta};
+    text('HP '+(40+g.vit*6)+' · stamina '+(40+g.sta*4)+' · dmg +'+(create.st.str*2),240,470,15,'#c9a86a','right');
+    btn('begin',W/2-140,510,280,56,'ENTER THE ARENA','',create.name.length===0);
+  }
+  else if(S.screen==='hub'){
+    text('THE ARENA GROUNDS',W/2,60,34,'#ffd23a');
+    drawGlad(200,300,S.glad,S.glad.look,false,false,false);
+    text(S.glad.name,200,340,22,'#ffd23a');
+    text('Lv '+S.level+' · '+S.xp+' xp · '+S.gold+'g · '+S.potions+' potions',200,368,15,'#c9a86a');
+    text(WEAPONS[S.inventory.weapon].name+' / '+ARMORS[S.inventory.armor].name,200,390,13,'#a89878');
+    const done=S.nextOpp>=OPPONENTS.length;
+    if(done){text('All opponents defeated — the Emperor\'s reign is yours.',W/2,180,18,'#7dff8a');}
+    else{
+      const o=OPPONENTS[S.nextOpp];
+      text('NEXT OPPONENT',620,140,14,'#c9a86a');
+      text(o.name,620,170,24,o.champion?'#ff6a5a':'#ffe9b8');
+      text('hp '+o.hp+' · str '+o.str+' · agi '+o.agi+' · def '+o.def,620,196,14,'#a89878');
+      text('purse '+o.gold+'g · '+o.xp+' xp',620,216,13,'#c9a86a');
+      drawGlad(620,330,{look:2},2,true,false,false);
+      btn('fight',520,420,200,56,'TO BATTLE!');
+    }
+    btn('shop',740,420,160,56,'SMITHY','weapons & armor');
+    btn('quit',60,510,160,48,'SAVE & QUIT');
+    text('fights won: '+S.nextOpp+'/'+OPPONENTS.length,620,510,14,'#a89878');
+  }
+  else if(S.screen==='combat'){
+    const c=S.combat,o=c.opp;
+    const lp=anims.find(a=>a.who==='p'&&a.kind==='lunge'),le=anims.find(a=>a.who==='e'&&a.kind==='lunge');
+    const hp_=anims.find(a=>a.who==='p'&&a.kind==='hit'),he=anims.find(a=>a.who==='e'&&a.kind==='hit');
+    drawGlad(260,340,S.glad,S.glad.look,false,!!hp_,!!lp);
+    drawGlad(700,340,{look:2},2,true,!!he,!!le);
+    text(S.glad.name,260,120,18,'#ffd23a');text(o.name,700,120,18,'#ff9a8a');
+    bar(140,135,240,16,c.php/maxHp(S.glad),'#d84a3a');text(Math.max(0,c.php)+'/'+maxHp(S.glad),260,148,11,'#fff');
+    bar(580,135,240,16,c.ehp/o.hp,'#d84a3a');text(Math.max(0,c.ehp)+'/'+o.hp,700,148,11,'#fff');
+    bar(140,158,240,10,c.pstam/maxStam(S.glad),'#3a8ad8');text('stamina '+Math.floor(c.pstam),260,178,11,'#8ac4ff');
+    // log
+    ctx.fillStyle='rgba(0,0,0,.35)';ctx.fillRect(140,395,680,90);
+    c.log.slice(-4).forEach((l,i)=>text(l,480,415+i*20,14,i===c.log.slice(-4).length-1?'#ffe9b8':'#a89878'));
+    // action bar — >=48px targets (spec §Controls mobile note)
+    const dis=c.phase!=='player';
+    text(c.phase==='player'?'YOUR MOVE':'enemy move…',480,380,15,c.phase==='player'?'#7dff8a':'#ff9a8a');
+    btn('act:attack',140,505,140,52,'ATTACK','always legal',dis);
+    btn('act:heavy',295,505,140,52,'HEAVY','x1.7 dmg · 30 stam',dis||c.pstam<HEAVY_COST);
+    btn('act:potion',450,505,140,52,'POTION x'+S.potions,'+'+POTION_HEAL+' hp',dis||S.potions<=0);
+    btn('act:taunt',605,505,120,52,'TAUNT','+'+TAUNT_STAM+' stam',dis);
+    btn('act:end',740,505,110,52,'HOLD','end turn',dis);
+  }
+  else if(S.screen==='victory'||S.screen==='defeat'||S.screen==='champion'){
+    const c=S.combat;
+    if(S.screen==='victory'){text('VICTORY!',W/2,180,48,'#ffd23a');text('+'+c.opp.gold+' gold · +'+c.opp.xp+' xp',W/2,225,20,'#7dff8a');
+      if(S.xp>=XP_TABLE[S.level-1]||S.level>1)text('Level '+S.level+' — the crowd roars',W/2,255,16,'#c9a86a');}
+    if(S.screen==='defeat'){text('DEFEAT',W/2,180,48,'#ff6a5a');text('You are dragged from the arena. (-'+Math.round(DEFEAT_GOLD_LOSS*100)+'% gold)',W/2,225,18,'#c9a86a');
+      text('Your gladiator lives to fight again.',W/2,255,15,'#a89878');}
+    if(S.screen==='champion'){text('CHAMPION OF THE ARENA!',W/2,170,44,'#ffd23a');text('Emperor Antaeus falls. v1 slice complete.',W/2,215,20,'#7dff8a');
+      text('(full tournament tree deferred — spec §Content scope Deferred)',W/2,245,14,'#a89878');}
+    drawGlad(W/2,380,S.glad,S.glad.look,false,false,false);
+    btn('confirm',W/2-120,470,240,56,S.screen==='defeat'?'LIMP HOME':'RETURN TO HUB');
+  }
+  else if(S.screen==='shop'){
+    text('THE SMITHY',W/2,55,34,'#ffd23a');
+    text(S.gold+' gold · level '+S.level+' · '+S.potions+'/'+MAX_POTIONS+' potions',W/2,85,16,'#c9a86a');
+    text('WEAPONS (dmg)',200,125,16,'#ffe9b8');text('ARMOR (def)',560,125,16,'#ffe9b8');
+    WEAPONS.forEach((w,i)=>{
+      const owned=S.inventory.ownedW.includes(i),eq=S.inventory.weapon===i,locked=S.level<w.lvl;
+      const y=140+i*58;
+      text(w.name+' +'+w.dmg,140,y+18,14,locked?'#777':'#ffe9b8','left');
+      text(locked?'lvl '+w.lvl:owned?(eq?'EQUIPPED':'owned'):w.price+'g',140,y+36,12,'#a89878','left');
+      if(owned&&!eq)btn('eqW:'+i,300,y,90,48,'EQUIP');
+      else if(!owned)btn('buyW:'+i,300,y,90,48,'BUY','',locked||S.gold<w.price);
+    });
+    ARMORS.forEach((a,i)=>{
+      const owned=S.inventory.ownedA.includes(i),eq=S.inventory.armor===i,locked=S.level<a.lvl;
+      const y=140+i*58;
+      text(a.name+' +'+a.def,500,y+18,14,locked?'#777':'#ffe9b8','left');
+      text(locked?'lvl '+a.lvl:owned?(eq?'EQUIPPED':'owned'):a.price+'g',500,y+36,12,'#a89878','left');
+      if(owned&&!eq)btn('eqA:'+i,660,y,90,48,'EQUIP');
+      else if(!owned)btn('buyA:'+i,660,y,90,48,'BUY','',locked||S.gold<a.price);
+    });
+    btn('buyP',770,140,140,48,'POTION '+POTION_PRICE+'g','heal '+POTION_HEAL,S.gold<POTION_PRICE||S.potions>=MAX_POTIONS);
+    if(S.shopMsg)text(S.shopMsg,W/2,420,16,'#ffd23a');
+    btn('back',W/2-100,510,200,52,'BACK TO HUB');
+  }
+  // floating combat text
+  floats.forEach(f=>{ctx.globalAlpha=1-f.t/50;text(f.txt,f.x,f.y-f.t*1.2,20,f.c);ctx.globalAlpha=1;});
+  ctx.restore();
+}
+
+/* ---------- observation hook (read-only) ---------- */
+window.__proto=()=>({screen:S.screen,gold:S.gold,xp:S.xp,level:S.level,nextOpp:S.nextOpp,
+  potions:S.potions,champion:S.champion,glad:S.glad?{name:S.glad.name,str:S.glad.str,agi:S.glad.agi,vit:S.glad.vit,sta:S.glad.sta,look:S.glad.look}:null,
+  inv:S.inventory?{weapon:S.inventory.weapon,armor:S.inventory.armor,ownedW:[...S.inventory.ownedW],ownedA:[...S.inventory.ownedA]}:null,
+  combat:S.combat?{phase:S.combat.phase,php:S.combat.php,ehp:S.combat.ehp,pstam:Math.floor(S.combat.pstam),opp:S.combat.opp.name,log:[...S.combat.log]}:null,
+  shopMsg:S.shopMsg,hasSave:hasSave()});
+
+/* ---------- main loop ---------- */
+let last=0;
+function frame(t){
+  const dt=Math.min(50,t-last);last=t;
+  anims.forEach(a=>a.t+=dt/16);anims=anims.filter(a=>a.t<a.dur);
+  floats.forEach(f=>f.t+=dt/16);floats=floats.filter(f=>f.t<50);
+  if(S.screen==='combat'&&S.combat&&S.combat.phase==='enemy'){
+    S.combat.t+=dt;if(S.combat.t>650)enemyTurn();
+  }
+  render();requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
