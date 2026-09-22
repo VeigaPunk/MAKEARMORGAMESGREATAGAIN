@@ -1,0 +1,152 @@
+{
+  "wave": "r05-fixes",
+  "reportDir": ".ufo/scopes/maga-verify/r05-wave",
+  "context": "# Goal\nmaga-verify round 5 — independent evidence arm for fleet maga. You are ONE L2 probe lane in a 29-lane wave. Verify, never build: find what is broken, do not confirm what works. Forge landed ~10 defect fixes as UNCOMMITTED work — verify current bytes.\n\n# Constraints\n- Repo root: /home/vgpnk/Projects/MAKEARMORGAMESGREATAGAIN — your only surface.\n- READ-ONLY on all source: NEVER edit files under MAGA-everything/, prototypes/, hardest/, or any source tree. NEVER run npm install / npm anything. NEVER start dev servers (all already running).\n- You MAY write screenshots ONLY to verification/evidence/r05-<YourName>-*.png. Return your FULL verdict markdown as your final message regardless — the L1 judge integrates it.\n- Browser: eval `browser.open({name:'<YourName>', url})` — ALWAYS pass a unique `name` for your tab (r4 lesson: unnamed tabs get hijacked by other lanes). Use tab.evaluate for page globals (tab.run can't see them). For file:// pages pass the full file:/// URL.\n- Dev servers: boxhead :5173 · impossible :5174 · burger :5175 · chicken-invaders replica :5176 · chicken-invaders-original (cluck) :5177 · swords-and-sandals :5178.\n- Evidence rule: every pass/fail carries an artifact (screenshot, console log, command output, measured value). Label inference. 'Not yet built' ≠ 'built wrong' — report schedule facts vs defects differently.\n\n# Contract\nReturn markdown: ## Verdict (PASS|PARTIAL|FAIL|STATIC-ONLY) · ## Evidence (values, timings, file:line, screenshot paths) · ## Defects (new findings, numbered suggestions D-41+) · ## Notes.",
+  "items": [
+    {
+      "name": "BoxheadPause",
+      "role": "scout",
+      "prompt": "Verify D-26 fix live: boxhead pause. Server http://localhost:5173. Source read-only: MAGA-everything/02-code/armor-games/apps/boxhead/src/game.ts (state 'paused' added ~line 307). Steps: start solo game; press Escape (or P) mid-run → expect PAUSED banner 'ESC / P — resume · M / ENTER — menu'; confirm zombies/players frozen (sample positions across 2s); press Escape again → resumes; pause again → press M → returns to mode select. Also: does pause work during waveBreak? During 'dead'/'victory' screens (should NOT)? Record exact behavior + screenshots to verification/evidence/r05-BoxheadPause-*.png."
+    },
+    {
+      "name": "BoxheadD16",
+      "role": "sentinel",
+      "prompt": "Adversarial verify D-16 fix: boxhead invulnerability wall-time. Server http://localhost:5173. Source read-only: apps/boxhead/src/game.ts — tickPlaying now clamps gameplayDt = min(dt, 0.05). Steps: start solo; get hit (note invuln duration ~1s); then simulate throttled frames — switch browser tab away 5s mid-invuln, or use CDP Emulation.setCPUThrottlingRate, or evaluate manual large-dt ticks if a debug hook exists. Check: does invuln still expire during background tab? Can stacked zombies still multi-hit in one frame? Report whether the clamp actually protects (evidence: hit counts, hp values, timestamps). Screenshots to verification/evidence/r05-BoxheadD16-*.png."
+    },
+    {
+      "name": "BoxheadDMCrates",
+      "role": "scout",
+      "prompt": "Verify D-25 fix live: deathmatch ammo starvation. Server http://localhost:5173. Source read-only: apps/boxhead/src/game.ts updateProps — crate spawner now runs in deathmatch (was solo/coop only); comment cites DD-77/DD-18 pending ARCADE ruling. Steps: start a deathmatch (2P mode); play until ammo depletes; observe whether ammo crates spawn (crateTimer=12, max 2); confirm pickups refill ammo and the match can conclude. ALSO flag: spec 01-boxhead.md says no DM pickups — this is a deliberate spec divergence; record it as a divergence entry (not a defect) with both sources cited. Screenshots to verification/evidence/r05-BoxheadDMCrates-*.png."
+    },
+    {
+      "name": "BoxheadStress",
+      "role": "scout",
+      "prompt": "Verify D-08 enabler: ?stress mode. Server http://localhost:5173/?stress. Source read-only: apps/boxhead/src/game.ts — stress now tops field to ~100 movers incl runner variants (was 60). Steps: open :5173/?stress, start solo; count on-screen zombies (via __maga hook if present, else visual estimate + screenshot); confirm count approaches ~100 and runners appear; sample fps/frame-time over 10s (performance.now deltas or devtools metrics) — spec F3 budget is 50–100 movers. Report measured mover count + fps. Screenshots to verification/evidence/r05-BoxheadStress-*.png."
+    },
+    {
+      "name": "BoxheadTouch",
+      "role": "sentinel",
+      "prompt": "Adversarial verify boxhead touch fixes under emulation. Server http://localhost:5173. Source read-only: apps/boxhead/src/touch.ts — pointerup/pointercancel now bound on window (D-14-class fix, same as shmup D-32). Steps: emulate 390×844 portrait coarse-pointer device; start solo; use touchscreen drag on the move stick then release OUTSIDE the canvas/viewport edge — does the player keep moving (bug) or stop (fixed)? Test fire zone similarly. Also test pause via touch (tap during pause → menu per new code). Record anomalies. Screenshots to verification/evidence/r05-BoxheadTouch-*.png."
+    },
+    {
+      "name": "BoxheadRegress",
+      "role": "sentinel",
+      "prompt": "Regression sweep: boxhead core loop on current uncommitted bytes. Server http://localhost:5173. Steps: full solo loop (title→mode→room→playing→die→dead→menu); co-op spawn check; deathmatch start. Re-check OPEN items: D-18 (banner/HUD bleed on menus — cosmetic, still present?), D-19 (grenade self-damage — still damages owner? design ruling owed). Also watch for NEW breakage from the pause/dt/crate churn: e.g. pause state leaking into menus, crates spawning in weird spots, dt clamp breaking wave timing. Screenshots to verification/evidence/r05-BoxheadRegress-*.png."
+    },
+    {
+      "name": "ImpossibleFixes",
+      "role": "scout",
+      "prompt": "Re-verify D-33/34 on CURRENT bytes + new features. Server http://localhost:5174. Source read-only: apps/impossible/src/main.ts. New since r4: best-progress persistence (save 'impossible'/'best-progress' on die + clear) and window.__proto debug hook under ?debug. Steps: (1) open :5174/?debug; no-jump run → confirm death at x≈1410 (gap kill); teleport(2700) via __proto → confirm block death at x≈2967. (2) Die at some x, reload page, check best-progress persisted (localStorage maga:impossible:best-progress + __proto.best). (3) Confirm __proto getters work (state/x/y/attempt/deaths/grounded/progress/paused/best/LEVEL_END). Screenshots to verification/evidence/r05-ImpossibleFixes-*.png."
+    },
+    {
+      "name": "ImpossibleClear",
+      "role": "sentinel",
+      "prompt": "Frontier item: prove/disprove impossible level clearability. Server http://localhost:5174/?debug (gives __proto hook with teleport + LEVEL data). Source read-only: apps/impossible/src/main.ts (LEVEL array, hazards). Steps: (a) extract LEVEL from __proto; compute required jump timings per hazard; (b) attempt a scripted full clear — either a deterministic autoplayer (dispatch keydown at computed x positions via rAF polling of __proto.x) or segment-by-segment teleport verification that each hazard is passable; (c) also make one honest manual attempt for feel. Report: cleared? max x reached legitimately? any impossible hazard (schedule fact vs defect)? Screenshots to verification/evidence/r05-ImpossibleClear-*.png."
+    },
+    {
+      "name": "BurgerGrid",
+      "role": "scout",
+      "prompt": "Verify burger-tycoon drawPane grid refactor. Server http://localhost:5175. Source read-only: apps/burger-tycoon/src/main.ts (new drawPane fn, grid mode) + sim.ts (act() returns null when state unchanged). Steps: open :5175; screenshot the layout — are all 4 panes (Farmland/Feedlot/Restaurant/HQ) now visible in a grid, or still tab-switched? Click actions in each pane via real pointer events; confirm hit regions align with drawn buttons (click each action, check log/state change); find an action that is a no-op (e.g. action with unmet precondition) and confirm it does NOT log/consume. Record console errors. Screenshots to verification/evidence/r05-BurgerGrid-*.png."
+    },
+    {
+      "name": "BurgerRegress",
+      "role": "sentinel",
+      "prompt": "Regression: burger collapse chain post-refactor. Server http://localhost:5175. Source read-only: apps/burger-tycoon/src/{main,sim}.ts. r4 verified acc #2/#3 (dirty→profit+backlash→rep collapse GAME OVER ~135s). Steps: enable all dirty actions; run to collapse; confirm the causal chain still works on new bytes (timestamps: dirty on → backlash rise → disease/event → rep drain → GAME OVER overlay → restart). Also idle 60s: sim still advances (acc #7). Any regression from drawPane/act() changes = new defect. Screenshots to verification/evidence/r05-BurgerRegress-*.png."
+    },
+    {
+      "name": "SasD23",
+      "role": "scout",
+      "prompt": "Verify D-23 fix live: sas defeated persistence. Server http://localhost:5178. Source read-only: apps/swords-and-sandals/src/main.ts — saveData now restores defeated + validSave() schema-gates corrupt saves. Steps: create gladiator, win bout 1, reload page → hub must offer 'Next Opponent' (not 'Start First Bout'). Then corrupt the save: localStorage set maga:swords-and-sandals:slot to malformed JSON / missing fields / defeated=99 → reload → expect fresh create (validSave rejects), NOT a crash or weird state. Record exact behavior. Screenshots to verification/evidence/r05-SasD23-*.png."
+    },
+    {
+      "name": "SasD2728",
+      "role": "sentinel",
+      "prompt": "Live-verify D-27/D-28 fixes (were static-only). Server http://localhost:5178. Source read-only: apps/swords-and-sandals/src/main.ts. D-27 (reload stat double-dip): buy weapon (+2), note weapon bonus; reload page; check weapon bonus did NOT re-apply/stack (owned[] persists, bonus applied once). D-28 (duplicate purchase): buy an item, return to shop → item must show 'Owned'/disabled; attempt click anyway → gold must not decrease again. Also try: buy item, reload, confirm still Owned. Report pass/fail per defect with gold/weapon values. Screenshots to verification/evidence/r05-SasD2728-*.png."
+    },
+    {
+      "name": "SasD2930",
+      "role": "scout",
+      "prompt": "Verify D-29/D-30 status on current bytes. Server http://localhost:5178. Source read-only: apps/swords-and-sandals/src/main.ts. D-29: Imperial Buckler gate changed 3→2 — reach level 2 (win ~2 bouts, xp/40) and confirm Buckler purchasable. D-30 (complete-screen replay exploit): defeat all 4 opponents → V1 COMPLETE screen → Return to Hub → confirm NO 'Start First Bout'/'Next Opponent' button (gated by defeated<opponents.length); try to force a bout anyway (e.g. call startFight via console if reachable, or check button absence). Report both. Screenshots to verification/evidence/r05-SasD2930-*.png."
+    },
+    {
+      "name": "SasD31",
+      "role": "scout",
+      "prompt": "Verify D-31 fix: name injection. Server http://localhost:5178. Source read-only: apps/swords-and-sandals/src/main.ts — renderHub now uses textContent for g.name (was innerHTML interpolation). Steps: create gladiator named `<img src=x onerror=window.__pwned=1>` (or similar); reach hub; evaluate window.__pwned — must be undefined; confirm name renders as literal text. Also check log lines and arena header for other injection sinks (log() uses innerHTML on logLines — can a name reach logLines?). Report all sinks found. Screenshots to verification/evidence/r05-SasD31-*.png."
+    },
+    {
+      "name": "SasProto",
+      "role": "critic",
+      "prompt": "Independently verify prototypes/swords-and-sandals.md claim card against prototypes/swords-and-sandals.html (file://, zero deps). Claims to test (each): create (name+look+15-pt stat spread) → 5 scripted opponents → champion screen; turn-gated combat (actions disabled during enemy phase); ATTACK/HEAVY/POTION/TAUNT/HOLD kit with stamina rules; stats affect combat (STR dmg, AGI misses, VIT hp); shop level-gates + insufficient-gold refusal; defeat → hub with save intact (−10% gold); touch-only fight completable; localStorage sas_proto_save persist across reload; zero console errors. Steps: open file:///home/vgpnk/Projects/MAKEARMORGAMESGREATAGAIN/prototypes/swords-and-sandals.html; real clicks/taps only; read window.__proto; confirm/refute each claim with values. Screenshots to verification/evidence/r05-SasProto-*.png."
+    },
+    {
+      "name": "ShmupD32Live",
+      "role": "sentinel",
+      "prompt": "Live-verify D-32 fix on both shmup apps. Servers http://localhost:5176 (replica) + :5177 (cluck). Source read-only: packages/shmup-core/src/touch.ts — pointerup/pointercancel now window-level with capture. Steps: emulate coarse-pointer device (390×844); start game on EACH app; drag virtual stick, slide finger off-canvas, release → ship must STOP (pre-fix: kept moving). Test fire button release outside too. Confirm no regression: normal touch play still works, menus still tappable. Screenshots to verification/evidence/r05-ShmupD32Live-*.png."
+    },
+    {
+      "name": "ShmupTypes",
+      "role": "scout",
+      "prompt": "Verify D-38 fix live: per-type enemy visuals. Servers http://localhost:5176 + :5177. Source read-only: packages/shmup-core/src/render.ts drawBird now takes type/boss variant colors from pack.enemyTypes/pack.bosses; packs.ts cluck types differentiated (GLIDER 1.15×, BRUISER 0.85×/hp3). Steps: play each app until multiple enemy types on screen; screenshot — are types visually distinct (different colors)? On cluck, confirm GLIDER faster / BRUISER tankier if observable. On replica, are types still stat-identical (D-38 was replica placeholder — check if packs.ts now differentiates replica too)? Screenshots to verification/evidence/r05-ShmupTypes-*.png."
+    },
+    {
+      "name": "ShmupSimChurn",
+      "role": "revenger",
+      "prompt": "Static review of uncommitted shmup-core churn. Read packages/shmup-core/src/{sim.ts,packs.ts,render.ts,touch.ts} diffs (git diff in repo root) + full current files. Questions: (1) D-37 boss names — does render.ts now draw pack.bosses[].name, or still generic 'BOSS'? (2) D-36 wave counter — waveIdx clamped post-final-wave? (3) D-39 — gift/food/enemy strings still dead? comb/beak still hardcoded? (4) Any NEW defect introduced by the sim.ts/packs.ts changes (spawn logic, boss type field, scoring)? Cite file:line. STATIC-ONLY verdict with a defect list."
+    },
+    {
+      "name": "ShmupReplicaEnd",
+      "role": "sentinel",
+      "prompt": "Frontier: replica shmup endgame. Server http://localhost:5176. Source read-only: packages/shmup-core/src/sim.ts + packs.ts (replica pack: chapters, bosses). Steps: play to game-over (die repeatedly — record lives/continues/game-over screen + restart path); then play to chapter-2 boss (survive ch1, document chapter transition, boss warning/fight/kill, reward). If full run too long, use any debug/state hook to fast-forward but LABEL it. Record wave structure vs spec 04-chicken-invaders.md. Screenshots to verification/evidence/r05-ShmupReplicaEnd-*.png."
+    },
+    {
+      "name": "HardestBoot",
+      "role": "scout",
+      "prompt": "Probe hardest/ boot surface (NEW, sibling maga-hardest built it — verify independently). Open file:///home/vgpnk/Projects/MAKEARMORGAMESGREATAGAIN/hardest/index.html. Read hardest/README.md + manifest.js first. Steps: record console errors/warnings; menu/level-select render; start level 1 — red square moves via WASD/arrows, blue dots patrol, death on touch, coin collect, green zones; test R restart, Esc pause/back, Enter next, M mute; touch drag joystick if emulatable; check localStorage save keys (unlocks/best/medals/total deaths). Screenshots to verification/evidence/r05-HardestBoot-*.png."
+    },
+    {
+      "name": "HardestEngine",
+      "role": "revenger",
+      "prompt": "Static reconstruction of hardest/ (no runtime needed). Read hardest/engine.js, game.js, autopilot.js, validate.mjs, LEVEL-FORMAT.md, manifest.js + 2-3 sample levels. Reconstruct: physics model (240Hz fixed step claim — verify in code), collision model (dot radius vs square), coin→goal arming, keys/doors, teleports, checkpoint logic, medal tiers, save schema. Then adversarial review: hunt for tunneling at 240Hz, off-by-one in goal arming, teleport loops, door-state persistence bugs, autopilot assumptions that could pass a broken level. Cite file:line. STATIC-ONLY verdict + defect candidates."
+    },
+    {
+      "name": "HardestValidate",
+      "role": "executor",
+      "prompt": "Run the hardest corpus gate: `node hardest/validate.mjs` in /home/vgpnk/Projects/MAKEARMORGAMESGREATAGAIN (read-only — it validates level files, writes nothing; if it tries to write, stop and report). Claim: 32/32 levels schema-valid + autopilot-clearable. Steps: run it, capture full output + exit code + wall time; if failures, capture which levels and why. Also run `node hardest/gen-manifest.mjs --check` or diff manifest.js vs levels/ dir listing (is manifest stale?). Report raw output verbatim in your verdict."
+    },
+    {
+      "name": "HardestLvA",
+      "role": "scout",
+      "prompt": "Browser-verify hardest levels 1–8 completable. Open file:///home/vgpnk/Projects/MAKEARMORGAMESGREATAGAIN/hardest/index.html. The game ships autopilot.js (deterministic solver) — check if it's exposed (window.HARDEST or similar) and can drive a level in-browser; if so, run levels 1–8 through it and record clear/deaths/time per level. If not exposed, manually play levels 1–3 and statically sanity-check 4–8. Record per-level: cleared? deaths? medal awarded? any level that seems impossible or buggy (dots through walls, unreachable coins, broken doors). Screenshots to verification/evidence/r05-HardestLvA-*.png."
+    },
+    {
+      "name": "HardestLvB",
+      "role": "scout",
+      "prompt": "Browser-verify hardest levels 9–16 completable. Same protocol as HardestLvA: file:///home/vgpnk/Projects/MAKEARMORGAMESGREATAGAIN/hardest/index.html, use autopilot.js if exposed, else manual + static. You may need to unlock levels — check save/unlock mechanism (localStorage) or level-select gating; if gated, either play through or evaluate the unlock predicate. Record per-level clear/deaths/medal + anomalies. Screenshots to verification/evidence/r05-HardestLvB-*.png."
+    },
+    {
+      "name": "HardestLvC",
+      "role": "scout",
+      "prompt": "Browser-verify hardest levels 17–24 completable. Same protocol: file:///home/vgpnk/Projects/MAKEARMORGAMESGREATAGAIN/hardest/index.html, autopilot if exposed, unlock via playthrough or save predicate. Record per-level clear/deaths/medal + anomalies. Screenshots to verification/evidence/r05-HardestLvC-*.png."
+    },
+    {
+      "name": "HardestLvD",
+      "role": "scout",
+      "prompt": "Browser-verify hardest levels 25–32 completable (incl. 30-hardest, 31-keymaster, 32-shortcut). Same protocol: file:///home/vgpnk/Projects/MAKEARMORGAMESGREATAGAIN/hardest/index.html, autopilot if exposed. Record per-level clear/deaths/medal + anomalies — pay attention to keymaster (keys/doors) and shortcut (teleports?) mechanics. Screenshots to verification/evidence/r05-HardestLvD-*.png."
+    },
+    {
+      "name": "HardestAdversarial",
+      "role": "sentinel",
+      "prompt": "Adversarial probe hardest/. file:///home/vgpnk/Projects/MAKEARMORGAMESGREATAGAIN/hardest/index.html. Hunt: (1) pause during death animation → state corruption? (2) R-restart during pause/clear → weird transitions? (3) teleport pad loops or landing inside walls; (4) door/key edge: collect key, die, respawn — door state correct? (5) corrupt localStorage save (bad JSON, impossible unlocks) → crash or graceful? (6) medal edge: 0-death gold, exactly-2 silver, 3+ bronze; (7) tab-blur mid-level → 240Hz accumulator spiral? Record every anomaly with repro. Screenshots to verification/evidence/r05-HardestAdversarial-*.png."
+    },
+    {
+      "name": "ProtoChickenD22",
+      "role": "critic",
+      "prompt": "Re-verify D-22 on EDITED bytes + combat watch. prototypes/chicken-invaders.html changed since r4 (mtime ~14min ago). D-22: reading window.__proto on TITLE screen threw TypeError (get wavesTotal, CHAPTERS[chapter-1]). Steps: open file:///home/vgpnk/Projects/MAKEARMORGAMESGREATAGAIN/prototypes/chicken-invaders.html; evaluate window.__proto on title → still throws or fixed? Start play → loop regression check (spawn→fire→kill→score→die→respawn); wavesTotal mid-game. Also re-check the r4 combat-score-gap watch item (kill scoring appeared stalled once — try to reproduce). Diff-check prototypes/chicken-invaders.md card vs current html if card updated. Screenshots to verification/evidence/r05-ProtoChickenD22-*.png."
+    },
+    {
+      "name": "DocsXref2",
+      "role": "reviewer",
+      "prompt": "Reconciliation check: D-40 docs-vs-runtime contradictions after maga-docs r8 (commit cd73e49 claims 'verify D-25..D-40 crosswalk DD-99, D-40 reconciliation DD-102, DM-crate inversion DD-103'). Read MAGA-everything/01-design-docs/ (find DD-99/DD-102/DD-103 entries — likely in a dissection/decision file) and check each r4 D-40 item: storage keys (maga: prefix), integer-scale claim, BN1 BH-1.7 provenance, BH-2.1, BH-3.2 mute, 'not yet scaffolded' cards, D-ID namespacing, docs-D-06/D-09 imports. Which are reconciled, which still contradicted? ALSO: new divergence to flag — DM crates now spawn in deathmatch (game.ts updateProps) while spec says no DM pickups; check if docs recorded it (DD-103?). STATIC-ONLY verdict + updated reconciliation table."
+    }
+  ]
+}

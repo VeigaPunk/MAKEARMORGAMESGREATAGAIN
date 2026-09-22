@@ -375,3 +375,76 @@ HUD shows generic `BOSS` (`render.ts:201`); `pack.bosses[].name` dead data. Spec
 | shmup apps deep (both packs) | `runtime-verdicts/11-shmup-deep.md` | PASS — D-32 found+fixed, D-36–39 notes |
 | impossible app deep | `runtime-verdicts/12-impossible-deep.md` | PASS — D-33/D-34 found+fixed, live re-verified |
 | proto claim cards ×3 | `proto-verdicts/claim-cards-r04.md` | impossible mostly verified; burger partial; chicken D-22 open |
+
+---
+
+# ROUND 5 (2026-09-22) — fix-verification wave + hardest surface
+
+29-lane wave `r05-fixes` verified forge's uncommitted defect burn live and covered the new `hardest/` surface. Lane reports: `.ufo/scopes/maga-verify/r05-wave/`. 90 evidence files under `verification/evidence/r05-*`.
+
+## Fix verdicts (live unless noted)
+
+| Defect | Verdict | Evidence |
+|--------|---------|----------|
+| D-16 invuln wall-time | **PARTIAL** — dt clamp 0.05 landed (`game.ts:355`) but throttle-resume burst still stacks lethal contact damage (D-58) | `r05-BoxheadStress-*`, `r05-BoxheadD16-current.png` |
+| D-22 proto `__proto` title throw | **FIXED** — `window.__proto` on title returns mode=title, wave=null, wavesTotal=null, no throw; combat regression watch cleared | ProtoChickenD22 live |
+| D-23 sas `defeated` persist | **FIXED** — win→reload→'Next Opponent' ×2 runs; `validSave()` rejects 7/8 corrupt payloads to fresh create, 0 crashes | `r05-SasD23-04/05/06/07` |
+| D-25 DM ammo starvation | **FIXED** — crates spawn in DM (first ~9.3s, cadence 12s, cap 2), pickup 0→16 ammo, match concluded P2 5-3 | `r05-BoxheadDMCrates-*` |
+| D-26 pause inert | **FIXED** — ESC/P pause+resume, world frozen pixel-identical 2s, M→menu, waveBreak frozen, dead/victory/mode correctly ignore pause | `r05-BoxheadPause-01..04` |
+| D-27 sas reload double-dip | **FIXED** — weapon stayed +2 across reload | `r05-SasD2728-reload-*` |
+| D-28 sas duplicate purchase | **FIXED** — 'Owned'/disabled, gold unchanged on re-click, persists across reload | `r05-SasD2728-shop-owned` |
+| D-29 Buckler gate | **FIXED** — gate 3→2; purchasable at Lv2 (gold-gated only) | `r05-SasD2930-d29-*` |
+| D-30 complete replay exploit | **FIXED** — defeated=4 boots 'complete'; hub shows no bout button; startFight unreachable; defeated=5 rejected by validSave | `r05-SasD2930-d30-*` |
+| D-31 sas name innerHTML | **PARTIAL** — renderHub textContent fix verified, but name still executes via `hud.innerHTML` (D-51 HIGH) and `g.look` via hub h1 (D-52) | `r05-SasD31-hub-hud-injection.png` |
+| D-32 shmup stick release | **FIXED live** — window-level pointerup verified on BOTH apps under 390×844 coarse emulation; ship stops, fire unstuck | `r05-ShmupD32Live-*` ×10 |
+| D-33/34 impossible collision | **RE-CONFIRMED on current bytes** — 27/27 no-jump deaths x=1410; teleport(2700) death x=2967 ×2 | `r05-ImpossibleFixes-*` |
+| D-36 wave counter | **PARTIAL** — crash vector clamped (`sim.ts:283`); `snapshot()` still leaks wave 3/2 during boss (D-41) | static |
+| D-37 boss names | **NOT FIXED** — HUD still literal 'BOSS' (`render.ts:201`); `BossType.name` dead | static |
+| D-38 type visuals | **FIXED (cluck)** — 3 distinct variants live; GLIDER 1.147× faster, BRUISER 0.846×/3hp measured; replica still identical (placeholder, stands) | `r05-ShmupTypes-cluck-wave1.png` |
+| D-39 dead strings | **PARTIAL** — gift/food still dead; comb/beak hardcoded now MISMATCH cluck headColors | static |
+| D-40 docs contradictions | **PARTIAL** — 7/8 bullets reconciled byte-verified (DD-99/102/103 exist); DD-18 body + xref BH-2.4 stale; DD-06/09 import unactioned | DocsXref2 |
+| D-08 F3 unreachable | **ENABLER LANDED** — ?stress tops ~100 movers incl runners (36/100); ~52fps median under 30-tab contention (lower bound); F3 gate still owes isolated run | `r05-BoxheadStress-*` |
+| D-18 banner bleed | **OPEN** — still visible on title/room/game | `r05-BoxheadRegress-*` |
+| D-19 grenade self-damage | **RESOLVED in code** — owner exempted `game.ts:679-704`; partner FF remains; design ruling formally owed | static+live |
+
+## New defects (r05)
+
+| ID | Sev | Summary | Site |
+|----|-----|---------|------|
+| D-41 | LOW | shmup `snapshot()` wave unclamped → `__maga.state` shows 3/2 during boss | `shmup-core/sim.ts:448` |
+| D-42 | LOW latent | speed≤0 gate freezes movement only — chicken still shoots/collides/blocks wave-clear | `sim.ts:285` |
+| D-43 | LOW | per-type HP without per-type score (BRUISER 3hp = 100pts) | `sim.ts:182` vs `:236` |
+| D-44 | LOW | replica SCOUT/ACE phantom types (identical stats, names never render) | `packs.ts:46-49` |
+| D-45 | HIGH | hardest corrupt `best` entry bricks level select — `b.time.toFixed` TypeError every frame; legit clears can't overwrite corrupt entry | `hardest/game.js:296`, `loadSave:13-16` |
+| D-46 | LOW latent | hardest playerSpeed unvalidated — >7680px/s tunnels walls (corpus max 185) | `hardest/engine.js` moveResolve |
+| D-47 | HIGH | hardest `MEDAL_COL` undefined → menu crashes ~60 ReferenceErrors/s, truncates at first medaled tile (every player who cleared a level). Sibling `MENU_COLS` crash fixed mid-wave | `hardest/game.js` drawMenu |
+| D-48 | MED | hardest manifest.js stale — 96 entries vs 98 level files; 97/98 ship-invisible (validator reads dir: 98/98 pass) | `hardest/manifest.js` vs `levels/` |
+| D-49 | MED | hardest autopilot re-decides per 1/240s substep; shipping loop samples input per frame — sub-frame clears unreproducible | `hardest/autopilot.js` vs `game.js:326` |
+| D-50 | LOW | hardest L30 patrol [20,10]-[20,15] renders through solid wall row 12 | `hardest/levels/30-hardest.js` |
+| D-51 | HIGH | sas stored XSS: `g.name` → `hud.innerHTML` executes on every screen (live `window.p===1`) | `sas/main.ts:17` |
+| D-52 | MED | sas stored XSS via crafted save: `g.look` → hub `<h1>` (live `window.q===1`) | `sas/main.ts:20` |
+| D-53 | LOW latent | sas `log()` innerHTML sink — not name-reachable today, one template away | `sas/main.ts:14` |
+| D-54 | MED | sas ladder unwinnable from Snorter onward — measured ~26 dealt/life vs 62hp; max gold 78 buys Buckler OR Sword+Sandals; complete screen unreachable by pure play | `sas/main.ts` economy |
+| D-55 | LOW | boxhead pause banner promises ENTER→menu; Enter bound to 'fire', does nothing | `game.ts:309` vs `input.ts:27` |
+| D-56 | LOW | boxhead frozen world renders behind SELECT MODE after pause→M (D-18 family) | `game.ts:160-165` |
+| D-57 | LOW | boxhead crateTimer unclamped negative while field full → instant respawn post-pickup | `game.ts` updateProps |
+| D-58 | MED | D-16 incomplete: throttle-resume burst stacks lethal damage despite dt cap — needs wall-clock invuln | `game.ts:355` + entities |
+| D-59 | MED docs | DD-103 inverts spec direction — spec 01-boxhead.md:30 says 'players vs each other WITH pickups'; crate enable moves code INTO compliance; DD-18 body + xref BH-2.4 stale | docs scope |
+| D-60 | INFO | impossible `window.__proto` debug hook shadowed by Window.prototype accessor — `__proto.LEVEL` unreadable; `__maga` works | `impossible/main.ts:280-288` |
+| D-61 | INFO | impossible `die()` persists unclamped progress — debug die at x>9900 writes best>1 | `impossible/main.ts:148` |
+| D-62 | INFO | hardest autopilot.js not loaded by index.html — solver unreachable from shipped page | `hardest/index.html` |
+| D-63 | PROCESS | shared-origin localStorage + global tab-name registry → cross-lane save/tab corruption (file:// origin shared; :5173/:5174 keys shared) | harness |
+
+## Round-5 coverage added
+
+| Surface | Verdict file | Result |
+|---------|--------------|--------|
+| boxhead fixes (D-16/25/26/08/touch/regress) | `r05-wave/Boxhead*.md` | D-25/26 FIXED live; D-16 PARTIAL (D-58); D-08 enabler landed; D-18 open |
+| impossible fixes + frontier | `r05-wave/Impossible*.md` | D-33/34 re-confirmed; best-progress + __proto live; full clear still unproven (segment-verified passable) |
+| burger grid refactor + collapse | `r05-wave/Burger*.md` | PASS — 4-pane grid, 10/10 actions, no-op contract, collapse chain intact |
+| sas fixes (D-23/27/28/29/30/31) | `r05-wave/Sas*.md` | D-23/27/28/29/30 FIXED live; D-31 PARTIAL → D-51/52/53; NEW D-54 unwinnable ladder |
+| shmup fixes (D-32/38/churn) | `r05-wave/Shmup*.md` | D-32 FIXED live both apps; D-38 cluck FIXED; D-37 not fixed; D-41–44 new |
+| hardest/ (new surface) | `r05-wave/Hardest*.md` | 96/96 shipped levels completable (browser+Node); D-45/47 menu crashes HIGH; D-48 manifest stale |
+| proto sas card | `r05-wave/SasProto.md` | PARTIAL — boot/create/combat-gate/persist live; loop/shop/defeat/touch/champion static |
+| proto chicken D-22 | `r05-wave/ProtoChickenD22.md` | FIXED on edited bytes |
+| docs reconciliation | `r05-wave/DocsXref2.md` | 7/8 reconciled; 3 stale downstream records |
