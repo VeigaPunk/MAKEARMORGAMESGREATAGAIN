@@ -528,6 +528,7 @@
 - **Status (r08):** staleness widened — variants 16→21, new `PIERCE_BYPASS`/`GUARD_*`/`SURGE_ODDS_*` tunables (DD-101). README still describes the committed fixed-matchup build.
 - **Status (r09):** staleness is now **substantive, not cosmetic** — the uncommitted tree is the R2 balance pass (DD-106): Guard ATK excluded from contest sum, Pierce ignores Guard, Surge gated ≥3 CP deficit (draw removed), Rush renamed **Blitz**, Oddsmaker power replaced. The committed README's "Rules in brief" section now describes *pre-R2 mechanics* — any citation of tcg rules from committed docs is wrong until the sibling commits.
 - **Status (r10):** tree README is now **current** — the uncommitted `tcg/README.md` + `tcg/prototype/README.md` describe R2 rules (Blitz, Guard-no-contest, Surge≥3, 3 decks, mulligan, `--matrix`/`--variant` CLI). Staleness is now committed-vs-tree only: the *committed* docs are pre-R2. Diff the tree, or wait for the sibling commit.
+- **Status (r10b):** **RESOLVED** — tcg-arena committed `48e24e6` (96 files): R2 mechanics + updated READMEs + design doc + `art/` SVGs + 73 variants all landed; `git status tcg/` clean. Committed docs now describe the R2 game.
 
 ### DD-96 — verify verdict 12 files D-33/D-34 against committed impossible; uncommitted tree already fixes both
 - **Source A (docs):** `verification/runtime-verdicts/12-impossible-deep.md` (r04, uncommitted) — **D-33** gaps not lethal: `main.ts:185` committed code only kills on `cube.y > H+200`; 3 of 4 gaps are free passes (proto card warned: kill on `floor === -Infinity && bottom > ground + margin`). **D-34** block side-kill tests cube's LEFT edge (`solidSideAt(cube.x, cube.y)`), ~34px penetration, death ~94ms late. **D-35** minor: sub-frame pointer taps dropped (poll-based edge detect).
@@ -551,6 +552,7 @@
 - **Status (r08b):** corpus **committed** `fe83d90` (hardest R2 M1–M3) — `LEVEL-FORMAT.md` now documents `y`/`D` tiles + the "keys must be reachable with doors closed" contract (validator-enforced) AND adds `T` teleport pads (paired in scan order) + medals/tiers/audio. Re-run post-commit: **32/32 PASS**. DD-98's vocabulary concern resolved.
 - **Status (r09):** corpus **complete at 96** — waves 1–3 committed (`9336a53` levels 33–60; `7e829dd` levels 61–96); `node hardest/validate.mjs` re-run at r09: **96/96 PASS** (~30s). DD-104.
 - **Status (r10):** corpus grew to **98** — movers mechanic + `97-moving-walls.js`/`98-crush-alley.js` uncommitted; `node hardest/validate.mjs` re-run at r10: **98/98 PASS** (~35s). `manifest.js` stale at 96 → browser loads 96 (DD-107).
+- **Status (r10b):** tcg sibling committed `48e24e6` — unrelated to hardest; DD-95/101/106 resolved there. Hardest movers+97/98 still uncommitted (DD-107).
 
 ### DD-99 — verify register landed in-tree spanning D-25…D-40 + status board (uncommitted); crosswalk
 - **Source A (docs):** `verification/divergence.md` uncommitted diff — formal register now ends **D-40** with a post-round-4 status board + coverage table; verdicts `runtime-verdicts/08…12` + `proto-verdicts/claim-cards-r04.md` + 30 `evidence/r04-*.png` still uncommitted.
@@ -573,6 +575,7 @@
 - **Owner:** tcg-arena — commit + README refresh (unchanged from DD-95).
 - **Status (r09):** variants **21→72** and the search *converged into mechanic changes* — R2 balance pass landed in the uncommitted tree (DD-106): `GUARD_NO_CONTEST`, `PIERCE_BYPASS`, Surge≥3/no-draw, Rush→Blitz, Oddsmaker "Shave the Odds", decklist rebuilds; design doc carries the sim-verified R2 matrix. Committed README is now two mechanic-revisions behind.
 - **Status (r10):** variants **72→73**; tree docs now updated to R2 (design doc R2 section + both READMEs) — DD-106's "docs describe pre-R2 rules" applies to *committed* docs only. New untracked `tcg/design/art-direction.md` (HS-legendary visual-reference map for card art).
+- **Status (r10b):** **RESOLVED** — `48e24e6` committed the full R2 surface incl. `variants/` (73 files) + `variants/README.md` catalogue + `art/` SVGs. Tree clean.
 
 ### DD-102 — verify D-40 reconciliation order against this pack: bullet-by-bullet resolution
 - **Source A (docs):** `verification/divergence.md` D-40 (uncommitted) — 8 bullets claiming build-card/ticket-xref claims contradicted by runtime.
@@ -606,6 +609,7 @@
 - **Assessment:** the DD-95/DD-101 drift crossed from harness-vs-doc to **rules-vs-doc** — the committed design doc and README now describe a game the tree no longer plays. Consumers citing tcg mechanics MUST read the uncommitted tree; the design doc's own R2 section is the best single source until commit.
 - **Owner:** tcg-arena — commit the R2 pass + refresh README/design committed versions.
 - **Status (r10):** tree-side docs caught up — `design/arena-tcg-design.md` R2 section + `README.md` + `prototype/README.md` all describe R2 rules in the uncommitted tree; variants 72→73; new `design/art-direction.md`. Committed docs remain pre-R2 — the divergence is now purely "committed vs tree", resolved by the sibling's commit.
+- **Status (r10b):** **RESOLVED** — `48e24e6` committed the R2 pass: committed design doc + both READMEs now describe R2 rules; `art/` hand-authored SVGs + `variants/README.md` landed; `git status tcg/` clean. The committed-vs-tree divergence is closed.
 
 ### DD-107 — hardest movers mechanic + levels 97/98 landed uncommitted; `manifest.js` stale (browser loads 96, validator sees 98)
 - **Source A (docs):** `hardest/LEVEL-FORMAT.md` committed version (`7e829dd`) — level vocabulary ends at keys/doors + teleports; DD-104 recorded corpus "complete at 96". DISSECTION `hardest/` row says 96 files.

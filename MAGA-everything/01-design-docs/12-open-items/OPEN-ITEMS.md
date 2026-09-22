@@ -92,7 +92,7 @@ Committing the burn closes these; verify re-probes after it lands.
 
 | Surface | State @ r10 | Source |
 |---|---|---|
-| `tcg/` | R2 balance pass still uncommitted — but **tree docs now current** (design doc R2 section + both READMEs describe R2 rules); committed docs remain pre-R2. 73 variant files + new `design/art-direction.md` (HS-legendary art map). Commit resolves | DD-95, DD-101, DD-106 |
+| `tcg/` | **R2 committed `48e24e6`** (96 files — mechanics + docs + `art/` SVGs + 73 variants + `variants/README.md`); tree clean; DD-95/101/106 **RESOLVED** | DD-95, DD-101, DD-106 |
 | `hardest/` | Corpus **98/98 PASS** re-verified live at r10 — movers mechanic + levels 97/98 **uncommitted**; `manifest.js` stale at 96 → browser loads 96, validator sees 98. Truth = `node hardest/validate.mjs` (~35s) | DD-107, DD-104, DD-91 |
 | `02-code/` | 11-file burn uncommitted since r06 — committed ≠ tree on every cited file | DD-94 |
 | `verification/` | Register ends D-40, committed `5d3e35f`+`c6808ce`; **r05 probe wave in flight** — 37 untracked evidence PNGs: Boxhead DM-crates + Esc-pause, BurgerGrid ×5 (4-pane + narrow single-pane), HardestBoot ×5 (incl. `boot-crash`), HardestLvA ×7 + LvB ×10 (level-unlock/save probes), SasD23 + SasD29/30 + SasD31 (XSS HUD-injection probes vs the `textContent` fix), ShmupTypes ×2. No r05 verdict file yet — expect register growth past D-40 | DD-99 |
