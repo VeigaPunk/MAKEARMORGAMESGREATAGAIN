@@ -141,6 +141,14 @@ Recorded commands (last observed results, 2026-09-22 round 2):
   (Champion bout, 42/66 HP), `sr1-sas-complete.png` (V1 COMPLETE,
   +55 gold victory line).
 
+- **sr1 root entry point (2026-09-23):** built via `npm run build:fleet`
+  (staged to `games/swords-and-sandals/`), served by `python3 -m
+  http.server 8123` from the repo root; hub card real-mouse-click ->
+  create screen -> real typed name "KIMI" + 6x strength+ clicks ->
+  "Enter the Arena" -> hub -> "Start First Bout" -> arena (opponent HP
+  34) — 0 console errors, 0 non-local requests. Evidence:
+  `verification/evidence/sr1-hub-run.log`, `sr1-hub-swords-and-sandals.png`.
+
 Ship-gate checklist: full ladder clear to champion/complete screen with
 real input — PASS; XSS injection matrix clean — PASS; keyboard map
 verified — PASS (no custom bindings by design, native DOM behavior

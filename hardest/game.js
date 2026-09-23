@@ -291,7 +291,7 @@ function overlay(title, sub) {
 }
 function drawMenu() {
   ctx.fillStyle = COL.text; ctx.textAlign = 'center';
-  ctx.font = 'bold 40px monospace'; ctx.fillText("THE WORLD'S HARDEST GAME", STAGE_W / 2, 60);
+  ctx.font = 'bold 40px monospace'; ctx.fillText('THE CRUEL MAZE', STAGE_W / 2, 60);
   ctx.font = '14px monospace'; ctx.fillStyle = COL.dim;
   ctx.fillText('arrows/WASD move · grab every coin · reach green · blue kills · R restart · M mute', STAGE_W / 2, 92);
   ctx.fillText(`total deaths ${save.deaths}`, STAGE_W / 2, 114);

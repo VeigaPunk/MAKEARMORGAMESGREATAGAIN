@@ -13,6 +13,7 @@
     "dev:burger": "npm run dev -w @maga/burger-tycoon",
     "dev:chicken": "npm run dev -w @maga/chicken-invaders",
     "dev:cluck": "npm run dev -w @maga/chicken-invaders-original",
-    "dev:sands": "npm run dev -w @maga/swords-and-sandals"
+    "dev:sands": "npm run dev -w @maga/swords-and-sandals",
+    "build:fleet": "node tools/build-fleet.mjs"
   }
 }

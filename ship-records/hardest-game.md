@@ -1,15 +1,18 @@
-# Ship record — The World's Hardest Game (remake)
+# Ship record — The Cruel Maze (remake; original: The World's Hardest Game)
 
 Original reference: The World's Hardest Game — precision dodge-and-collect
-mazes. Player-facing title is currently the ORIGINAL NAME
-(`hardest/game.js:276`, `hardest/index.html:6`) — must become an original
-evocation before ship (rights posture).
+mazes. Player-facing title renamed to the original evocation **The Cruel
+Maze** (ship-run sr1, 2026-09-23): `hardest/game.js` menu title,
+`hardest/index.html` `<title>`, `hardest/README.md` heading. Internal
+file/dir names and `HARDEST_*` globals unchanged.
 
-Status: **NOT SHIPPED** — validator gate is GREEN (114/114); the two HIGH
-menu defects and the blur defect are FIXED. Remaining ship blockers: title
-rename to an original evocation (separate wave), broader real-input browser
-verification beyond the sr1 smoke, root entry-point integration.
-Last updated: 2026-09-22 (ship-run 2026-09-22, sr1 fix wave).
+Status: **NOT SHIPPED** — validator gate is GREEN (114/114 after the
+rename); the two HIGH menu defects and the blur defect are FIXED.
+Remaining ship blockers: broader real-input browser verification beyond
+the sr1 smoke; in-app menus/HUD/pause/settings/touch polish. Root
+entry-point integration is DONE (reachable from `/index.html` as
+`hardest/`).
+Last updated: 2026-09-23 (ship-run sr1, root entry-point wave).
 
 ## Survey — implementations found
 
@@ -96,7 +99,8 @@ architecture decision of this run, recorded per the mission rule.
 Recorded commands (last observed results):
 - `node hardest/validate.mjs` — r05: 96/96 exit 0 (36.8s);
   sr1 2026-09-22: **114/114 exit 0** (109: clear t=37.8s d=0;
-  111: clear t=30.6s d=0). Scoped iteration used
+  111: clear t=30.6s d=0); sr1 2026-09-23 (after the title rename):
+  **114/114 exit 0** (~2 min full corpus). Scoped iteration used
   `node hardest/validate.mjs --only hardest/levels/NN-slug.js`.
 - `node hardest/gen-pars.mjs` → `pars.js: 114 pars`;
   `node hardest/difficulty.mjs` → `DIFFICULTY.md: 114 levels`
@@ -123,9 +127,13 @@ Recorded commands (last observed results):
 
 Ship-gate checklist (pending): ~~gate 114/114~~ DONE sr1; ~~D-45/47/65
 fixed + re-proven~~ DONE sr1; ~~pars + DIFFICULTY regenerated~~ DONE sr1;
-rename to original evocation; menus/HUD/pause/settings/touch verified with
-real input in browser (sr1 covered menu/level-1/pause/resume; settings does
-not exist); integrated into the root entry point.
+~~rename to original evocation~~ DONE sr1 (The Cruel Maze, validator re-run
+after rename); ~~integrated into the root entry point~~ DONE sr1 (root
+`index.html` card -> `hardest/`, real-input click-through proof in
+`verification/evidence/sr1-hub-run.log` / `sr1-hub-hardest.png`; renders
+from file:// too, serve hint on the hub); menus/HUD/pause/settings/touch
+verified with real input in browser (sr1 covered menu/level-1/pause/resume;
+settings does not exist).
 
 ## Deferrals
 

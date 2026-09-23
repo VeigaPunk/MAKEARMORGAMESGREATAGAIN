@@ -78,6 +78,13 @@ Recorded commands (last observed results):
     survives in-session reload, HUD shows BEST — PASS.
   - Console errors: 0 app-originated (only `/favicon.ico` 404).
 
+- **sr1 root entry point (2026-09-23):** built via `npm run build:fleet`
+  (staged to `games/burger-tycoon/`), served by `python3 -m http.server
+  8123` from the repo root; hub card real-mouse-click -> sim boot ->
+  real click farm "sow" action (crops 20->35) — 0 console errors, 0
+  non-local requests. Evidence: `verification/evidence/sr1-hub-run.log`,
+  `sr1-hub-burger-tycoon.png`.
+
 Ship-gate checklist: pending.
 
 ## Deferrals

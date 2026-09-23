@@ -119,6 +119,15 @@ Recorded commands (last observed results):
     deathless, so ch2 constants stand as shipped (same constants cluck
     full-cleared under at r05).
 
+- **sr1 root entry point (2026-09-23):** both packs built via `npm run
+  build:fleet` (staged to `games/chicken-invaders/` and
+  `games/cluck-horizon/`), served by `python3 -m http.server 8123` from
+  the repo root; hub card real-mouse-click per pack -> title -> real click
+  START -> mode=play, chapter 1, wave 1 live (12 chickens, both packs) —
+  0 console errors, 0 non-local requests. Evidence:
+  `verification/evidence/sr1-hub-run.log`, `sr1-hub-chicken-invaders.png`,
+  `sr1-hub-cluck-horizon.png`.
+
 Ship-gate checklist: pending (must include both packs, both touch layouts,
 and the G2 originality audit for Cluck Horizon).
 

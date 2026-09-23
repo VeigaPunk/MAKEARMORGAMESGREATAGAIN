@@ -1,0 +1,56 @@
+[09:56:05] sr1-hub-run: chromium=Chrome/151.0.7922.137 base=http://localhost:8123 root=/home/vgpnk/Projects/MAKEARMORGAMESGREATAGAIN-kimi
+[09:56:05] hub: cards -> games/boxhead/ games/impossible-game/ games/burger-tycoon/ games/chicken-invaders/ games/cluck-horizon/ games/swords-and-sandals/ hardest/
+[09:56:05] hub: 7 cards=PASS; serve hint hidden over http=PASS
+[09:56:05] screenshot -> sr1-hub.png
+[09:56:05] hub: console errors (favicon whitelisted): 0; non-local requests: 0
+[09:56:05] == boxhead: click card games/boxhead/
+[09:56:05] link click -> http://localhost:8123/games/boxhead/ (canvas in DOM: true) PASS
+[09:56:05] boot: state=title
+[09:56:07] REAL KEYS (Space,1,1): state=playing mode=solo room=open-yard wave=1 PASS
+[09:56:08] solo run live: wave=1
+[09:56:08] screenshot -> sr1-hub-boxhead.png
+[09:56:08] boxhead: boot+interaction PASS; errors this game=0; non-local this game=0; non-favicon 4xx=0
+[09:56:08] == impossible-game: click card games/impossible-game/
+[09:56:08] link click -> http://localhost:8123/games/impossible-game/ (canvas in DOM: true) PASS
+[09:56:08] boot: state=running attempt=1 y=396.0
+[09:56:09] REAL KEY (Space): jump y 396.0 -> min 250.8 PASS
+[09:56:09] screenshot -> sr1-hub-impossible-game.png
+[09:56:09] impossible-game: boot+interaction PASS; errors this game=0; non-local this game=0; non-favicon 4xx=0
+[09:56:10] == burger-tycoon: click card games/burger-tycoon/
+[09:56:10] link click -> http://localhost:8123/games/burger-tycoon/ (canvas in DOM: true) PASS
+[09:56:10] screenshot -> sr1-hub-burger-tycoon-title.png
+[09:56:10] REAL CLICK (farm: sow): crops 20 -> 35 PASS
+[09:56:10] screenshot -> sr1-hub-burger-tycoon.png
+[09:56:10] burger-tycoon: boot+interaction PASS; errors this game=0; non-local this game=0; non-favicon 4xx=0
+[09:56:11] == chicken-invaders: click card games/chicken-invaders/
+[09:56:11] link click -> http://localhost:8123/games/chicken-invaders/ (canvas in DOM: true) PASS
+[09:56:11] boot: mode=title pack=replica
+[09:56:11] REAL CLICK (START): mode=play chapter=1 wave=1 PASS
+[09:56:13] wave live: wave=1 chickens=12
+[09:56:13] screenshot -> sr1-hub-chicken-invaders.png
+[09:56:13] chicken-invaders: boot+interaction PASS; errors this game=0; non-local this game=0; non-favicon 4xx=0
+[09:56:13] == cluck-horizon: click card games/cluck-horizon/
+[09:56:13] link click -> http://localhost:8123/games/cluck-horizon/ (canvas in DOM: true) PASS
+[09:56:14] boot: mode=title pack=cluck
+[09:56:14] REAL CLICK (START): mode=play chapter=1 wave=1 PASS
+[09:56:16] wave live: wave=1 chickens=12
+[09:56:16] screenshot -> sr1-hub-cluck-horizon.png
+[09:56:16] cluck-horizon: boot+interaction PASS; errors this game=0; non-local this game=0; non-favicon 4xx=0
+[09:56:16] == swords-and-sandals: click card games/swords-and-sandals/
+[09:56:16] link click -> http://localhost:8123/games/swords-and-sandals/ (canvas in DOM: true) PASS
+[09:56:16] boot: mode=create
+[09:56:17] REAL INPUT (typed name=KIMI, 6x strength+): "strength: 8 +"
+[09:56:17] REAL CLICK (Enter the Arena): mode=hub PASS
+[09:56:18] REAL CLICK (Start First Bout): mode=arena opponentHp=34 PASS
+[09:56:18] screenshot -> sr1-hub-swords-and-sandals.png
+[09:56:18] swords-and-sandals: boot+interaction PASS; errors this game=0; non-local this game=0; non-favicon 4xx=0
+[09:56:18] == hardest: click card hardest/
+[09:56:18] link click -> http://localhost:8123/hardest/ (canvas in DOM: true) PASS
+[09:56:18] boot: screen=menu levels=114 unlocked=1
+[09:56:19] REAL KEY (Enter): screen=play level=1 PASS
+[09:56:20] screenshot -> sr1-hub-hardest.png
+[09:56:20] hardest: boot+interaction PASS; errors this game=0; non-local this game=0; non-favicon 4xx=0
+[09:56:20] file://: renders, cards=7, serve hint shown=true PASS
+[09:56:20] screenshot -> sr1-hub-file.png
+[09:56:20] console errors total (favicon whitelisted): 0; non-local requests total: 0
+[09:56:20] sr1-hub-run: PASS

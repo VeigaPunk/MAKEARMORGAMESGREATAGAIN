@@ -94,6 +94,13 @@ Recorded commands (last observed results):
   - Console errors: 0 app-originated (only the browser's automatic
     `/favicon.ico` 404). Evidence: `sr1-impossible-*.{log,png,json,mjs}`.
 
+- **sr1 root entry point (2026-09-23):** built via `npm run build:fleet`
+  (staged to `games/impossible-game/`), served by `python3 -m http.server
+  8123` from the repo root; hub card real-mouse-click -> boot state=running
+  -> real Space jump (y 396.0 -> min 250.8) — 0 console errors, 0 non-local
+  requests. Evidence: `verification/evidence/sr1-hub-run.log`,
+  `sr1-hub-impossible-game.png`.
+
 Ship-gate checklist: pending (per-game acceptance to be assembled from spec
 02 + mission bar: menus/HUD/pause/settings/touch/persistence/audio/content).
 

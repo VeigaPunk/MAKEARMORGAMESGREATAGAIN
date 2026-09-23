@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FLASHBACK ARCADE</title>
+<link rel="icon" href="data:,">
+<style>
+  :root {
+    --bg: #0b0b14;
+    --panel: #15151f;
+    --panel-2: #1c1c2a;
+    --line: #2e2e44;
+    --text: #e8e8f2;
+    --dim: #9a9ab0;
+    --gold: #ffd166;
+    --accent: #6ee7ff;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace;
+    min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(110, 231, 255, 0.08), transparent),
+      repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.015) 0 1px, transparent 1px 3px);
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 32px 16px 24px; }
+
+  header { text-align: center; padding: 24px 0 8px; }
+  h1 {
+    margin: 0;
+    font-size: 44px;
+    letter-spacing: 6px;
+    color: var(--gold);
+    text-shadow: 0 0 18px rgba(255, 209, 102, 0.45), 0 3px 0 #6b4e00;
+  }
+  .sub { margin: 10px 0 0; color: var(--dim); font-size: 15px; letter-spacing: 1px; }
+  .marquee {
+    margin: 22px auto 0; max-width: 720px; border: 1px solid var(--line);
+    background: var(--panel); padding: 10px 14px; font-size: 13px; color: var(--dim);
+    display: none; text-align: left; line-height: 1.6;
+  }
+  .marquee b { color: var(--gold); }
+  .marquee code { color: var(--accent); }
+
+  .grid {
+    display: grid; gap: 16px; padding: 28px 0 8px;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+  a.card {
+    display: flex; flex-direction: column; gap: 8px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 18px 18px 16px;
+    color: var(--text); text-decoration: none;
+    min-height: 148px;
+    position: relative;
+    transition: transform 60ms linear, border-color 60ms linear, background 60ms linear;
+  }
+  a.card::before {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+    background: var(--c, var(--accent)); border-radius: 6px 0 0 6px;
+  }
+  a.card:hover, a.card:focus-visible {
+    border-color: var(--c, var(--accent));
+    background: var(--panel-2);
+    transform: translateY(-2px);
+    outline: none;
+    box-shadow: 0 0 0 1px var(--c, var(--accent)), 0 6px 18px rgba(0, 0, 0, 0.5);
+  }
+  a.card:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .tag {
+    align-self: flex-start; font-size: 11px; letter-spacing: 1px;
+    color: var(--c, var(--accent)); border: 1px solid var(--line);
+    padding: 2px 8px; border-radius: 3px; text-transform: uppercase;
+  }
+  .name { font-size: 22px; font-weight: bold; letter-spacing: 1px; }
+  .desc { font-size: 13px; color: var(--dim); line-height: 1.55; flex: 1; }
+  .keys { font-size: 12px; color: var(--text); opacity: 0.85; }
+  .keys b { color: var(--gold); font-weight: normal; }
+
+  footer {
+    margin-top: 24px; border-top: 1px solid var(--line); padding: 16px 4px 8px;
+    font-size: 12px; color: var(--dim); line-height: 1.8; text-align: center;
+  }
+  footer code { color: var(--accent); }
+  @media (max-width: 680px) {
+    h1 { font-size: 30px; letter-spacing: 3px; }
+    .grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>FLASHBACK ARCADE</h1>
+    <p class="sub">six Flash-era classics, remade</p>
+    <div class="marquee" id="filehint">
+      <b>You opened this page straight from disk.</b> The cabinet renders, but the
+      game links below are modern module builds — browsers refuse to run them from
+      <code>file://</code>. Serve the repository root instead:
+      <code>python3 -m http.server 8123</code>, then open
+      <code>http://localhost:8123/</code>. (The Cruel Maze is the exception: it also
+      runs by opening <code>hardest/index.html</code> directly.)
+    </div>
+  </header>
+
+  <nav class="grid" aria-label="Games">
+
+    <a class="card" style="--c:#ff6b6b" href="games/boxhead/">
+      <span class="tag">co-op survival</span>
+      <span class="name">Crateheads</span>
+      <span class="desc">Top-down zombie room survival — solo, local co-op, and deathmatch in one arena.</span>
+      <span class="keys"><b>WASD + mouse</b> · two players one keyboard · touch ready</span>
+    </a>
+
+    <a class="card" style="--c:#4dabf7" href="games/impossible-game/">
+      <span class="tag">one-button runner</span>
+      <span class="name">Impossible Run</span>
+      <span class="desc">Rhythm autorunner over spikes and gaps. Instant death, instant retry.</span>
+      <span class="keys"><b>SPACE / click / tap</b> to jump · R restart</span>
+    </a>
+
+    <a class="card" style="--c:#ffd166" href="games/burger-tycoon/">
+      <span class="tag">management sim</span>
+      <span class="name">Burger Tycoon</span>
+      <span class="desc">Four-pane supply-chain sim: farm, feedlot, restaurant, HQ — with a dirty-dealing economy.</span>
+      <span class="keys"><b>Mouse / touch</b> · keys 1-4 switch panes</span>
+    </a>
+
+    <a class="card" style="--c:#ff8787" href="games/chicken-invaders/">
+      <span class="tag">shmup</span>
+      <span class="name">Chicken Storm</span>
+      <span class="desc">Vertical shoot-em-up: formation waves, weapon gifts, missiles, and boss birds.</span>
+      <span class="keys"><b>Arrows / mouse</b> steer · SPACE / click fires</span>
+    </a>
+
+    <a class="card" style="--c:#63e6be" href="games/cluck-horizon/">
+      <span class="tag">shmup · original IP</span>
+      <span class="name">Cluck Horizon</span>
+      <span class="desc">An original-IP flock takes the same engine to new space lanes — new ships, new waves.</span>
+      <span class="keys"><b>Arrows / mouse</b> steer · SPACE / click fires</span>
+    </a>
+
+    <a class="card" style="--c:#e599f7" href="games/swords-and-sandals/">
+      <span class="tag">gladiator RPG</span>
+      <span class="name">Arena of Bonks</span>
+      <span class="desc">Forge a gladiator, buy gear at the smithy, and climb the turn-based arena ladder.</span>
+      <span class="keys"><b>Mouse / touch</b> menus · keyboard in combat</span>
+    </a>
+
+    <a class="card" style="--c:#69db7c" href="hardest/">
+      <span class="tag">precision ordeal</span>
+      <span class="name">The Cruel Maze</span>
+      <span class="desc">A precision dodge-and-collect ordeal — 114 mazes, coins, keys, par medals.</span>
+      <span class="keys"><b>WASD / arrows</b> · touch drag · runs from file:// too</span>
+    </a>
+
+  </nav>
+
+  <footer>
+    Serve from the repository root: <code>python3 -m http.server 8123</code> → <code>http://localhost:8123/</code><br>
+    Originals referenced for mechanics and feel; all fleet branding is original evocation.
+  </footer>
+
+</div>
+<script>
+  if (location.protocol === 'file:') {
+    document.getElementById('filehint').style.display = 'block';
+  }
+</script>
+</body>
+</html>

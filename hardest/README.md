@@ -1,4 +1,4 @@
-# The World's Hardest Game — `hardest/`
+# The Cruel Maze — `hardest/`
 
 Dependency-free Canvas2D replica: red square, blue patrol dots (instant death),
 yellow coins (collect ALL to arm the goal), green zones (start / checkpoint /

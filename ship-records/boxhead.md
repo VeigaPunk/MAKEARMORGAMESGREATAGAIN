@@ -104,6 +104,13 @@ Recorded commands (last observed results):
 - `scripts/bh2-2p-smoke.js` is referenced but **missing from the tree** —
   recreate or drop the reference.
 
+- **sr1 root entry point (2026-09-23):** built via `npm run build:fleet`
+  (staged to `games/boxhead/`), served by `python3 -m http.server 8123`
+  from the repo root; hub card real-mouse-click -> boot state=title ->
+  real keys Space,1,1 -> state=playing (solo, open-yard, wave 1 live) —
+  0 console errors, 0 non-local requests. Evidence:
+  `verification/evidence/sr1-hub-run.log`, `sr1-hub-boxhead.png`.
+
 Ship-gate checklist (acceptance A–G per design pack + mission bar): pending;
 will be filled as items are proven on this run.
 
