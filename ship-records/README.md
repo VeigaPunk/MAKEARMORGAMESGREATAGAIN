@@ -17,16 +17,16 @@ history, `verification/`, `MAGA-everything/01-design-docs/`
 (DISSECTION/OPEN-ITEMS/divergence-log), and `.ufo/handoff/` — mined as
 status records, never as instructions.
 
-## Status board (updated 2026-09-23, after sr1 waves A+B)
+## Status board (updated 2026-09-23, after sr1 waves A+B + sr2 wave C start)
 
 | Game | Rendition | Decision | Gate / proof state (this run) | Remaining before ship | Ship status |
 |---|---|---|---|---|---|
 | Boxhead: 2Play Rooms | `apps/boxhead` (Pixi 8) | EXTEND | B-N1/B-N2 re-proven 37/39 real-input (sr1); `?debug` hook added | grenade AoE multi-kill unproven; DM kill-credit stub `game.ts:737-739`; D-55/56 re-confirmed, D-58 open; 51 placeholders; art/audio/menus polish | NOT SHIPPED |
 | The Impossible Game | `apps/impossible` (Canvas2D) | EXTEND | sentinels x=1410/x=2967 exact; **full clear x=9900 proven 2/2** (sr1); persistence PASS | title/menus, practice checkpoints, calibration, touch, audio (AudioSyncClock) — proto features not yet in app; constants guessed | NOT SHIPPED |
-| Burger Tycoon | `apps/burger-tycoon` (Canvas2D+DOM) | EXTEND | 7/7 acceptance re-proven (sr1); collapse chain forced-failure t=42s | economy numbers guessed; audio/art/menus/settings polish | NOT SHIPPED |
+| Burger Tycoon | `apps/burger-tycoon` (Canvas2D+DOM) | EXTEND | **SHIP-CANDIDATE (sr2)** — constants tuned via 4-strategy harness (all targets pass); arcade-core audio extended (music/SFX buses, 15 cues + Muzak bed); settings persisted; proto r1 art ported; 24 app + 7 hub real-input checks PASS; `games/burger-tycoon` rebuilt | headed-browser audio listen; CC deed review (operator); no win-state by design | SHIP-CANDIDATE |
 | Chicken Invaders 2 (+ Cluck Horizon) | `packages/shmup-core` + 2 pack apps | EXTEND (dual-pack kept) | **both packs full clear proven** (sr1); D-37/D-38 FIXED; cluck regression clean | D-36/39/41–44 LOW; combat constants guessed; cluck gameplay SVGs unwired; audio/art polish | NOT SHIPPED |
 | Swords & Sandals 2 | `apps/swords-and-sandals` (Canvas2D+DOM) | EXTEND | D-51/52/53 XSS FIXED; D-54 rebalanced — **full ladder clear to V1 COMPLETE proven** (sr1); save/load + keyboard PASS | art/audio/menus polish; mobile thumb layout; content depth vs original (tournament tree deferred) | NOT SHIPPED |
-| The World's Hardest Game | `hardest/` (zero-dep, file://) | ADOPT + EXTEND | **validator 114/114 GREEN exit 0** (sr1, re-run after rename); D-45/47/65 FIXED; pars + DIFFICULTY regenerated; **rights rename DONE (The Cruel Maze)**; **reachable from root hub** | menus/HUD/pause/settings/touch browser proof beyond level 1; audio polish | NOT SHIPPED |
+| The World's Hardest Game | `hardest/` (zero-dep, file://) | ADOPT + EXTEND | **SHIP-CANDIDATE (sr2)** — validator 114/114 exit 0 (re-run ×4 incl. parent); rights sweep done (L96 "The Crucible" + dedup renames); volume/mute settings persisted + WebAudio music; L114 victory screen; sr2 real-input matrix 12/12 (settings/pause/clear/medals/touch/select/hub) | headed-browser audio listen; real-input L114 (autopilot-proven); D-49/50/62 pre-existing LOW/INFO | SHIP-CANDIDATE |
 
 Wave notes: all sr1 verification used real input events via zero-dependency
 Node CDP drivers (committed under `verification/evidence/sr1-*.mjs`) against
