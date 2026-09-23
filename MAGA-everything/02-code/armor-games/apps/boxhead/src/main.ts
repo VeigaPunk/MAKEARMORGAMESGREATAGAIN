@@ -1,10 +1,10 @@
 import { Application } from 'pixi.js';
-import { Input, Sfx, fitIntegerScale, letterboxOffset, viewport } from '@maga/arcade-core';
+import { Input, Sfx, fitIntegerScale, letterboxOffset, viewport, load, save } from '@maga/arcade-core';
 import { Game } from './game';
 import { TouchControls } from './touch';
 
 /**
- * Boxhead native replica — bootstrap.
+ * Crateheads — bootstrap.
  * Fixed logical stage, integer letterboxed scaling, unified input, synth SFX.
  */
 
@@ -28,13 +28,47 @@ document.body.appendChild(app.canvas);
 
 const input = new Input();
 const sfx = new Sfx();
-// BH-3.2 MAESTRO drop zone: mute toggle lives in page chrome, not the stage,
-// so it stays reachable on every screen including menus.
+// mute toggle lives in page chrome, not the stage, so it stays reachable on
+// every screen including menus (BH-3.2).
 const muteBtn = document.getElementById('mute');
+// ---- audio settings (persisted, app-prefixed key) — sibling-app pattern ----
+const settingsBtn = document.getElementById('settings-btn') as HTMLButtonElement;
+const settingsEl = document.getElementById('settings')!;
+const volMusicEl = document.getElementById('vol-music') as HTMLInputElement;
+const volSfxEl = document.getElementById('vol-sfx') as HTMLInputElement;
+const muteBoxEl = document.getElementById('mute-box') as HTMLInputElement;
+const settingsCloseEl = document.getElementById('settings-close') as HTMLButtonElement;
+
+interface AudioSettings { music: number; sfx: number; muted: boolean }
+let audioSettings = load<AudioSettings>('boxhead', 'audio', { music: 0.7, sfx: 0.85, muted: false });
+function paintMute(): void {
+  if (muteBtn) muteBtn.textContent = audioSettings.muted ? 'SOUND OFF' : 'SOUND ON';
+}
+function applyAudio(): void {
+  sfx.musicVolume = audioSettings.music;
+  sfx.sfxVolume = audioSettings.sfx;
+  sfx.muted = audioSettings.muted;
+  volMusicEl.value = String(Math.round(audioSettings.music * 100));
+  volSfxEl.value = String(Math.round(audioSettings.sfx * 100));
+  muteBoxEl.checked = audioSettings.muted;
+  paintMute();
+  save('boxhead', 'audio', audioSettings);
+}
+volMusicEl.addEventListener('input', () => { audioSettings.music = Number(volMusicEl.value) / 100; applyAudio(); });
+volSfxEl.addEventListener('input', () => {
+  audioSettings.sfx = Number(volSfxEl.value) / 100;
+  applyAudio();
+  sfx.blip({ wave: 'square', freq: 520, duration: 0.05, volume: 0.5 }); // audition tick
+});
+muteBoxEl.addEventListener('change', () => { audioSettings.muted = muteBoxEl.checked; applyAudio(); });
+settingsCloseEl.addEventListener('click', () => settingsEl.classList.add('hidden'));
+settingsBtn.addEventListener('click', () => settingsEl.classList.toggle('hidden'));
+applyAudio();
 if (muteBtn) {
-  const paint = () => { muteBtn.textContent = sfx.muted ? 'SOUND OFF' : 'SOUND ON'; };
-  muteBtn.addEventListener('click', () => { sfx.muted = !sfx.muted; paint(); });
-  paint();
+  muteBtn.addEventListener('click', () => {
+    audioSettings.muted = !audioSettings.muted;
+    applyAudio();
+  });
 }
 
 let cachedScale = 1;
@@ -58,7 +92,7 @@ const game = new Game(app, input, sfx, touch);
 // PROOF/debug hook: open with ?debug to expose state for automated acceptance
 if (new URLSearchParams(location.search).has('debug')) {
   (window as unknown as { __maga: unknown }).__maga = {
-    game, input, touch,
+    game, input, touch, sfx,
     get state() { return game.snapshot(); },
   };
 }
@@ -66,7 +100,9 @@ if (new URLSearchParams(location.search).has('debug')) {
 function layout(): void {
   const vp = viewport();
   const badgeH = badgeEl?.offsetHeight ?? 0;
-  if (muteBtn) muteBtn.style.top = `${badgeH + 4}px`;
+  const chromeEl = document.querySelector<HTMLElement>('.chrome-btns');
+  if (chromeEl) chromeEl.style.top = `${badgeH + 4}px`;
+  if (settingsEl) settingsEl.style.top = `${badgeH + 30}px`;
   const avail = { width: vp.width, height: vp.height - badgeH };
   const s = fitIntegerScale(STAGE_W, STAGE_H, avail, 4);
   const off = letterboxOffset(STAGE_W, STAGE_H, s, avail);

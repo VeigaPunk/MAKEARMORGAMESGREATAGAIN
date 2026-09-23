@@ -1,4 +1,5 @@
-import { Container, Graphics } from 'pixi.js';
+import { Container, Graphics, Text } from 'pixi.js';
+import { PAL } from './art/palette';
 
 /**
  * BH-2.1 touch layout C (solo mobile): virtual stick bottom-left + FIRE
@@ -34,6 +35,7 @@ export class TouchControls {
   private stickBase!: Graphics;
   private stickKnob!: Graphics;
   private fireBtn!: Graphics;
+  private fireLabel: Text | null = null;
 
   constructor(
     private stageW: number,
@@ -139,21 +141,33 @@ export class TouchControls {
 
   private drawStick(): void {
     const h = this.stickHome();
+    // stick base — panel backing, ring, dead-zone square (§4.13)
     this.stickBase.clear()
-      .circle(h.x, h.y, STICK_R).stroke({ width: 2, color: 0x8a8aa0, alpha: 0.9 })
-      .circle(h.x, h.y, STICK_R).fill({ color: 0x30303f, alpha: 0.5 });
+      .circle(h.x, h.y, STICK_R).fill({ color: PAL.panel, alpha: 0.7 })
+      .circle(h.x, h.y, STICK_R).stroke({ width: 2, color: PAL.panelEdge })
+      .circle(h.x, h.y, STICK_R - 8).stroke({ width: 1, color: PAL.panelEdge })
+      .rect(h.x - 8, h.y - 8, 16, 16).fill({ color: PAL.void, alpha: 0.8 });
     const kx = h.x + (this.stick?.x ?? 0) * STICK_R;
     const ky = h.y + (this.stick?.y ?? 0) * STICK_R;
+    // knob — ink body, accent center
     this.stickKnob.clear()
-      .circle(kx, ky, 14).fill({ color: 0xf5c542, alpha: 0.85 }).stroke({ width: 1, color: 0x000000 });
+      .circle(kx, ky, 14).fill({ color: PAL.ink, alpha: 0.85 }).stroke({ width: 1, color: PAL.panelEdge })
+      .rect(kx - 2, ky - 2, 4, 4).fill(PAL.accent);
   }
 
   private drawFire(): void {
     const h = this.fireHome();
     this.fireBtn.clear()
       .circle(h.x, h.y, FIRE_R)
-      .fill({ color: this.fire ? 0xd43a3a : 0x8a2430, alpha: 0.85 })
-      .stroke({ width: 2, color: 0xf5c542, alpha: 0.9 });
+      .fill({ color: this.fire ? PAL.warn : 0x8a2430, alpha: 0.85 })
+      .stroke({ width: 2, color: PAL.panelEdge });
+    if (!this.fireLabel) {
+      this.fireLabel = new Text({ text: 'FIRE', style: { fill: PAL.ink, fontSize: 10, fontFamily: 'monospace' } });
+      this.fireLabel.anchor.set(0.5);
+      this.view.addChild(this.fireLabel);
+    }
+    this.fireLabel.x = h.x;
+    this.fireLabel.y = h.y;
   }
 
   private applyVisibility(): void {
@@ -162,6 +176,7 @@ export class TouchControls {
       this.shown = want;
       this.view.visible = want;
       this.view.alpha = this.baseAlpha;
+      if (this.fireLabel) this.fireLabel.visible = want;
     }
   }
 

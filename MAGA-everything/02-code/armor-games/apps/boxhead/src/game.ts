@@ -1,30 +1,38 @@
-import { Application, Assets, Container, Graphics, Sprite, Text, TilingSprite, type Texture } from 'pixi.js';
+import { Application, Assets, Container, Graphics, Sprite, Text, type Texture } from 'pixi.js';
 import { Input, Sfx, load, save } from '@maga/arcade-core';
 import {
-  AmmoCrate, Barrel, BlastRing, Player, Projectile, Zombie,
+  AmmoCrate, Barrel, BlastRing, MuzzleFlash, Player, Projectile, Speck, Zombie,
   clamp, dist, type Vec,
 } from './entities';
 import { ROOMS, WAVE_TABLES, ScoreSystem, ammoPerShot, fireDelay, type ArenaRoom } from './world';
+import { PAL, TILESETS } from './art/palette';
+import { playCue, startCombatMusic, startDmMusic, startMenuMusic } from './audio';
 import { TouchControls } from './touch';
 
 /**
- * Boxhead native replica — BH-2: local 2P (co-op + deathmatch) + touch layout C.
- * Combat tables are TBD ARCADE placeholders (see world.ts).
- * Keyboard-only combat per concept spec: shots fire in facing direction;
- * mouse aim is optional sugar on desktop.
+ * Crateheads — local 2P arena survival (co-op + deathmatch) + touch layout C.
+ * Combat tables tuned 2026-09-23 (sr2; rationale in ship-records/boxhead.md
+ * and src/world.ts). Keyboard-only combat per concept spec: shots fire in
+ * facing direction; mouse aim is optional sugar on desktop.
  */
 
 const STAGE_W = 640;
 const STAGE_H = 400; // provisional, UNVERIFIED until ARCADE measures the original
 const MAX_WAVE = 3;
-const CRATE_AMMO = 16;
+const CRATE_AMMO = 24; // sr2-tuned: a 3-wave slice shouldn't starve the economy
+// (the original's pressure came from later content, not wave 1-3 ammo)
+const CRATE_FIRST = 8; // seconds to first crate of a run (sr1: measured 8.3s)
+const CRATE_EVERY = 10; // seconds between crate spawns once under the cap
+const CRATE_CAP = 2;
 const BARREL_RADIUS = 55;
 const BARREL_PLAYER_DAMAGE = 25;
-const DM_TARGET_KILLS = 5; // deathmatch scoring rule STUB — TBD ARCADE
+/** DM win rule, tuned sr2: first to 5 with the crate economy (16 rounds per
+ *  crate, respawn refill 24) lands a ~2–4 minute match — short arcade run. */
+const DM_TARGET_KILLS = 5;
 const DM_RESPAWN = 1.4;
-
-const P1_COLOR = 0xe8e8f0;
-const P2_COLOR = 0x7ab8ff;
+/** contact/bullet damage, tuned sr2: 100 hp / 10 per hit = ten hits per life;
+ *  0.8 s contact invuln caps swarm DPS at ~12.5 hp/s — frantic but escapable. */
+const HIT_DAMAGE = 10;
 
 type GameState = 'title' | 'mode' | 'room' | 'playing' | 'paused' | 'dead' | 'victory';
 type Mode = 'solo' | 'coop' | 'deathmatch';
@@ -69,11 +77,23 @@ export class Game {
 
   private hudText!: Text;
   private banner!: Text;
+  private bannerBg!: Graphics;
+  private hudG = new Graphics();
+  private streakText!: Text;
+  private streakFlash = 0;
+  private bannerT = 0; // wave-banner auto-clear timer
+  private lastWeapon = 'pistol';
+  private lastMult = 1;
+  private runnerCueDone = false;
+  private animClock = 0;
+  private flashes: MuzzleFlash[] = [];
+  private specks: Speck[] = [];
+  /** D-58: wall-clock grace after a hidden-tab resume — the first frames get
+   *  a clamped dt and brief invulnerability so stacked movers cannot burst. */
+  private resumeGraceUntil = 0;
   private menuChip = new Container();
-  /** direct-authored art (public/art/*.svg); menus/arena work without them,
-   *  these decorate once the async load resolves. */
+  /** direct-authored art (public/art/*.svg); menus fall back to text-only. */
   private logoTex: Texture | null = null;
-  private floorTex: Texture | null = null;
 
   constructor(
     private app: Application,
@@ -96,7 +116,17 @@ export class Game {
     this.hudText = new Text({ text: '', style: { fill: 0xf5c542, fontSize: 12, fontFamily: 'monospace', lineHeight: 16 } });
     this.hudText.x = 14;
     this.hudText.y = 10;
+    this.hud.addChild(this.hudG);
     this.hud.addChild(this.hudText);
+
+    this.streakText = new Text({
+      text: '',
+      style: { fill: PAL.hudScore, fontSize: 13, fontFamily: 'monospace' },
+    });
+    this.streakText.anchor.set(0.5);
+    this.streakText.x = STAGE_W - 40;
+    this.streakText.y = 18;
+    this.hud.addChild(this.streakText);
 
     this.banner = new Text({
       text: '',
@@ -105,6 +135,9 @@ export class Game {
     this.banner.anchor = 0.5;
     this.banner.x = STAGE_W / 2;
     this.banner.y = STAGE_H / 2 - 30;
+    this.bannerBg = new Graphics();
+    this.bannerBg.visible = false;
+    this.hud.addChild(this.bannerBg);
     this.hud.addChild(this.banner);
 
     // touch MENU chip for end screens (D-14): phones have no M key.
@@ -120,12 +153,12 @@ export class Game {
     this.menuChip.visible = false;
     this.hud.addChild(this.menuChip);
     // authored art preload — decorative only; failures leave procedural look.
-    Assets.load<Texture>('/art/boxhead-logo.svg')
+    Assets.load<Texture>('/art/crateheads-logo.svg')
       .then((t) => { this.logoTex = t; if (this.state === 'title') this.showTitle(); })
       .catch(() => { /* keep text-only title */ });
-    Assets.load<Texture>('/art/floor-tile.svg')
-      .then((t) => { this.floorTex = t; })
-      .catch(() => { /* keep flat arena fill */ });
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) this.resumeGraceUntil = performance.now() + 350;
+    });
     this.showTitle();
   }
 
@@ -154,9 +187,25 @@ export class Game {
     });
   }
 
+  /** banner text + backdrop bar (§4.15); bg hides when text is empty */
+  private setBanner(text: string, accent = false): void {
+    this.banner.text = text;
+    this.bannerBg.visible = text.length > 0;
+    if (text.length > 0) {
+      const lines = text.split('\n').length;
+      const w = Math.max(...text.split('\n').map((l) => l.length)) * 10.2 + 28;
+      const h = lines * 25 + 18;
+      this.bannerBg.clear()
+        .rect(this.banner.x - w / 2, this.banner.y - h / 2, w, h)
+        .fill({ color: PAL.void, alpha: 0.9 })
+        .stroke({ width: 1, color: accent ? PAL.warn : PAL.panelEdge });
+    }
+  }
+
   private showTitle(): void {
     this.state = 'title';
-    this.sfx.stopMusic();
+    this.setBanner('');
+    startMenuMusic(this.sfx);
     this.clearMenu();
     this.world.visible = false;
     this.hud.visible = false;
@@ -165,28 +214,31 @@ export class Game {
       logo.anchor.set(0.5);
       logo.x = STAGE_W / 2;
       logo.y = 72;
-      logo.scale.set(0.72);
+      logo.scale.set(0.62);
       this.menu.addChild(logo);
     }
     this.menuText([
-      'BOXHEAD — 2PLAY ROOMS (native replica)',
+      'CRATEHEADS',
       'INTERNAL-NO-PUBLIC build · localhost only',
       '',
       'PRESS SPACE / ENTER / TAP TO CONTINUE',
     ], 150);
+    playCue(this.sfx, 'uiConfirm');
   }
 
   private showModeSelect(): void {
     this.state = 'mode';
-    // D-18: end-of-run banner + stale HUD must not bleed onto menus
-    this.banner.text = '';
+    // D-18/D-56: end-of-run banner + stale HUD + frozen world must not bleed
+    // onto menus
+    this.setBanner('');
     this.hud.visible = false;
+    this.world.visible = false;
     this.clearMenu();
     this.menuText([
       'SELECT MODE',
       '1 — SOLO SURVIVAL (WASD or arrows + Space/J)',
       '2 — LOCAL CO-OP (P1 WASD+Space · P2 arrows+IJKL/numpad)',
-      '3 — LOCAL DEATHMATCH (first to 5 kills — rule TBD ARCADE)',
+      `3 — LOCAL DEATHMATCH (first to ${DM_TARGET_KILLS} kills)`,
       '',
       'Press 1 / 2 / 3 (or tap to pick Solo)',
     ], 96);
@@ -212,35 +264,43 @@ export class Game {
     this.world.visible = true;
     this.hud.visible = true;
 
-    // room geometry
+    // room geometry — procedural tile set (§4.9/§4.20): checker floor, walled
+    // border with top highlight / bottom shadow, obstacle blocks
     this.world.removeChildren().forEach((c) => c.destroy());
+    const tiles = TILESETS[this.room.id] ?? TILESETS['open-yard'];
     const arena = new Graphics();
-    arena.rect(10, 10, STAGE_W - 20, STAGE_H - 20).fill(0x101018).stroke({ width: 2, color: 0x2a2a3a });
+    for (let ty = 10; ty < STAGE_H - 10; ty += 16) {
+      for (let tx = 10; tx < STAGE_W - 10; tx += 16) {
+        const alt = ((tx - 10) / 16 + (ty - 10) / 16) % 2 === 1;
+        arena.rect(tx, ty, 16, 16).fill(alt ? tiles.floorAlt : tiles.floor);
+      }
+    }
+    // border walls: 10px frame, highlight on top, shadow at bottom
+    arena.rect(0, 0, STAGE_W, 10).fill(tiles.wall)
+      .rect(0, STAGE_H - 10, STAGE_W, 10).fill(tiles.wall)
+      .rect(0, 0, 10, STAGE_H).fill(tiles.wall)
+      .rect(STAGE_W - 10, 0, 10, STAGE_H).fill(tiles.wall)
+      .rect(0, 0, STAGE_W, 2).fill(PAL.panelEdge)
+      .rect(0, STAGE_H - 2, STAGE_W, 2).fill(PAL.wallEdge)
+      .rect(0, 0, 2, STAGE_H).fill(PAL.panelEdge)
+      .rect(STAGE_W - 2, 0, 2, STAGE_H).fill(PAL.wallEdge);
     for (const o of this.room.obstacles) {
-      arena.rect(o.x, o.y, o.w, o.h).fill(0x2c2c3c).stroke({ width: 1, color: 0x44445c });
+      arena.rect(o.x, o.y, o.w, o.h).fill(tiles.wall).stroke({ width: 1, color: PAL.wallEdge })
+        .rect(o.x, o.y, o.w, 2).fill(PAL.panelEdge);
     }
     this.world.addChild(arena);
-    if (this.floorTex) {
-      // authored floor tile over the flat fill — same base color (0x101018),
-      // so this only adds the subtle grid/grime layer; entities draw above.
-      const floor = new TilingSprite({ texture: this.floorTex, width: STAGE_W - 20, height: STAGE_H - 20 });
-      floor.x = 10;
-      floor.y = 10;
-      floor.alpha = 0.85;
-      this.world.addChild(floor);
-    }
 
     const twoPlayer = this.mode !== 'solo';
     this.input.setMode(twoPlayer ? 'versus' : 'solo');
 
     this.slots = [{
-      p: new Player(this.room.spawn.x, this.room.spawn.y, P1_COLOR),
+      p: new Player(this.room.spawn.x, this.room.spawn.y, PAL.p1),
       cooldown: 0, lastPointerAim: null, pointerAimAge: 99, kills: 0, respawnTimer: 0, alive: true,
     }];
     this.world.addChild(this.slots[0].p.g);
     if (twoPlayer) {
       this.slots.push({
-        p: new Player(this.room.spawn2.x, this.room.spawn2.y, P2_COLOR),
+        p: new Player(this.room.spawn2.x, this.room.spawn2.y, PAL.p2),
         cooldown: 0, lastPointerAim: null, pointerAimAge: 99, kills: 0, respawnTimer: 0, alive: true,
       });
       this.world.addChild(this.slots[1].p.g);
@@ -254,11 +314,13 @@ export class Game {
 
     this.scoreSys = new ScoreSystem();
     this.wave = 0;
-    this.crateTimer = 8; // D-10: stale timer carried an instant crate into retries
+    this.crateTimer = CRATE_FIRST; // D-10: stale timer carried an instant crate into retries
+    this.lastWeapon = 'pistol';
+    this.runnerCueDone = false;
     this.state = 'playing';
-    this.banner.text = '';
-    // BH-3.2 music slot: placeholder combat bed — MAESTRO replaces the pattern.
-    this.sfx.startMusic([110, 0, 110, 0, 131, 0, 98, 0], 160);
+    this.setBanner('');
+    if (this.mode === 'deathmatch') startDmMusic(this.sfx);
+    else startCombatMusic(this.sfx);
     if (this.mode === 'deathmatch') {
       this.spawnQueue = 0;
     } else {
@@ -270,46 +332,58 @@ export class Game {
     this.wave += 1;
     if (this.wave > MAX_WAVE) {
       this.state = 'victory';
-      this.persistHigh();
+      const newBest = this.persistHigh();
       this.sfx.stopMusic();
-      this.banner.text =
+      this.setBanner(
         `WAVE ${MAX_WAVE} CLEARED (${this.mode === 'coop' ? 'CO-OP' : 'SOLO'})\n` +
         `SCORE ${this.scoreSys.score} · BEST ${this.high}\n` +
-        `SPACE / tap — run it again · M — menu`;
-      this.sfx.preset('pickup');
+        `SPACE / tap — run it again · M — menu`,
+      );
+      playCue(this.sfx, newBest ? 'highScore' : 'victory');
       return;
     }
     const def = WAVE_TABLES[this.wave - 1];
     this.spawnQueue = def.count;
     this.spawnTimer = 0.5;
     this.waveBreak = 0;
-    this.sfx.preset('ui');
+    this.runnerCueDone = false;
+    this.setBanner(`— WAVE ${this.wave} —`);
+    this.bannerT = 1.6;
+    playCue(this.sfx, 'waveStart');
   }
 
   private gameOver(): void {
     this.state = 'dead';
-    this.persistHigh();
+    const newBest = this.persistHigh();
     this.sfx.stopMusic();
-    this.banner.text =
+    this.setBanner(
       `OVERRUN ON WAVE ${this.wave} (${this.room.name})\n` +
       `SCORE ${this.scoreSys.score} · BEST ${this.high}\n` +
-      `SPACE / tap — retry · M — menu`;
+      `SPACE / tap — retry · M — menu`,
+      true,
+    );
+    playCue(this.sfx, 'gameOver');
+    if (newBest) playCue(this.sfx, 'highScore');
   }
 
   private dmEnd(winner: number): void {
     this.state = 'victory';
     this.sfx.stopMusic();
-    this.banner.text =
+    this.setBanner(
       `P${winner + 1} WINS THE DEATHMATCH ${this.slots[winner].kills}–${this.slots[1 - winner].kills}\n` +
-      `(scoring rule is a STUB — TBD ARCADE)\n` +
-      `SPACE / tap — rematch · M — menu`;
+      `SPACE / tap — rematch · M — menu`,
+    );
+    playCue(this.sfx, 'victory');
   }
 
-  private persistHigh(): void {
+  /** returns true when the run set a new best */
+  private persistHigh(): boolean {
     if (this.scoreSys.score > this.high) {
       this.high = this.scoreSys.score;
       save('boxhead', 'highscore', this.high);
+      return true;
     }
+    return false;
   }
 
   private clearField(): void {
@@ -317,12 +391,16 @@ export class Game {
     for (const b of this.bullets) b.destroy();
     for (const c of this.crates) c.g.destroy();
     for (const bl of this.blasts) bl.destroy();
+    for (const f of this.flashes) f.destroy();
+    for (const sp of this.specks) sp.destroy();
     for (const s of this.slots) s.p.g.destroy();
     this.zombies = [];
     this.bullets = [];
     this.crates = [];
     this.barrels = [];
     this.blasts = [];
+    this.flashes = [];
+    this.specks = [];
     this.slots = [];
     this.spawnQueue = 0;
   }
@@ -334,34 +412,46 @@ export class Game {
     this.menuChip.visible = this.state === 'dead' || this.state === 'victory';
     if (this.state === 'playing' && this.input.wasPressed('pause')) {
       this.state = 'paused';
-      this.banner.text = 'PAUSED\nESC / P — resume · M / ENTER — menu';
+      // D-55: only M (action) exits pause — Enter is bound to 'fire'
+      this.setBanner('PAUSED\nESC / P — resume · M — menu');
     } else if (this.state === 'paused') {
       if (this.input.wasPressed('pause')) {
         this.state = 'playing';
-        this.banner.text = '';
+        this.setBanner(this.bannerT > 0 ? `— WAVE ${this.wave} —` : '');
       } else if (this.input.wasPressed('action') || this.input.pointer.tapped) {
         // Pause remains keyboard- and touch-accessible; tapping the banner quits.
         this.showModeSelect();
       }
     } else switch (this.state) {
       case 'title':
-        if (this.input.wasPressed('fire') || this.input.wasPressed('action') || this.input.pointer.tapped) this.showModeSelect();
+        if (this.input.wasPressed('fire') || this.input.wasPressed('action') || this.input.pointer.tapped) {
+          playCue(this.sfx, 'uiConfirm');
+          this.showModeSelect();
+        }
         break;
       case 'mode':
         if (this.input.wasPressed('slot1') || this.input.wasPressed('fire') || this.input.pointer.tapped) {
           this.mode = 'solo';
+          playCue(this.sfx, 'uiConfirm');
           this.showRoomSelect();
         } else if (this.input.wasPressed('slot2')) {
           this.mode = 'coop';
+          playCue(this.sfx, 'playerJoin');
           this.showRoomSelect();
         } else if (this.input.wasPressed('slot3')) {
           this.mode = 'deathmatch';
+          playCue(this.sfx, 'playerJoin');
           this.showRoomSelect();
         }
         break;
       case 'room':
-        if (this.input.wasPressed('slot2')) this.startRun(1);
-        else if (this.input.wasPressed('slot1') || this.input.wasPressed('fire') || this.input.pointer.tapped) this.startRun(0);
+        if (this.input.wasPressed('slot2')) {
+          playCue(this.sfx, 'uiConfirm');
+          this.startRun(1);
+        } else if (this.input.wasPressed('slot1') || this.input.wasPressed('fire') || this.input.pointer.tapped) {
+          playCue(this.sfx, 'uiConfirm');
+          this.startRun(0);
+        }
         break;
       case 'playing':
         this.tickPlaying(dt);
@@ -383,8 +473,13 @@ export class Game {
   private tickPlaying(dt: number): void {
     // D-16: cap gameplay time so tab-throttled frames cannot consume invulnerability
     // in one jump and let stacked movers deliver several hits at once.
-    const gameplayDt = Math.min(dt, 0.05);
-    dt = gameplayDt;
+    dt = Math.min(dt, 0.05);
+    // D-58: after a hidden-tab resume, run the first 350 ms wall-clock on a
+    // single fresh frame with contact grace — no catch-up burst.
+    if (performance.now() < this.resumeGraceUntil) {
+      dt = Math.min(dt, 1 / 60);
+      for (const s of this.slots) if (s.alive) s.p.invuln = Math.max(s.p.invuln, 0.12);
+    }
     this.updatePlayers(dt);
     if (this.mode !== 'deathmatch') {
       this.updateSpawning(dt);
@@ -393,11 +488,25 @@ export class Game {
     this.updateBullets(dt);
     this.updateProps(dt);
     this.scoreSys.tick(dt);
+
+    // weapon-ladder unlock sting on tier upgrade
+    const w = this.scoreSys.weaponForMult();
+    if (w !== this.lastWeapon) {
+      const order: Record<string, number> = { pistol: 0, shotgun: 1, uzi: 2, grenades: 3 };
+      if (order[w] > order[this.lastWeapon]) playCue(this.sfx, 'unlock');
+      this.lastWeapon = w;
+    }
+    // wave banner auto-clear
+    if (this.bannerT > 0) {
+      this.bannerT -= dt;
+      if (this.bannerT <= 0) this.setBanner('');
+    }
+    this.streakFlash = Math.max(0, this.streakFlash - dt);
     this.updateHud();
 
     if (this.mode === 'deathmatch') {
       // handled in bullet/player collisions (dmEnd)
-    } else if (this.slots.every((s) => !s.alive)) {
+    } else if (this.state === 'playing' && this.slots.every((s) => !s.alive)) {
       this.gameOver();
     }
   }
@@ -487,7 +596,7 @@ export class Game {
     const cost = ammoPerShot(weapon);
     if (slot.p.ammo < cost) {
       slot.cooldown = 0.25;
-      this.sfx.blip({ wave: 'square', freq: 140, freqEnd: 90, duration: 0.05, volume: 0.5 }); // dry click
+      playCue(this.sfx, 'empty');
       return;
     }
     slot.p.ammo -= cost;
@@ -504,8 +613,7 @@ export class Game {
       this.world.addChild(b.g);
     };
     if (weapon === 'grenades') {
-      // lobbed AoE shell — detonates on first contact/expiry (D-03)
-      shoot(dir, 'grenade');
+      shoot(dir, 'grenade'); // lobbed AoE shell — detonates on hit/wall/expiry (D-03)
     } else {
       shoot(dir);
       if (weapon === 'shotgun') {
@@ -515,7 +623,11 @@ export class Game {
         }
       }
     }
-    this.sfx.preset('shoot');
+    // muzzle flash at the weapon tip (§4.6)
+    const flash = new MuzzleFlash({ x: slot.p.pos.x + dir.x * 13, y: slot.p.pos.y + dir.y * 13 }, Math.atan2(dir.y, dir.x));
+    this.flashes.push(flash);
+    this.world.addChild(flash.g);
+    playCue(this.sfx, weapon === 'shotgun' ? 'shotgun' : weapon === 'uzi' ? 'uzi' : weapon === 'grenades' ? 'grenadeThrow' : 'pistol');
   }
 
   // --- zombies -------------------------------------------------------------------
@@ -525,6 +637,10 @@ export class Game {
       if (this.spawnTimer <= 0) {
         const def = WAVE_TABLES[this.wave - 1];
         const runner = def.runners > 0 && this.spawnQueue <= def.runners;
+        if (runner && !this.runnerCueDone) {
+          this.runnerCueDone = true; // one alarm per wave, not one per runner
+          playCue(this.sfx, 'specialSpawn');
+        }
         this.spawnZombie(runner, def.speed);
         this.spawnQueue -= 1;
         this.spawnTimer = def.spawnEvery;
@@ -564,14 +680,15 @@ export class Game {
       for (const s of this.slots) {
         if (!s.alive || s.p.invuln > 0) continue;
         if (dist(z.pos, s.p.pos) < 14) {
-          s.p.hp -= 10; // TBD ARCADE
+          s.p.hp -= HIT_DAMAGE;
           s.p.invuln = 0.8;
           this.scoreSys.playerHit();
-          this.sfx.preset('hit');
+          this.bloodAt(s.p.pos, 3);
+          playCue(this.sfx, 'playerHurt');
           if (s.p.hp <= 0) {
             s.alive = false;
             s.p.g.visible = false;
-            this.sfx.preset('death');
+            playCue(this.sfx, 'playerDeath');
           }
         }
       }
@@ -590,6 +707,7 @@ export class Game {
         for (const barrel of this.barrels) {
           if (!barrel.exploded && barrel.fuse < 0 && dist(barrel.pos, b.pos) < 10) {
             barrel.fuse = 0;
+            barrel.litBy = owner;
             dead = true;
             break;
           }
@@ -602,12 +720,15 @@ export class Game {
           if (dist(z.pos, b.pos) < 11) {
             z.hp -= 1;
             dead = true;
+            this.bloodAt(z.pos, 2);
             if (z.hp <= 0) {
               this.scoreSys.kill();
+              playCue(this.sfx, 'zombieDeath');
               z.destroy();
               this.zombies.splice(j, 1);
             } else {
               z.hitFlash = 0.1;
+              playCue(this.sfx, 'zombieHit');
             }
             break;
           }
@@ -623,19 +744,20 @@ export class Game {
             const slot = this.slots[k];
             if (!slot.alive || slot.p.invuln > 0) continue;
             if (dist(slot.p.pos, b.pos) < 11) {
-              slot.p.hp -= 10; // TBD ARCADE
+              slot.p.hp -= HIT_DAMAGE;
               dead = true;
+              this.bloodAt(slot.p.pos, 3);
               if (slot.p.hp <= 0) {
                 slot.alive = false;
                 slot.p.g.visible = false;
                 slot.respawnTimer = DM_RESPAWN;
                 const killer = this.slots[1 - k];
                 killer.kills += 1;
-                this.sfx.preset('death');
+                playCue(this.sfx, 'playerDeath');
                 if (killer.kills >= DM_TARGET_KILLS) this.dmEnd(1 - k);
               } else {
                 slot.p.invuln = 0.35;
-                this.sfx.preset('hit');
+                playCue(this.sfx, 'playerHurt');
               }
               break;
             }
@@ -654,11 +776,15 @@ export class Game {
 
   // --- props ---------------------------------------------------------------------
   private updateProps(dt: number): void {
+    this.animClock += dt;
     // DD-77 / DD-18: spec has no DM pickups; crates are enabled in all modes
     // as the deadlock fix pending ARCADE ruling on the no-pickup divergence.
+    // D-57: the timer only runs while under the cap, so a full field never
+    // banks negative time into an instant post-pickup respawn.
+    if (this.crates.length < CRATE_CAP) {
       this.crateTimer -= dt;
-      if (this.crateTimer <= 0 && this.crates.length < 2) {
-        this.crateTimer = 12;
+      if (this.crateTimer <= 0) {
+        this.crateTimer = CRATE_EVERY;
         const pos = this.freeSpot();
         if (pos) {
           const c = new AmmoCrate(pos);
@@ -666,13 +792,14 @@ export class Game {
           this.world.addChild(c.g);
         }
       }
+    }
       for (let i = this.crates.length - 1; i >= 0; i--) {
         const c = this.crates[i];
         for (const s of this.slots) {
           if (!s.alive) continue;
           if (dist(c.pos, s.p.pos) < 15) {
             s.p.ammo += CRATE_AMMO;
-            this.sfx.preset('pickup');
+            playCue(this.sfx, 'pickup');
             c.take();
             this.crates.splice(i, 1);
             break;
@@ -680,72 +807,134 @@ export class Game {
         }
       }
 
-    // barrels: fuses and chain reactions
+    // barrels: idle fuse blink + lit fuses and chain reactions
     for (const barrel of this.barrels) {
       if (barrel.exploded) continue;
       if (barrel.fuse >= 0) {
         barrel.fuse += dt;
+        barrel.draw(this.animClock);
         if (barrel.fuse > 0.12) this.explodeBarrel(barrel);
+      } else if (Math.floor(this.animClock * 5) !== Math.floor((this.animClock - dt) * 5)) {
+        barrel.draw(this.animClock);
       }
     }
 
-    // blast VFX
+    // blast / muzzle / speck VFX
     for (let i = this.blasts.length - 1; i >= 0; i--) {
       if (!this.blasts[i].tick(dt)) {
         this.blasts[i].destroy();
         this.blasts.splice(i, 1);
       }
     }
+    for (let i = this.flashes.length - 1; i >= 0; i--) {
+      if (!this.flashes[i].tick(dt)) {
+        this.flashes[i].destroy();
+        this.flashes.splice(i, 1);
+      }
+    }
+    for (let i = this.specks.length - 1; i >= 0; i--) {
+      if (!this.specks[i].tick(dt)) {
+        this.specks[i].destroy();
+        this.specks.splice(i, 1);
+      }
+    }
   }
 
   private explodeBarrel(barrel: Barrel): void {
     barrel.explode();
-    this.detonate(barrel.pos, BARREL_RADIUS);
+    this.detonate(barrel.pos, BARREL_RADIUS, barrel.litBy >= 0 ? barrel.litBy : undefined);
   }
+
   /** shared AoE: barrels and grenade shells (D-03). Kills zombies in radius,
    *  damages players in 0.8×radius, chains unlit barrels.
    *  D-19 ruling: a grenade's OWNER is exempt from its blast (fired weapon,
    *  not environmental hazard like barrels); partners still take friendly
-   *  fire — era-consistent co-op chaos, recorded for ARCADE review. */
-  private detonate(pos: Vec, radius: number, owner?: number): void {
-
+   *  fire — era-consistent co-op chaos, recorded for ARCADE review.
+   *  sr2: `credit` (grenade owner / barrel lighter) claims DM blast kills —
+   *  chained barrels inherit the lighter's credit. */
+  private detonate(pos: Vec, radius: number, credit?: number): void {
     const ring = new BlastRing(pos, radius);
     this.blasts.push(ring);
     this.world.addChild(ring.g);
-    this.sfx.blip({ wave: 'sawtooth', freq: 90, freqEnd: 30, duration: 0.35, volume: 0.9 });
+    this.explosionAt(pos, radius);
+    playCue(this.sfx, 'explode');
 
+    let blastKills = 0;
     for (let j = this.zombies.length - 1; j >= 0; j--) {
       const z = this.zombies[j];
       if (dist(z.pos, pos) < radius) {
         this.scoreSys.kill();
+        this.bloodAt(z.pos, 3);
         z.destroy();
         this.zombies.splice(j, 1);
+        blastKills += 1;
       }
     }
+    if (blastKills > 0) playCue(this.sfx, 'zombieDeath');
     for (const s of this.slots) {
       if (!s.alive || s.p.invuln > 0) continue;
-      if (owner !== undefined && this.slots.indexOf(s) === owner) continue; // D-19: shooter exempt from own grenade
+      if (credit !== undefined && this.slots.indexOf(s) === credit) continue; // D-19: shooter exempt from own grenade
       if (dist(s.p.pos, pos) < radius * 0.8) {
         s.p.hp -= BARREL_PLAYER_DAMAGE;
         s.p.invuln = 0.8;
         if (this.mode !== 'deathmatch') this.scoreSys.playerHit();
-        this.sfx.preset('hit');
+        this.bloodAt(s.p.pos, 3);
+        playCue(this.sfx, 'playerHurt');
         if (s.p.hp <= 0) {
           s.alive = false;
           s.p.g.visible = false;
-          this.sfx.preset('death');
+          playCue(this.sfx, 'playerDeath');
           if (this.mode === 'deathmatch') {
-            // no kill credit for AoE (stub) — just respawn
             s.respawnTimer = DM_RESPAWN;
+            if (credit !== undefined && credit !== this.slots.indexOf(s)) {
+              const killer = this.slots[credit];
+              killer.kills += 1;
+              if (killer.kills >= DM_TARGET_KILLS) this.dmEnd(credit);
+            }
+          } else if (this.slots.every((slot) => !slot.alive)) {
+            this.gameOver();
           }
         }
       }
     }
-    // chain other barrels
+    // chain other barrels — credit propagates down the chain
     for (const other of this.barrels) {
       if (!other.exploded && other.fuse < 0 && dist(other.pos, pos) < radius) {
         other.fuse = 0;
+        other.litBy = credit ?? -1;
       }
+    }
+  }
+
+  /** blood / debris specks (§4.10) */
+  private bloodAt(pos: Vec, n: number): void {
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const sp = 30 + Math.random() * 60;
+      const color = Math.random() < 0.7 ? PAL.blood : PAL.bloodDark;
+      const s = new Speck(
+        { x: pos.x, y: pos.y },
+        { x: Math.cos(a) * sp, y: Math.sin(a) * sp },
+        color, 2, 0.2 + Math.random() * 0.2,
+      );
+      this.specks.push(s);
+      this.world.addChild(s.g);
+    }
+  }
+
+  /** explosion debris — hot shrapnel ring (§4.16 frame B) */
+  private explosionAt(pos: Vec, radius: number): void {
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2 + Math.random() * 0.4;
+      const sp = 60 + Math.random() * 70;
+      const color = i % 3 === 0 ? PAL.muzzle : i % 3 === 1 ? PAL.warn : PAL.blood;
+      const s = new Speck(
+        { x: pos.x, y: pos.y },
+        { x: Math.cos(a) * sp, y: Math.sin(a) * sp },
+        color, 2, 0.25 + Math.random() * 0.2,
+      );
+      this.specks.push(s);
+      this.world.addChild(s.g);
     }
   }
 
@@ -777,6 +966,8 @@ export class Game {
         `DEATHMATCH — P1 ${this.slots[0].kills} · P2 ${this.slots[1]?.kills ?? 0}  (target ${DM_TARGET_KILLS})\n` +
         `P1 HP ${Math.max(0, this.slots[0].p.hp)} AMMO ${this.slots[0].p.ammo}` +
         (this.slots[1] ? `   P2 HP ${Math.max(0, this.slots[1].p.hp)} AMMO ${this.slots[1].p.ammo}` : '');
+      this.hudG.clear();
+      this.streakText.text = '';
       return;
     }
     const second = this.slots[1];
@@ -785,6 +976,31 @@ export class Game {
       `HP ${Math.max(0, this.player.hp)}  AMMO ${this.player.ammo}  [${w.toUpperCase()}]  BEST ${this.high}` +
       (second ? `\nP2 HP ${Math.max(0, second.p.hp)}  AMMO ${second.p.ammo}` : '') +
       (this.spawnQueue === 0 && this.zombies.length === 0 ? '  — wave clear…' : '');
+
+    // HP / ammo bar chips (§4.12)
+    const hpPct = Math.max(0, this.player.hp) / 100;
+    const hpCol = hpPct < 0.3 ? PAL.warn : PAL.ok;
+    this.hudG.clear()
+      .rect(14, 25, 64, 5).fill(PAL.panel).stroke({ width: 1, color: PAL.panelEdge })
+      .rect(15, 26, 62 * hpPct, 3).fill(hpCol)
+      .rect(14, 32, 64, 5).fill(PAL.panel).stroke({ width: 1, color: PAL.panelEdge })
+      .rect(15, 33, 62 * Math.min(1, this.player.ammo / 48), 3).fill(PAL.accent);
+    if (second) {
+      const hp2 = Math.max(0, second.p.hp) / 100;
+      this.hudG
+        .rect(14, 39, 64, 5).fill(PAL.panel).stroke({ width: 1, color: PAL.panelEdge })
+        .rect(15, 40, 62 * hp2, 3).fill(hp2 < 0.3 ? PAL.warn : PAL.p2);
+    }
+
+    // streak multiplier chip (§4.18) — flashes on increment
+    if (this.scoreSys.mult > this.lastMult) this.streakFlash = 0.1;
+    this.lastMult = this.scoreSys.mult;
+    const label = `x${this.scoreSys.mult}`;
+    this.streakText.text = label;
+    const flash = this.streakFlash > 0 && Math.floor(this.streakFlash * 20) % 2 === 0;
+    this.hudG
+      .rect(this.streakText.x - 26, 8, 52, 20).fill(PAL.panel)
+      .stroke({ width: 1, color: flash ? PAL.warn : PAL.panelEdge });
   }
 
   /** PROOF/debug snapshot — read-only state for automated acceptance (?debug) */
@@ -812,6 +1028,10 @@ export class Game {
       obstacles: this.room.obstacles,
       banner: this.banner.text,
       hud: this.hudText.text,
+      crateTimer: Math.round(this.crateTimer * 100) / 100,
+      weaponTier: this.lastWeapon,
+      dmTarget: DM_TARGET_KILLS,
+      audio: { running: this.sfx.running, voices: this.sfx.voices, muted: this.sfx.muted },
     };
   }
 }

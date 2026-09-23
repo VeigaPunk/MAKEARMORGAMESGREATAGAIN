@@ -53,7 +53,13 @@ export const ROOMS: ArenaRoom[] = [
 
 /**
  * WaveDirector — escalating spawn tables.
- * ALL NUMBERS ARE TBD ARCADE PLACEHOLDERS — replace with captured originals.
+ * Tuned 2026-09-23 (sr2): the original's exact spawn compositions are a
+ * documented evidence gap (dossier §Evidence gaps), so these are declared
+ * tuning targets, not captures. Iterated twice against a real-input CDP
+ * player-bot (probe: 12/22/36 bankrupted the ammo economy and swarmed wave 2;
+ * 5/9/14 from the placeholder build was trivially sparse — a ~1.75× step per
+ * wave with runners from wave 2 lands the "chaotic but killable" arcade feel).
+ * A 3-wave v1 slice sized for a ~3–6 minute run (concept: 5–20 min session).
  */
 export interface WaveTable {
   count: number;
@@ -63,14 +69,17 @@ export interface WaveTable {
 }
 
 export const WAVE_TABLES: WaveTable[] = [
-  { count: 5, speed: 34, runners: 0, spawnEvery: 1.4 },
-  { count: 9, speed: 40, runners: 2, spawnEvery: 1.1 },
-  { count: 14, speed: 46, runners: 4, spawnEvery: 0.85 },
+  { count: 8, speed: 30, runners: 0, spawnEvery: 1.3 },
+  { count: 14, speed: 36, runners: 2, spawnEvery: 1.1 },
+  { count: 22, speed: 42, runners: 4, spawnEvery: 0.9 },
 ];
 
 /**
- * ScoreSystem — streak multiplier + weapon ladder stubs.
- * Thresholds are PLACEHOLDERS (TBD ARCADE playtest).
+ * ScoreSystem — streak multiplier + weapon ladder.
+ * Tuned 2026-09-23 (sr2): thresholds 3/6/10 declare the dossier's
+ * pistol → shotgun → uzi → grenades order (concept §Core loop step 5).
+ * A 3-kill streak lands shotgun inside wave 1, uzi by wave 2, grenades by
+ * wave 3; mult decays after 3.5 s without a kill so the ladder breathes.
  */
 export type WeaponTier = 'pistol' | 'shotgun' | 'uzi' | 'grenades';
 
@@ -101,25 +110,27 @@ export class ScoreSystem {
     }
   }
 
-  /** weapon ladder stub — PLACEHOLDER thresholds */
+  /** weapon ladder — mult thresholds tuned sr2 (rationale above) */
   weaponForMult(): WeaponTier {
-    if (this.mult >= 14) return 'grenades';
-    if (this.mult >= 8) return 'uzi';
-    if (this.mult >= 4) return 'shotgun';
+    if (this.mult >= 10) return 'grenades';
+    if (this.mult >= 6) return 'uzi';
+    if (this.mult >= 3) return 'shotgun';
     return 'pistol';
   }
 }
 
-/** per-weapon fire behavior stubs (TBD ARCADE tables) */
+/** per-weapon fire behavior; delays tuned sr2 to the original's feel:
+ *  pistol = reliable mid-rate workhorse, shotgun = slow punchy cone,
+ *  uzi = rapid ticks, grenades = slow lobbed AoE ordnance. */
 export function fireDelay(w: WeaponTier): number {
   switch (w) {
     case 'uzi': return 0.14;
     case 'shotgun': return 0.5;
-    case 'grenades': return 0.8; // stub: grenades not implemented yet, fires single
+    case 'grenades': return 0.8;
     default: return 0.34;
   }
 }
 
 export function ammoPerShot(w: WeaponTier): number {
-  return w === 'grenades' ? 2 : 1; // TBD ARCADE — AoE costs more per lob
+  return w === 'grenades' ? 2 : 1; // AoE ordnance costs 2 rounds per lob
 }

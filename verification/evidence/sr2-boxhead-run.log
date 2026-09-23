@@ -1,0 +1,62 @@
+# sr2 Crateheads verification run — 2026-09-23T21:43:36.335Z
+# build: apps/boxhead/dist served at http://127.0.0.1:8281/?debug (fresh sr2 build)
+PASS BOOT — state=title
+PASS RIGHTS-title — document.title=Crateheads
+PASS RIGHTS-title-string — ["","CRATEHEADS","INTERNAL-NO-PUBLIC build · localhost only","","PRESS SPACE / ENTER / TAP TO CONTINUE"]
+PASS RIGHTS-logo-svg — crateheads-logo.svg loads and spells CRATEHEADS
+PASS SOLO-start — wave=1 spawnQueue=8
+PASS SOLO-wave-tables — wave1 count=8 (tuned table)
+PASS SOLO-victory — end=victory wave=4 score=39600 time≈76s
+PASS SOLO-ladder — PISTOL,SHOTGUN,UZI,GRENADES
+PASS SOLO-swarm — peak concurrent=6
+PASS SOLO-crates — crates seen=2
+PASS SOLO-banner — WAVE 3 CLEARED (SOLO)
+PASS SOLO-highscore — stored=39600 high=39600
+INFO GRENADE-attempt1 proof=null blasts=0 end=victory
+PASS RETRY-after-victory — state=playing
+PASS DEATH-idle — died wave=1
+PASS DEATH-banner — OVERRUN ON WAVE 1 (OPEN YARD)
+PASS DEATH-retry — state=playing
+PASS PAUSE-esc — PAUSED
+PASS PAUSE-world-frozen — zombie positions identical 500ms
+PASS D-55-enter-noop — Enter in pause still paused (banner promises only M)
+PASS PAUSE-resume-p — state=playing
+PASS D-56-world-hidden — state=mode world.visible=false
+PASS D-18-banner-clear — banner=""
+PASS PERSIST-highscore — high=39600 (was 39600)
+PASS SETTINGS-live — slider=38 musicVolume=0.38
+PASS SETTINGS-mute — muted=true
+PASS SETTINGS-persist-reload — stored={"music":0.38,"sfx":0.85,"muted":true} live music=0.38
+PASS SETTINGS-restored — {"mv":0.73,"muted":false}
+PASS BOOT — state=title
+PASS AUDIO-scheduled — running=true voices=13
+PASS D-57-crate-timer — crateTimer=6.93
+INFO run2 end=dead blasts=0 grenade=null tiers=PISTOL,SHOTGUN,UZI,GRENADES
+FAIL SOLO-blast-kill — blast kill events run1=0 run2=0
+FAIL GRENADE-aoe-multikill — two full runs, no >=3 cluster killed by one lob
+PASS COOP-start — mode=coop players=2
+PASS COOP-simul-move — P1 dy=75 P2 dx=75
+PASS COOP-simul-fire — P1 24->22 P2 24->22
+PASS COOP-friendly-inert — P2 hp=100
+PASS COOP-pause — ESC pauses co-op
+PASS COOP-resume — P resumes co-op
+PASS DM-start — mode=deathmatch
+PASS DM-crates-enabled — first crate within 15s
+PASS DM-p2-damage — P1 hp=20
+PASS DM-p1-near-barrel — dist=38
+INFO DM phase2 p2=(155,237) barrels=[{"x":150,"y":300,"exploded":false,"fuse":-1},{"x":500,"y":110,"exploded":false,"fuse":-1}]
+PASS DM-aoe-kill-credit — P2 kills 0->1 (barrel blast, P1 hp=-5)
+PASS DM-match-end — P1 WINS THE DEATHMATCH 5–1
+PASS DM-target-5 — scoreline=5–1
+PASS DM-rematch — SPACE rematch
+PASS BOOT — state=title
+PASS TOUCH-menus — state=playing
+PASS TOUCH-stick — P1 x 320->356
+PASS TOUCH-fire — ammo 24->22
+PASS TOUCH-portrait-letterbox — canvas 500x312.5 scale=0.781
+PASS TOUCH-death — death under touch emulation
+PASS TOUCH-tap-retry — state=playing
+PASS HYGIENE-console — 0 errors
+PASS HYGIENE-local-only — all local
+
+CANONICAL SMOKE: 53/55

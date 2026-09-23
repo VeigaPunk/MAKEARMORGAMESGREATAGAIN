@@ -1,26 +1,31 @@
-# PIXEL drop zone — Boxhead asset manifest (BH-3.1)
+# PIXEL/MAESTRO resolution — Crateheads asset manifest (BH-3.1, sr2)
 
 **Rule:** chunky low-fi boxes, flat mid-2000s portal palette, top-down readable
 silhouettes. No realistic humans, no bloom/HDR, no smoothing that softens hit
-readability. Replace placeholder `Graphics` boxes in `src/entities.ts` —
-filenames below are the contract; keep stage logical units (stage 640×400).
+readability. Stage logical units stay 640×400.
 
-| File | Replaces | Notes |
-|------|----------|-------|
-| `player-p1.png` | `Player` box (P1 tint 0xe8e8f0) | ~12×15 px logical, facing up baseline |
-| `player-p2.png` | `Player` box (P2 tint 0x7ab8ff) | same silhouette, blue tint |
-| `zombie.png` | `Zombie` walker (0x6a8f3a) | same box silhouette, green |
-| `zombie-runner.png` | `Zombie` runner (0xd43a3a) | red variant |
-| `muzzle-flash.png` | in-code muzzle VFX | optional; current build has none |
-| `shotgun-pellets.png` | projectile sprite | optional; bullets are 5×2 rects today |
-| `ammo-crate.png` | `AmmoCrate` (0xf5c542 + band) | 14×10 logical, readable at a glance |
-| `barrel.png` | `Barrel` idle (0xb03030) | 12×16 logical |
-| `barrel-explode.png` | `BlastRing` ring VFX | optional sprite alternative |
-| `room-open-yard.png` | `ROOMS[0]` floor/props | 620×380 inner field |
-| `room-pillars.png` | `ROOMS[1]` floor/props | 620×380 inner field |
-| `ui-stick-base.png` / `ui-stick-knob.png` / `ui-fire.png` | `touch.ts` chrome | optional; vector chrome acceptable |
-| `ui-death-screen.png` | banner text backdrop | optional |
+**Status (2026-09-23, sr2): every slot RESOLVED procedurally** — the build
+ships zero binary gameplay assets. All in-game art is Pixi `Graphics` drawn
+from the authored recipes in
+`01-design-docs/02-concept-specs/001-boxhead-native-placeholder-recipes.md`
+(palette module `src/art/palette.ts`, entities `src/entities.ts`, arena/HUD in
+`src/game.ts`, touch chrome `src/touch.ts`). Audio is 100% WebAudio recipes
+(`src/audio.ts`) per `06-audio/boxhead-2play-sound-bible.md` — zero binary
+audio, per stack-locked doctrine.
 
-**Status:** all slots PLACEHOLDER — code draws `Graphics` primitives today.
-Drop files here; wiring lands behind a loader that falls back to primitives
-when a file is absent (no code thrash for partial drops).
+| File | Resolution |
+|------|------------|
+| `player-p1.png` / `player-p2.png` | procedural — recipes §4.1/§4.2 (body + head + eyes + p1/p2 stripe, 2-frame walk bob) |
+| `zombie.png` / `zombie-runner.png` | procedural — §4.3 two green skins + §4.4 horned red runner (special) |
+| `muzzle-flash.png` | procedural — §4.6 two-frame cross flash at weapon tip |
+| `shotgun-pellets.png` | procedural — §4.5 pellet + §4.17 5-pellet spread logic |
+| `ammo-crate.png` | procedural — §4.7 wood crate, bands, ammo mark |
+| `barrel.png` / `barrel-explode.png` | procedural — §4.8 barrel + idle fuse blink; §4.16 ring + hot core + debris specks |
+| `room-open-yard.png` / `room-pillars.png` | procedural — §4.9/§4.20 checker floor + walled border + obstacle blocks (warehouse / lab tile sets) |
+| `ui-stick-base.png` / `ui-stick-knob.png` / `ui-fire.png` | procedural — §4.13 panel-backed stick, accent knob, labeled FIRE button |
+| `ui-death-screen.png` | procedural — §4.15 banner bar with panel backdrop |
+| `boxhead-logo.svg` | replaced — `public/art/crateheads-logo.svg` (direct-authored block wordmark, original letterforms) |
+| `floor-tile.svg` | removed — superseded by procedural floor tiles |
+
+No PNG drops are planned; if a future drop wants binary art it must land
+behind the same fallback rule (code-drawn primitives when a file is absent).
