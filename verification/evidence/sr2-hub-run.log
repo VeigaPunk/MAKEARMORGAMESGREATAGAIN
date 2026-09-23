@@ -1,0 +1,9 @@
+== sr2 hub entry point: burger-tycoon boot proof (built game, real input) ==
+PASS hub card present — games/burger-tycoon/
+PASS hub click navigates into game — http://localhost:8123/games/burger-tycoon/
+PASS built game boots (?debug hook) — url=http://localhost:8123/games/burger-tycoon/
+PASS title screen on built game — mode=title
+PASS real click action on built game (sow) — crops 20->36
+PASS console errors: 0 — clean
+PASS non-local requests: 0 — all local
+== SUMMARY: ALL PASS ==

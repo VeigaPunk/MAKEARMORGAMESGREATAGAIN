@@ -1,0 +1,24 @@
+== sr2 BURGER Tycoon acceptance + flow (final build, real input) ==
+PASS title screen at boot — mode=title
+PASS title->play via real click — mode=play
+PASS AC7 sim-idles — t 0.5->3.0, cash 501->506
+PASS AC1 four-panes-affect-economy — crops 20->36, patties 10->14, demand 1.0->1.9, cash 500->343
+PASS AC2 dirty=cutCorners — profit 0.0->14.4/s, backlash 0.0->1.1
+PASS SFX scheduled (WebAudio running, voices>0) — {"voices":34,"running":true,"muted":false,"music":0.7,"sfxVol":0.85}
+PASS pause: Esc freezes sim — mode=pause, t 2.5->2.5
+PASS resume: Esc resumes sim — mode=play, t 2.5->4.1
+PASS settings: volumes+mute applied + persisted — music=0.29 sfx=0.5 muted=true ls={"master":0.9,"music":0.29,"sfx":0.5,"muted":true}
+PASS settings persist across reload — music=0.29 muted=true slider=29
+PASS back to play after reload (real click) — mode=play
+PASS AC5 no-McD-marks — forbidden=[none]
+PASS AC6 english-only — non-Latin/accented chars=0
+collapse: dirty toggles = {"deforest":1,"cheapFeed":1,"cutCorners":1} (t=0s)
+PASS AC3 forced-failure (REPUTATION COLLAPSE, comparable pressure) — over=true t=40s reason="REPUTATION COLLAPSE — activists shut you down" rep=0 backlash=100 (sr1 reference: t=42s)
+PASS restart after game-over (real click) — over=false t=0.4 cash=501
+PASS best-time persistence across reload — ls 39.93169999999997 -> 39.93169999999997
+PASS console errors: 0 app-originated — clean
+== AC4 mobile tabs + single-pane art (best-effort, 500px viewport) ==
+viewport mode: grid=false canvasClientWidth=500
+PASS AC4 tabs: 4 DOM tabs, pane 4 reachable — tabs=4 active=3
+PASS mobile console errors: 0 app-originated — clean
+== SUMMARY: ALL PASS ==

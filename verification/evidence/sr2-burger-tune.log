@@ -1,0 +1,11 @@
+sr2-burger-tune.mjs — strategy playtest vs tuned sim
+IDLE (no input) | run ends (bankrupt) by t=660 — slow bleed, not instant: PASS
+CLEAN (no dirty toggles) | viable early: cash >= 300 at t=90: PASS
+CLEAN (no dirty toggles) | no clean win: game over (bankrupt) by t=660: PASS
+CLEAN (no dirty toggles) | pressure is slow: survives past t=240: PASS
+DIRTY (all toggles at t=0) | REPUTATION COLLAPSE 30-90s (sr1 comparable: was t=42): PASS
+MIXED (cheapFeed+cutCorners, scrub backlash) | dirty outlives clean early: survives past t=90: PASS
+MIXED (cheapFeed+cutCorners, scrub backlash) | treadmill ends the run by t=720 (stain compounds): PASS
+MIXED (cheapFeed+cutCorners, scrub backlash) | escalating scrub costs bite: prUses+bribeUses >= 2: PASS
+MIXED (cheapFeed+cutCorners, scrub backlash) | dirty pays: peak cash >= 600: PASS
+ALL TUNING TARGETS PASS
