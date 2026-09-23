@@ -1,0 +1,125 @@
+[04:48:04] sr1-shmup-driver scenario=types url=http://localhost:5176/?debug pid=254222
+[04:48:05] BOOT OK: mode=title pack=replica unlocked=1 lives=3 ls=null
+[04:48:05] REAL CLICK (START ch1): mode=play chapter=1 wave=1/2 lives=3 weapon=PEA SHOOTER
+[04:48:06] formation settled — sampling 100× @100ms for per-type motion fit
+[04:48:17] TYPE 0 CHICKEN: n=4 omega=0.700 (expected 0.700) hp@spawn=2 -> DISTINCT
+[04:48:17] TYPE 1 CHICKEN SCOUT: n=4 omega=0.805 (expected 0.805) hp@spawn=2 -> DISTINCT
+[04:48:17] TYPE 2 CHICKEN ACE: n=4 omega=0.595 (expected 0.595) hp@spawn=4 -> DISTINCT
+[04:48:17] screenshot -> sr1-shmup-replica-types.png (32KB)
+[04:48:17] hits-to-kill: tracking nearest ACE (type 2) by formation slot under real held fire
+[04:48:17]   tracking ACE at formation bx=444 hp=4
+[04:48:24]   ACE hp 4 -> 3 (hit #1)
+[04:48:25]   ACE hp 3 -> 2 (hit #2)
+[04:48:28]   ACE hp 2 -> 1 (hit #3)
+[04:48:29]   ACE destroyed (hit #4)
+[04:48:29] ACE hits-to-kill: 4 hits (expected 4, hp4 tank) -> PASS
+[04:48:29] console errors: 0
+[04:48:29] D-38 BEHAVIORAL PROOF: PASS
+[04:48:29] TYPES PASS — exit 0
+[04:48:48] sr1-shmup-driver scenario=fullclear url=http://localhost:5176/?debug pid=254833
+[04:48:49] BOOT OK: mode=title pack=replica unlocked=1 lives=3 ls=null
+[04:48:49] REAL CLICK (START ch1): mode=play chapter=1 wave=1/2 lives=3 weapon=PEA SHOOTER
+[04:49:15] death (cause=egg) lives 3->2 t=8.8s
+[04:49:26] CH1 BOSS SPAWN: hp=60/60 (HUD shows pack boss name)
+[04:49:26] screenshot -> sr1-shmup-replica-boss.png (33KB)
+[04:49:43] CHAPTER 1 CLEAR banner (boss down, score=3650)
+[04:49:44] CHAPTER 1 CLEAR banner (boss down, score=3650)
+[04:49:44] CHAPTER 1 CLEAR banner (boss down, score=3650)
+[04:49:44] CHAPTER 1 CLEAR banner (boss down, score=3650)
+[04:49:44] CHAPTER 1 CLEAR banner (boss down, score=3650)
+[04:49:44] CHAPTER 1 CLEAR banner (boss down, score=3650)
+[04:49:44] CHAPTER 1 CLEAR banner (boss down, score=3650)
+[04:49:44] CHAPTER 1 CLEAR banner (boss down, score=3650)
+[04:49:44] CHAPTER 1 CLEAR banner (boss down, score=3650)
+[04:49:44] CHAPTER 1 CLEAR banner (boss down, score=3650)
+[04:49:44] CHAPTER 1 CLEAR banner (boss down, score=3650)
+[04:49:45] CHAPTER 1 CLEAR banner (boss down, score=3650)
+[04:49:45] CHAPTER 1 CLEAR banner (boss down, score=3650)
+[04:49:45] CHAPTER 1 CLEAR banner (boss down, score=3650)
+[04:49:45] CHAPTER 1 CLEAR banner (boss down, score=3650)
+[04:49:45] CHAPTER 1 CLEAR banner (boss down, score=3650)
+[04:49:45] CHAPTER 1 CLEAR banner (boss down, score=3650)
+[04:49:45] CHAPTER 1 CLEAR banner (boss down, score=3650)
+[04:49:45] CHAPTER 1 CLEAR banner (boss down, score=3650)
+[04:49:45] CHAPTER 1 CLEAR banner (boss down, score=3650)
+[04:49:45] CHAPTER 1 CLEAR banner (boss down, score=3650)
+[04:49:46] CHAPTER 1 CLEAR banner (boss down, score=3650)
+[04:49:46] CHAPTER 1 CLEAR banner (boss down, score=3650)
+[04:49:46] CHAPTER 1 CLEAR banner (boss down, score=3650)
+[04:49:46] CHAPTER 1 CLEAR banner (boss down, score=3650)
+[04:49:46] CHAPTER 2 START (unlocked=2) — select-unlock persisted
+[04:50:04] death (cause=egg) lives 2->1 t=6.6s
+[04:50:28] death (cause=egg) lives 1->0 t=30.6s
+[04:50:29] FULLCLEAR GAMEOVER — FAIL (see above)
+[04:50:29] screenshot -> sr1-shmup-replica-fail.png (39KB)
+[04:50:29] console errors: 0
+[04:50:29] FULLCLEAR FAIL — exit 1
+[04:53:50] sr1-shmup-driver scenario=fullclear url=http://localhost:5176/?debug pid=257505
+[04:53:51] BOOT OK: mode=title pack=replica unlocked=1 lives=3 ls=null
+[04:53:51] REAL CLICK (START ch1): mode=play chapter=1 wave=1/2 lives=3 weapon=PEA SHOOTER
+[04:55:03] CH1 BOSS SPAWN: hp=60/60 (HUD shows pack boss name)
+[04:55:03] screenshot -> sr1-shmup-replica-boss.png (31KB)
+[04:55:23] death (cause=egg) lives 3->2 t=52.2s
+[04:55:29] CHAPTER 1 CLEAR (boss down, score=3450)
+[04:55:32] CHAPTER 2 START (unlocked=2) — select-unlock persisted
+[04:55:37] death (cause=chicken) lives 2->1 t=5.4s
+[04:55:53] death (cause=chicken) lives 1->0 t=21.6s
+[04:55:54] FULLCLEAR GAMEOVER — FAIL (see above)
+[04:55:54] screenshot -> sr1-shmup-replica-fail.png (37KB)
+[04:55:54] console errors: 0
+[04:55:55] FULLCLEAR FAIL — exit 1
+[05:00:09] sr1-shmup-driver scenario=fullclear url=http://localhost:5176/?debug pid=261442
+[05:00:09] BOOT OK: mode=title pack=replica unlocked=1 lives=3 ls=null
+[05:00:10] REAL CLICK (START ch1): mode=play chapter=1 wave=1/2 lives=3 weapon=PEA SHOOTER
+[05:01:44] CH1 BOSS SPAWN: hp=60/60 (HUD shows pack boss name)
+[05:01:44] screenshot -> sr1-shmup-replica-boss.png (32KB)
+[05:02:26] death (cause=egg) lives 3->2 t=81.8s
+[05:02:31] death (cause=egg) lives 2->1 t=86.6s
+[05:02:49] CHAPTER 1 CLEAR (boss down, score=3400)
+[05:02:52] CHAPTER 2 START (unlocked=2) — select-unlock persisted
+[05:02:59] death (cause=egg) lives 1->0 t=7s
+[05:03:00] FULLCLEAR GAMEOVER — FAIL (see above)
+[05:03:00] screenshot -> sr1-shmup-replica-fail.png (38KB)
+[05:03:00] console errors: 0
+[05:03:00] FULLCLEAR FAIL — exit 1
+[05:06:35] sr1-shmup-driver scenario=fullclear url=http://localhost:5176/?debug pid=266782
+[05:06:36] BOOT OK: mode=title pack=replica unlocked=1 lives=3 ls=null
+[05:06:36] REAL CLICK (START ch1): mode=play chapter=1 wave=1/2 lives=3 weapon=PEA SHOOTER
+[05:07:38] CH1 BOSS SPAWN: hp=60/60 (HUD shows pack boss name)
+[05:07:38] screenshot -> sr1-shmup-replica-boss.png (32KB)
+[05:08:15] CHAPTER 1 CLEAR (boss down, score=3500)
+[05:08:18] CHAPTER 2 START (unlocked=2) — select-unlock persisted
+[05:09:43] WIN: all chapters clear score=7750 livesLeft=3 deaths=0 unlocked=2 localStorage=2
+[05:09:43] screenshot -> sr1-shmup-replica-win.png (39KB)
+[05:09:43] REAL KEY (R): win -> title mode=title unlocked=2 localStorage=2
+[05:09:43] REAL KEY (Digit2, Enter): chapter-select ch2 -> mode=play chapter=2 (restart after win works)
+[05:09:43] console errors: 0
+[05:09:43] REPLICA FULL CLEAR + UNLOCK PERSIST: PASS
+[05:09:43] FULLCLEAR PASS — exit 0
+[05:10:12] sr1-shmup-driver scenario=gameover url=http://localhost:5176/?debug pid=268852
+[05:10:13] BOOT OK: mode=title pack=replica unlocked=1 lives=3 ls=null
+[05:10:13] REAL CLICK (START ch1): mode=play chapter=1 wave=1/2 lives=3 weapon=PEA SHOOTER
+[05:10:16] death (cause=egg) lives 3->2
+[05:10:21] death (cause=egg) lives 2->1
+[05:10:31] death (cause=egg) lives 1->0
+[05:10:33] GAME OVER reached: lives=0 deaths=3 lastDeath=egg mode=gameover
+[05:10:33] screenshot -> sr1-shmup-replica-gameover.png (36KB)
+[05:10:33] REAL KEY (R): gameover -> title mode=title
+[05:10:33] REAL KEY (Enter): title -> restart mode=play chapter=1 lives=3
+[05:10:33] console errors: 0
+[05:10:33] REPLICA GAME-OVER FLOW: PASS
+[05:10:33] GAMEOVER PASS — exit 0
+[05:10:42] sr1-shmup-driver scenario=clucksmoke url=http://localhost:5177/?debug pid=269334
+[05:10:43] BOOT OK: mode=title pack=cluck unlocked=1 lives=3 ls=null
+[05:10:43] REAL CLICK (START ch1): mode=play chapter=1 wave=1/2 lives=3 weapon=SOUP LASER
+[05:10:43] smoke t=0s mode=play ch=1 wave=1/2 chickens=12 bossHp=null score=0 lives=3 weapon=SOUP LASER
+[05:10:48] smoke t=5s mode=play ch=1 wave=1/2 chickens=8 bossHp=null score=450 lives=3 weapon=SPATULA SPREAD
+[05:10:53] smoke t=10s mode=play ch=1 wave=1/2 chickens=8 bossHp=null score=450 lives=3 weapon=SPATULA SPREAD
+[05:10:58] smoke t=15s mode=play ch=1 wave=1/2 chickens=4 bossHp=null score=850 lives=3 weapon=SPATULA SPREAD
+[05:11:03] smoke t=20s mode=play ch=1 wave=1/2 chickens=2 bossHp=null score=1050 lives=3 weapon=SPATULA SPREAD
+[05:11:08] smoke t=25s mode=play ch=1 wave=2/2 chickens=12 bossHp=null score=1250 lives=3 weapon=SPATULA SPREAD
+[05:11:13] screenshot -> sr1-shmup-cluck-smoke.png (32KB)
+[05:11:13] cluck smoke end: mode=play wave=2 score=2250 kills=22 lives=3 deaths=0
+[05:11:13] console errors: 0
+[05:11:13] CLUCK REGRESSION SMOKE: PASS
+[05:11:13] CLUCKSMOKE PASS — exit 0

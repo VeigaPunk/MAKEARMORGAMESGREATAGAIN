@@ -211,7 +211,7 @@ export class ShmupRenderer {
     // HUD (Text objects update only on change)
     const hud = `SCORE ${sim.score}\nLIVES ${'♥'.repeat(Math.max(0, sim.lives))}\n${sim.pack.weapons[sim.weaponLv]}\nMISSILES ${sim.missileN}`;
     if (hud !== this.lastHud) { this.hudText.text = hud; this.lastHud = hud; }
-    const right = `CH ${sim.chapter} · ${sim.boss ? 'BOSS' : `WAVE ${sim.waveIdx + 1}/${sim.wavesTotal}`}\n[${sim.pack.id.toUpperCase()}]`;
+    const right = `CH ${sim.chapter} · ${sim.boss ? `BOSS ${sim.pack.bosses[sim.boss.type].name}` : `WAVE ${sim.waveIdx + 1}/${sim.wavesTotal}`}\n[${sim.pack.id.toUpperCase()}]`;
     if (right !== this.lastRight) { this.hudRight.text = right; this.lastRight = right; }
     const joke = sim.jokeT > 0 && sim.pack.jokes ? (sim.pack.jokes[sim.chapter - 1] ?? '') : '';
     if (joke !== this.lastJoke) { this.jokeText.text = joke; this.lastJoke = joke; }

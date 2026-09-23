@@ -7,8 +7,11 @@ The shmup engine also carries **Cluck Horizon**, an original-IP second
 content pack: keep the dual-pack architecture, don't fork it. Player-facing
 branding must be original evocations.
 
-Status: **NOT SHIPPED** — survey complete, rendition EXTEND in progress.
-Last updated: 2026-09-22 (ship-run 2026-09-22).
+Status: **NOT SHIPPED** — survey complete, rendition EXTEND in progress;
+replica content types, boss naming, and both end-to-end flows proven
+2026-09-23 (shmup verification+fix wave). Art/audio placeholder fronts
+unchanged (below).
+Last updated: 2026-09-23 (shmup verification+fix wave).
 
 ## Survey — implementations found
 
@@ -42,15 +45,33 @@ packs). Cluck full clear proven; replica partial. Do not fork.
 
 ## Known defects / unproven fronts
 
-- OPEN: **D-38** — replica pack `enemyTypes` stat-identical
-  (`shmup-core/src/packs.ts:45-49`), type assignment a no-op; spec wants
-  2–3 types. Cluck side FIXED (keep).
-- OPEN: **D-37** — boss names not fixed. D-36→D-41 LOW, D-39 PARTIAL,
-  D-42/43/44 LOW.
+- FIXED (2026-09-23): **D-38** — replica `enemyTypes` now meaningfully
+  distinct, mirroring the cluck pattern (`shmup-core/src/packs.ts:45-49`):
+  CHICKEN 1.0×/hp2 (yellow/pink), CHICKEN SCOUT 1.15×/hp2 (pale-yellow/red),
+  CHICKEN ACE 0.85×/hp4 (amber/deep-red). Consumed per-type by sim (motionT
+  speed scaling, `Math.max(waveHp, variantHp)` durability) and render
+  (per-type colors). Fairness: hp4 tank = ~0.7s focused pea-shooter fire;
+  full clear proven deathless (below).
+- FIXED (2026-09-23): **D-37** — replica boss names were derivatives of the
+  original's boss names ("Big Chicken"/"Mother-Hen Ship") and the name field
+  was dead data. Renamed to original evocations **THE HENERAL** (ch1) and
+  **HER EGGSCELLENCY** (ch2) and made player-facing: HUD boss line renders
+  `BOSS <name>` (`render.ts:214`). Live-proven in screenshots. Cluck bosses
+  (MOTHER GOOSE / ROOSTER REGENT) unchanged — already original. The replica
+  pack title/sub ("CHICKEN INVADERS — The Next Wave…") intentionally retains
+  the spec-04-sanctioned INTERNAL replica branding with the INTERNAL-NO-PUBLIC
+  watermark; public ship still needs InterAction clearance per spec.
+- OPEN (other lanes): D-36 (HUD `WAVE 3/2` unclamped — visible in the
+  sr1-shmup win screenshot), D-39 (hardcoded pickup/comb colors),
+  D-42/43/44 LOW, D-41 (snapshot churn) — not re-verified here.
 - FIXED (keep fixed): D-21, D-22 (probe-throws lesson), D-32.
-- UNPROVEN: replica game-over flow + replica ch2 boss (source-read only at
-  r05; cross-lane tab hijack blocked live proof — D-63 shared-origin
-  localStorage contamination was the process cause; isolate probe origins).
+- PROVEN (2026-09-23, was the r05 gap): replica game-over flow (3× death →
+  game-over banner → R → title → Enter restart, lives reset) and replica
+  full clear (ch1 waves+boss → chapter clear → ch2 waves+boss → win, chapter
+  unlock persisted to localStorage, post-win ch2 re-select works). Method:
+  per-lane headless chromium + CDP real input (see Verification) — the r05
+  cross-lane tab hijack (D-63) is avoided by giving every run its own
+  chromium instance and fresh `--user-data-dir` (no shared browser).
 
 ## Placeholders to resolve before ship
 
@@ -66,7 +87,37 @@ Recorded commands (last observed results):
   real input — PASS (`verification/proto-verdicts/chicken-invaders.md`).
 - Apps: `npm run dev:chicken` (5176) / `npm run dev:cluck` (5177) + CDP —
   cluck FULL clear (ch2 boss, win, game-over, unlock persist) proven;
-  replica ch1+boss+chapter-clear proven; replica game-over + ch2 boss OPEN.
+  replica ch1+boss+chapter-clear proven (r05).
+- 2026-09-23 shmup wave (this lane): typecheck + build PASS
+  (`npm run typecheck -w @maga/shmup-core`, both apps; `npm run build -w
+  @maga/chicken-invaders`). Live: zero-dep CDP driver
+  `verification/evidence/sr1-shmup-driver.mjs` (own headless chromium per
+  run, fresh `--user-data-dir`, real `Input.dispatchKeyEvent` /
+  `dispatchMouseEvent` only; state via `?debug` → `window.__maga`):
+  - `… types "http://localhost:5176/?debug" …` — **PASS**: per-type least-
+    squares motion fit over 100 samples: ω = 0.700/0.805/0.595 exactly
+    matching pack speeds 1/1.15/0.85; spawn hp 2/2/4; tracked ACE died to
+    exactly 4 real-bullet hits. 0 console errors.
+  - `… fullclear "http://localhost:5176/?debug" …` — **PASS**: ch1 2 waves
+    + boss THE HENERAL → CHAPTER 1 CLEAR → ch2 2 waves (dives) + boss
+    HER EGGSCELLENCY → win banner, score 7750, 0 deaths; unlock persisted
+    (`maga:chicken-invaders:chapter-unlocked` = "2"); R → title, Digit2 +
+    Enter → ch2 restarts. 0 console errors.
+  - `… gameover "http://localhost:5176/?debug" …` — **PASS**: 3 egg deaths
+    → `GAME OVER — R / click for title` at lives 0 → R → title → Enter →
+    play, lives reset to 3. 0 console errors.
+  - `… clucksmoke "http://localhost:5177/?debug" …` — **PASS** (regression
+    smoke after shmup-core changes): cluck boots, ch1 wave 1 cleared → wave
+    2, 22 kills, score 2250, lives 3, 0 deaths. 0 console errors.
+  - Run log: `verification/evidence/sr1-shmup-run.log`; screenshots
+    `sr1-shmup-replica-types.png` (3 distinct type variants),
+    `sr1-shmup-replica-boss.png` (HUD `BOSS THE HENERAL`),
+    `sr1-shmup-replica-gameover.png`, `sr1-shmup-replica-win.png`,
+    `sr1-shmup-cluck-smoke.png`.
+  - Note: three earlier driver iterations failed in ch2 (dive/egg dodging) —
+    retained in the run log; the game was not touched. Final AI clears
+    deathless, so ch2 constants stand as shipped (same constants cluck
+    full-cleared under at r05).
 
 Ship-gate checklist: pending (must include both packs, both touch layouts,
 and the G2 originality audit for Cluck Horizon).

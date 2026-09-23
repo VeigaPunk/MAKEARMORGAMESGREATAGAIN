@@ -448,7 +448,7 @@ export class ShmupSim {
       score: this.score, lives: this.lives, missiles: this.missileN,
       weapon: this.weaponLv, weaponName: this.pack.weapons[this.weaponLv],
       shipX: this.ship.x, shipY: this.ship.y, shipAlive: this.ship.alive, invuln: this.ship.invuln,
-      chickens: this.chickens.map(c => ({ x: c.x, y: c.y, hp: c.hp, dive: !!c.dive })),
+      chickens: this.chickens.map(c => ({ x: c.x, y: c.y, hp: c.hp, type: c.type, dive: !!c.dive })),
       eggs: this.eggs.length,
       pickups: this.pickups.map(p => ({ x: p.x, y: p.y, kind: p.kind })),
       bossHp: this.boss ? this.boss.hp : null, bossMax: this.boss ? this.boss.max : null,

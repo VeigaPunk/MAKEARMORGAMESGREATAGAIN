@@ -44,12 +44,12 @@ export const PACKS: Record<ContentPack['id'], ContentPack> = {
     food: 'DRUMSTICK',
     enemyTypes: [
       { name: 'CHICKEN', color: 0xffd43b, headColor: 0xff8787, speed: 1, hp: 2 },
-      { name: 'CHICKEN SCOUT', color: 0xffd43b, headColor: 0xff8787, speed: 1, hp: 2 },
-      { name: 'CHICKEN ACE', color: 0xffd43b, headColor: 0xff8787, speed: 1, hp: 2 },
+      { name: 'CHICKEN SCOUT', color: 0xffe066, headColor: 0xff6b6b, speed: 1.15, hp: 2 },
+      { name: 'CHICKEN ACE', color: 0xf08c00, headColor: 0xe03131, speed: 0.85, hp: 4 },
     ],
     bosses: [
-      { name: 'BIG HEN', color: 0xffd43b, headColor: 0xff8787 },
-      { name: 'MOTHER HEN', color: 0xffd43b, headColor: 0xff8787 },
+      { name: 'THE HENERAL', color: 0xffd43b, headColor: 0xff8787 },
+      { name: 'HER EGGSCELLENCY', color: 0xffd43b, headColor: 0xff8787 },
     ],
     ship: 0x4dabf7,
     foe: 0xffd43b,
