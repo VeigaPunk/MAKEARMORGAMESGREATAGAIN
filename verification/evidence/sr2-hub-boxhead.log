@@ -1,0 +1,6 @@
+HUB card name=Crateheads
+after real click: url=http://127.0.0.1:8283/games/boxhead/ canvas-sample-colors=1
+instrumented boot: state=playing mode=solo wave=1 zombies=1
+console errors: 0 -
+non-local requests: 0 -
+HUB BOOT-PROOF PASS
