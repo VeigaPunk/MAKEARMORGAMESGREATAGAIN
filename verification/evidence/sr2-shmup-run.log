@@ -1,0 +1,160 @@
+[16:21:28] sr2-shmup-driver scenario=pause url=http://127.0.0.1:8282/games/chicken-invaders/?debug pid=516253 cdp=9514
+[16:21:29] BOOT OK: mode=title pack=replica unlocked=1 lives=3 ls=null
+[16:21:29] REAL CLICK (START ch1): mode=play chapter=1 wave=1/2 lives=3 weapon=PEA SHOOTER
+[16:21:30] REAL KEY (Esc): paused=true mode=play
+[16:21:31] world frozen while paused: true
+[16:21:31] REAL KEY (Esc): resumed paused=false
+[16:21:31] REAL KEY (Esc, R): quit-to-title mode=title paused=false
+[16:21:31] console errors: 0
+[16:21:31] PAUSE FLOW: PASS
+[16:21:31] PAUSE PASS — exit 0
+[16:21:48] sr2-shmup-driver scenario=audio url=http://127.0.0.1:8282/games/cluck-horizon/?debug pid=516486 cdp=9567
+[16:21:48] sr2-shmup-driver scenario=touch url=http://127.0.0.1:8282/games/chicken-invaders/?debug pid=516487 cdp=9568
+[16:21:48] sr2-shmup-driver scenario=settings url=http://127.0.0.1:8282/games/chicken-invaders/?debug pid=516493 cdp=9574
+[16:21:48] NON-LOCAL REQUEST: data:image/avif;base64,AAAAIGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZk1BMUIAAADybWV0YQAAAAAAAAAoaGRscgAAAAAAAAAAcGljdAAAAAAAAAAAAAAAAGxpYmF2aWYAAAAADnBpdG0AAAAAAAEAAAAeaWxvYwAAAABEAAABAAEAAAABAAABGgAAAB0AAAAoaWluZgAAAAAAAQAAABppbmZlAgAAAAABAABhdjAxQ29sb3IAAAAAamlwcnAAAABLaXBjbwAAABRpc3BlAAAAAAAAAAIAAAACAAAAEHBpeGkAAAAAAwgICAAAAAxhdjFDgQ0MAAAAABNjb2xybmNseAACAAIAAYAAAAAXaXBtYQAAAAAAAAABAAEEAQKDBAAAACVtZGF0EgAKCBgANogQEAwgMg8f8D///8WfhwB8+ErK42A=
+[16:21:48] NON-LOCAL REQUEST: data:image/webp;base64,UklGRh4AAABXRUJQVlA4TBEAAAAvAAAAAAfQ//73v/+BiOh/AAA=
+[16:21:48] NON-LOCAL REQUEST: data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2056%2052%22%20width%3D%2256%22%20height%3D%2252%22%3E%0A%20%20%3C!--%20FLOCKBIRD%20BRUISER%20%E2%80%94%20heavy%20bruiser%3A%20bulky%20armored%20body%2C%20pauldrons%2C%20brow%20ridge.%20--%3E%0A%20%20%3Cg%20stroke-linejoin%3D%22round%22%3E%0A%20%20%20%20%3C!--%20stub%20wings%20--%3E%0A%20%20%20%20%3Cpolygon%20points%3D%2210%2C26%202%2C34%2014%2C36%22%20fill%3D%22%23e8590c%22%20stroke%3D%22%233a1c05%22%20stroke-width%3D%221.5%22%2F%3E%0A%20%20%20%20%3Cpolygon%20points%3D%2246%2C26%2054%2C34%2042%2C36%22%20fill%3D%22%23e8590c%22%20stroke%3D%22%233a1c05%22%20stroke-width%3D%221.5%22%2F%3E%0A%20%20%20%20%3C!--%20bulky%20body%20--%3E%0A%20%20%20%20%3Cellipse%20cx%3D%2228%22%20cy%3D%2230%22%20rx%3D%2217%22%20ry%3D%2215%22%20fill%3D%22%23ffe677%22%20stroke%3D%22%233a1c05%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3C!--%20armor%20plates%20--%3E%0A%20%20%20%20%3Cpath%20d%3D%22M15%2C24%20Q%2028%2C16%2041%2C24%22%20stroke%3D%22%23e8590c%22%20stroke-width%3D%222.4%22%20fill%3D%22none%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M13%2C31%20Q%2028%2C23%2043%2C31%22%20stroke%3D%22%23e8590c%22%20stroke-width%3D%222.4%22%20fill%3D%22none%22%2F%3E%0A%20%20%20%20%3C!--%20small%20head%20sunk%20into%20shoulders%20--%3E%0A%20%20%20%20%3Ccircle%20cx%3D%2228%22%20cy%3D%2214%22%20r%3D%227%22%20fill%3D%22%23ffc92a%22%20stroke%3D%22%233a1c05%22%20stroke-width%3D%221.8%22%2F%3E%0A%20%20%20%20%3C!--%20heavy%20brow%20--%3E%0A%20%20%20%20%3Cpath%20d%3D%22M22%2C11%20L%2028%2C9%20L%2034%2C11%22%20stroke%3D%22%233a1c05%22%20stroke-width%3D%222.2%22%20fill%3D%22none%22%2F%3E%0A%20%20%20%20%3C!--%20thick%20beak%20--%3E%0A%20%20%20%20%3Cpolygon%20points%3D%2224%2C15%2032%2C15%2028%2C5%22%20fill%3D%22%23e8590c%22%20stroke%3D%22%233a1c05%22%20stroke-width%3D%221.4%22%2F%3E%0A%20%20%20%20%3C!--%20beady%20eyes%20under%20brow%20--%3E%0A%20%20%20%20%3Ccircle%20cx%3D%2224.5%22%20cy%3D%2213%22%20r%3D%221.5%22%20fill%3D%22%23111%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%2231.5%22%20cy%3D%2213%22%20r%3D%221.5%22%20fill%3D%22%23111%22%2F%3E%0A%20%20%20%20%3C!--%20rivets%20--%3E%0A%20%20%20%20%3Ccircle%20cx%3D%2220%22%20cy%3D%2236%22%20r%3D%221.4%22%20fill%3D%22%233a1c05%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%2228%22%20cy%3D%2238%22%20r%3D%221.4%22%20fill%3D%22%233a1c05%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%2236%22%20cy%3D%2236%22%20r%3D%221.4%22%20fill%3D%22%233a1c05%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%3C%2Fsvg%3E%0A
+[16:21:48] NON-LOCAL REQUEST: data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2072%2040%22%20width%3D%2272%22%20height%3D%2240%22%3E%0A%20%20%3C!--%20FLOCKBIRD%20GLIDER%20%E2%80%94%20wide%20flat%20glider%3A%20broad%20crescent%20wings%2C%20low%20body.%20--%3E%0A%20%20%3Cg%20stroke-linejoin%3D%22round%22%3E%0A%20%20%20%20%3C!--%20wide%20crescent%20wings%2C%20tips%20swept%20up%20--%3E%0A%20%20%20%20%3Cpath%20d%3D%22M4%2C26%20Q%202%2C12%2018%2C10%20L%2034%2C14%20L%2034%2C26%20Q%2020%2C30%204%2C26%20Z%22%20fill%3D%22%23ffe066%22%20stroke%3D%22%233a1c05%22%20stroke-width%3D%221.5%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M68%2C26%20Q%2070%2C12%2054%2C10%20L%2038%2C14%20L%2038%2C26%20Q%2052%2C30%2068%2C26%20Z%22%20fill%3D%22%23ffe066%22%20stroke%3D%22%233a1c05%22%20stroke-width%3D%221.5%22%2F%3E%0A%20%20%20%20%3C!--%20wing%20feather%20notches%20--%3E%0A%20%20%20%20%3Cpath%20d%3D%22M10%2C24%20L%2014%2C15%20M%2018%2C26%20L%2022%2C14%22%20stroke%3D%22%23e8590c%22%20stroke-width%3D%221.6%22%20fill%3D%22none%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M62%2C24%20L%2058%2C15%20M%2054%2C26%20L%2050%2C14%22%20stroke%3D%22%23e8590c%22%20stroke-width%3D%221.6%22%20fill%3D%22none%22%2F%3E%0A%20%20%20%20%3C!--%20low%20flat%20body%20--%3E%0A%20%20%20%20%3Cellipse%20cx%3D%2236%22%20cy%3D%2224%22%20rx%3D%2212%22%20ry%3D%228%22%20fill%3D%22%23ffa94d%22%20stroke%3D%22%233a1c05%22%20stroke-width%3D%221.5%22%2F%3E%0A%20%20%20%20%3C!--%20head%20--%3E%0A%20%20%20%20%3Ccircle%20cx%3D%2236%22%20cy%3D%2213%22%20r%3D%226%22%20fill%3D%22%23ffe066%22%20stroke%3D%22%233a1c05%22%20stroke-width%3D%221.5%22%2F%3E%0A%20%20%20%20%3C!--%20short%20wedge%20beak%20--%3E%0A%20%20%20%20%3Cpolygon%20points%3D%2233%2C11%2039%2C11%2036%2C3%22%20fill%3D%22%23ffd43b%22%20stroke%3D%22%233a1c05%22%20stroke-width%3D%221.2%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%2233.5%22%20cy%3D%2212.5%22%20r%3D%221.6%22%20fill%3D%22%23111%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%2238.5%22%20cy%3D%2212.5%22%20r%3D%221.6%22%20fill%3D%22%23111%22%2F%3E%0A%20%20%20%20%3C!--%20belly%20stripe%20--%3E%0A%20%20%20%20%3Cpath%20d%3D%22M28%2C27%20Q%2036%2C31%2044%2C27%22%20stroke%3D%22%23e8590c%22%20stroke-width%3D%222%22%20fill%3D%22none%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%3C%2Fsvg%3E%0A
+[16:21:48] NON-LOCAL REQUEST: data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2048%2044%22%20width%3D%2248%22%20height%3D%2244%22%3E%0A%20%20%3C!--%20FLOCKBIRD%20%E2%80%94%20small%20darting%20bird%3A%20slim%20swept%20body%2C%20swept-back%20wings%2C%20sharp%20beak.%20--%3E%0A%20%20%3Cg%20stroke-linejoin%3D%22round%22%3E%0A%20%20%20%20%3C!--%20wings%20--%3E%0A%20%20%20%20%3Cpolygon%20points%3D%226%2C22%2020%2C16%2022%2C22%22%20fill%3D%22%23e8590c%22%20stroke%3D%22%233a1c05%22%20stroke-width%3D%221.5%22%2F%3E%0A%20%20%20%20%3Cpolygon%20points%3D%2242%2C22%2028%2C16%2026%2C22%22%20fill%3D%22%23e8590c%22%20stroke%3D%22%233a1c05%22%20stroke-width%3D%221.5%22%2F%3E%0A%20%20%20%20%3C!--%20tail%20--%3E%0A%20%20%20%20%3Cpolygon%20points%3D%2224%2C34%2019%2C42%2024%2C39%2029%2C42%22%20fill%3D%22%23e8590c%22%20stroke%3D%22%233a1c05%22%20stroke-width%3D%221.5%22%2F%3E%0A%20%20%20%20%3C!--%20body%3A%20slim%20vertical%20dart%20--%3E%0A%20%20%20%20%3Cellipse%20cx%3D%2224%22%20cy%3D%2224%22%20rx%3D%229%22%20ry%3D%2213%22%20fill%3D%22%23ffa94d%22%20stroke%3D%22%233a1c05%22%20stroke-width%3D%221.5%22%2F%3E%0A%20%20%20%20%3C!--%20head%20--%3E%0A%20%20%20%20%3Ccircle%20cx%3D%2224%22%20cy%3D%2211%22%20r%3D%226%22%20fill%3D%22%23ffe066%22%20stroke%3D%22%233a1c05%22%20stroke-width%3D%221.5%22%2F%3E%0A%20%20%20%20%3C!--%20beak%3A%20long%20sharp%20point%20(darting)%20--%3E%0A%20%20%20%20%3Cpolygon%20points%3D%2221%2C9%2027%2C9%2024%2C0%22%20fill%3D%22%23ffd43b%22%20stroke%3D%22%233a1c05%22%20stroke-width%3D%221.2%22%2F%3E%0A%20%20%20%20%3C!--%20eyes%20--%3E%0A%20%20%20%20%3Ccircle%20cx%3D%2221.5%22%20cy%3D%2210.5%22%20r%3D%221.6%22%20fill%3D%22%23111%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%2226.5%22%20cy%3D%2210.5%22%20r%3D%221.6%22%20fill%3D%22%23111%22%2F%3E%0A%20%20%20%20%3C!--%20chest%20streak%20--%3E%0A%20%20%20%20%3Cpolygon%20points%3D%2224%2C18%2021%2C28%2027%2C28%22%20fill%3D%22%23ffe066%22%20opacity%3D%220.85%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%3C%2Fsvg%3E%0A
+[16:21:48] NON-LOCAL REQUEST: data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20124%20116%22%20width%3D%22124%22%20height%3D%22116%22%3E%0A%20%20%3C!--%20ROOSTER%20REGENT%20%E2%80%94%20boss%202%3A%20regal%20rooster%20with%20big%20comb%2C%20sweeping%20tail%20plumes%2C%20cape%20chest.%20--%3E%0A%20%20%3Cg%20stroke-linejoin%3D%22round%22%3E%0A%20%20%20%20%3C!--%20sweeping%20tail%20plumes%20--%3E%0A%20%20%20%20%3Cpath%20d%3D%22M78%2C70%20Q%20116%2C60%20118%2C24%20Q%20100%2C40%2092%2C52%20Q%20112%2C38%20108%2C12%20Q%2092%2C32%2084%2C48%20Q%2096%2C26%2084%2C8%20Q%2076%2C34%2074%2C54%20Z%22%0A%20%20%20%20%20%20%20%20%20%20fill%3D%22%23e8590c%22%20stroke%3D%22%233a1c05%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M82%2C74%20Q%20108%2C70%20112%2C46%22%20fill%3D%22none%22%20stroke%3D%22%23ffa94d%22%20stroke-width%3D%223%22%2F%3E%0A%20%20%20%20%3C!--%20broad%20chest%20%2F%20cape%20--%3E%0A%20%20%20%20%3Cellipse%20cx%3D%2256%22%20cy%3D%2274%22%20rx%3D%2234%22%20ry%3D%2228%22%20fill%3D%22%23ffe677%22%20stroke%3D%22%233a1c05%22%20stroke-width%3D%222.4%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M30%2C66%20Q%2056%2C54%2082%2C66%20M%2028%2C76%20Q%2056%2C64%2084%2C76%22%20stroke%3D%22%23e8590c%22%20stroke-width%3D%222.2%22%20fill%3D%22none%22%2F%3E%0A%20%20%20%20%3C!--%20regal%20shoulder%20mantle%20--%3E%0A%20%20%20%20%3Cpath%20d%3D%22M26%2C58%20Q%2056%2C44%2086%2C58%20L%2082%2C66%20Q%2056%2C54%2030%2C66%20Z%22%20fill%3D%22%23ffc92a%22%20stroke%3D%22%233a1c05%22%20stroke-width%3D%221.8%22%2F%3E%0A%20%20%20%20%3C!--%20head%20--%3E%0A%20%20%20%20%3Ccircle%20cx%3D%2248%22%20cy%3D%2234%22%20r%3D%2216%22%20fill%3D%22%23ffe677%22%20stroke%3D%22%233a1c05%22%20stroke-width%3D%222.2%22%2F%3E%0A%20%20%20%20%3C!--%20big%20comb%20--%3E%0A%20%20%20%20%3Cpath%20d%3D%22M36%2C24%20Q%2032%2C8%2042%2C12%20Q%2042%2C2%2050%2C8%20Q%2052%2C-2%2058%2C8%20Q%2064%2C4%2062%2C16%20Q%2060%2C22%2056%2C22%20Z%22%0A%20%20%20%20%20%20%20%20%20%20fill%3D%22%23e8590c%22%20stroke%3D%22%233a1c05%22%20stroke-width%3D%221.8%22%2F%3E%0A%20%20%20%20%3C!--%20beak%20--%3E%0A%20%20%20%20%3Cpolygon%20points%3D%2240%2C34%2056%2C32%2046%2C48%22%20fill%3D%22%23e8590c%22%20stroke%3D%22%233a1c05%22%20stroke-width%3D%221.6%22%2F%3E%0A%20%20%20%20%3C!--%20wattles%20--%3E%0A%20%20%20%20%3Cellipse%20cx%3D%2242%22%20cy%3D%2248%22%20rx%3D%224%22%20ry%3D%226%22%20fill%3D%22%23e8590c%22%20stroke%3D%22%233a1c05%22%20stroke-width%3D%221.2%22%2F%3E%0A%20%20%20%20%3C!--%20fierce%20eyes%20--%3E%0A%20%20%20%20%3Ccircle%20cx%3D%2242%22%20cy%3D%2230%22%20r%3D%222.6%22%20fill%3D%22%23111%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%2254%22%20cy%3D%2229%22%20r%3D%222.6%22%20fill%3D%22%23111%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M38%2C26%20L%2046%2C27%20M%2050%2C26%20L%2058%2C25%22%20stroke%3D%22%233a1c05%22%20stroke-width%3D%221.8%22%2F%3E%0A%20%20%20%20%3C!--%20tail%20plume%20accents%20--%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22104%22%20cy%3D%2226%22%20r%3D%224%22%20fill%3D%22%23ffd43b%22%20stroke%3D%22%233a1c05%22%20stroke-width%3D%221.2%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%2298%22%20cy%3D%2214%22%20r%3D%223.4%22%20fill%3D%22%23ffd43b%22%20stroke%3D%22%233a1c05%22%20stroke-width%3D%221.2%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%3C%2Fsvg%3E%0A
+[16:21:48] NON-LOCAL REQUEST: data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20120%20110%22%20width%3D%22120%22%20height%3D%22110%22%3E%0A%20%20%3C!--%20MOTHER%20GOOSE%20%E2%80%94%20boss%201%3A%20matriarch%20goose%2C%20long%20elegant%20neck%2C%20layered%20wings%2C%20golden%20collar.%20--%3E%0A%20%20%3Cg%20stroke-linejoin%3D%22round%22%3E%0A%20%20%20%20%3C!--%20spread%20layered%20wings%20--%3E%0A%20%20%20%20%3Cpath%20d%3D%22M22%2C58%20Q%204%2C44%2010%2C26%20Q%2026%2C36%2036%2C50%20Z%22%20fill%3D%22%23e8590c%22%20stroke%3D%22%233a1c05%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M98%2C58%20Q%20116%2C44%20110%2C26%20Q%2094%2C36%2084%2C50%20Z%22%20fill%3D%22%23e8590c%22%20stroke%3D%22%233a1c05%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M26%2C60%20Q%2012%2C52%2016%2C40%20Q%2028%2C48%2036%2C56%20Z%22%20fill%3D%22%23ffa94d%22%20stroke%3D%22%233a1c05%22%20stroke-width%3D%221.6%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M94%2C60%20Q%20108%2C52%20104%2C40%20Q%2092%2C48%2084%2C56%20Z%22%20fill%3D%22%23ffa94d%22%20stroke%3D%22%233a1c05%22%20stroke-width%3D%221.6%22%2F%3E%0A%20%20%20%20%3C!--%20plump%20body%20--%3E%0A%20%20%20%20%3Cellipse%20cx%3D%2260%22%20cy%3D%2272%22%20rx%3D%2232%22%20ry%3D%2226%22%20fill%3D%22%23ffa94d%22%20stroke%3D%22%233a1c05%22%20stroke-width%3D%222.4%22%2F%3E%0A%20%20%20%20%3C!--%20belly%20--%3E%0A%20%20%20%20%3Cellipse%20cx%3D%2260%22%20cy%3D%2280%22%20rx%3D%2220%22%20ry%3D%2214%22%20fill%3D%22%23ffe066%22%20stroke%3D%22%233a1c05%22%20stroke-width%3D%221.6%22%2F%3E%0A%20%20%20%20%3C!--%20tail%20feathers%20--%3E%0A%20%20%20%20%3Cpolygon%20points%3D%2260%2C96%2048%2C108%2056%2C100%2060%2C106%2064%2C100%2072%2C108%22%20fill%3D%22%23ffe066%22%20stroke%3D%22%233a1c05%22%20stroke-width%3D%221.4%22%2F%3E%0A%20%20%20%20%3C!--%20long%20elegant%20neck%20--%3E%0A%20%20%20%20%3Cpath%20d%3D%22M52%2C56%20Q%2044%2C32%2052%2C18%20L%2066%2C18%20Q%2060%2C34%2066%2C54%20Z%22%20fill%3D%22%23ffe066%22%20stroke%3D%22%233a1c05%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3C!--%20head%20--%3E%0A%20%20%20%20%3Ccircle%20cx%3D%2260%22%20cy%3D%2214%22%20r%3D%2212%22%20fill%3D%22%23ffe066%22%20stroke%3D%22%233a1c05%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%3C!--%20golden%20collar%20--%3E%0A%20%20%20%20%3Cpath%20d%3D%22M50%2C32%20Q%2060%2C38%2068%2C32%22%20stroke%3D%22%23ffd43b%22%20stroke-width%3D%224%22%20fill%3D%22none%22%2F%3E%0A%20%20%20%20%3C!--%20crown%3A%20three%20nubs%20--%3E%0A%20%20%20%20%3Cpath%20d%3D%22M50%2C6%20L%2053%2C0%20L%2057%2C5%20L%2060%2C-2%20L%2063%2C5%20L%2067%2C0%20L%2070%2C6%22%20fill%3D%22%23ffd43b%22%20stroke%3D%22%233a1c05%22%20stroke-width%3D%221.4%22%2F%3E%0A%20%20%20%20%3C!--%20orange%20beak%20--%3E%0A%20%20%20%20%3Cpolygon%20points%3D%2252%2C12%2068%2C12%2060%2C26%22%20fill%3D%22%23e8590c%22%20stroke%3D%22%233a1c05%22%20stroke-width%3D%221.6%22%2F%3E%0A%20%20%20%20%3C!--%20stern%20eyes%20--%3E%0A%20%20%20%20%3Ccircle%20cx%3D%2254%22%20cy%3D%2210%22%20r%3D%222.2%22%20fill%3D%22%23111%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%2266%22%20cy%3D%2210%22%20r%3D%222.2%22%20fill%3D%22%23111%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%3C%2Fsvg%3E%0A
+[16:21:48] NON-LOCAL REQUEST: data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2036%2044%22%20width%3D%2236%22%20height%3D%2244%22%3E%0A%20%20%3C!--%20COURIER%20SHIP%20%E2%80%94%20teal%20courier%20craft%3A%20hull%20%2B%20wings%20%2B%20cockpit%20%2B%20engine%20pods.%20--%3E%0A%20%20%3Cg%20stroke-linejoin%3D%22round%22%3E%0A%20%20%20%20%3C!--%20wings%20--%3E%0A%20%20%20%20%3Cpolygon%20points%3D%226%2C20%202%2C34%2012%2C30%22%20fill%3D%22%230ca678%22%20stroke%3D%22%2304241c%22%20stroke-width%3D%221.5%22%2F%3E%0A%20%20%20%20%3Cpolygon%20points%3D%2230%2C20%2034%2C34%2024%2C30%22%20fill%3D%22%230ca678%22%20stroke%3D%22%2304241c%22%20stroke-width%3D%221.5%22%2F%3E%0A%20%20%20%20%3C!--%20wing%20accent%20tips%20--%3E%0A%20%20%20%20%3Cpolygon%20points%3D%223%2C31%206%2C26%208%2C29%22%20fill%3D%22%23ffa94d%22%2F%3E%0A%20%20%20%20%3Cpolygon%20points%3D%2233%2C31%2030%2C26%2028%2C29%22%20fill%3D%22%23ffa94d%22%2F%3E%0A%20%20%20%20%3C!--%20hull%20--%3E%0A%20%20%20%20%3Cpolygon%20points%3D%2218%2C2%208%2C24%2012%2C36%2024%2C36%2028%2C24%22%20fill%3D%22%2320c997%22%20stroke%3D%22%2304241c%22%20stroke-width%3D%221.8%22%2F%3E%0A%20%20%20%20%3C!--%20cockpit%20--%3E%0A%20%20%20%20%3Cpolygon%20points%3D%2218%2C8%2013%2C20%2023%2C20%22%20fill%3D%22%23b3ffe3%22%20stroke%3D%22%2304241c%22%20stroke-width%3D%221.2%22%2F%3E%0A%20%20%20%20%3C!--%20engine%20pods%20--%3E%0A%20%20%20%20%3Crect%20x%3D%2210%22%20y%3D%2236%22%20width%3D%225%22%20height%3D%226%22%20fill%3D%22%230ca678%22%20stroke%3D%22%2304241c%22%20stroke-width%3D%221.2%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2221%22%20y%3D%2236%22%20width%3D%225%22%20height%3D%226%22%20fill%3D%22%230ca678%22%20stroke%3D%22%2304241c%22%20stroke-width%3D%221.2%22%2F%3E%0A%20%20%20%20%3C!--%20flames%20--%3E%0A%20%20%20%20%3Cpolygon%20points%3D%2211.5%2C42%2012.5%2C42%2012%2C48%22%20fill%3D%22%23ffd43b%22%2F%3E%0A%20%20%20%20%3Cpolygon%20points%3D%2222.5%2C42%2023.5%2C42%2023%2C48%22%20fill%3D%22%23ffd43b%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%3C%2Fsvg%3E%0A
+[16:21:48] NON-LOCAL REQUEST: data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20900%20240%22%20width%3D%22900%22%20height%3D%22240%22%3E%0A%20%20%3C!--%20CLUCK%20HORIZON%20%E2%80%94%20original%20hand-lettered%20wordmark%20(ArtCluck%2C%20wave%202).%0A%20%20%20%20%20%20%20Teal%20%2320c997%20%2F%20orange%20%23ffa94d%20on%20deep%20space%20teal.%20Slab-arcade%20caps%2C%0A%20%20%20%20%20%20%20italic%20slant%2C%20beak-wedge%20terminals.%20Not%20derived%20from%20any%20existing%20mark.%20--%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22tealFill%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%2363e6be%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220.55%22%20stop-color%3D%22%2320c997%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%230ca678%22%2F%3E%0A%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22orgFill%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23ffd8a8%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220.55%22%20stop-color%3D%22%23ffa94d%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23e8590c%22%2F%3E%0A%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3C!--%20backing%20glow%20--%3E%0A%20%20%3Cg%20opacity%3D%220.25%22%3E%0A%20%20%20%20%3Crect%20x%3D%2218%22%20y%3D%2242%22%20width%3D%22864%22%20height%3D%22120%22%20rx%3D%2218%22%20fill%3D%22%2320c997%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%20%20%3Cg%20font-family%3D%22'Arial%20Black'%2Csans-serif%22%20font-weight%3D%22900%22%20font-style%3D%22italic%22%20text-anchor%3D%22middle%22%3E%0A%20%20%20%20%3C!--%20CLUCK%20--%3E%0A%20%20%20%20%3Ctext%20x%3D%22238%22%20y%3D%22132%22%20font-size%3D%22104%22%20letter-spacing%3D%222%22%0A%20%20%20%20%20%20%20%20%20%20fill%3D%22url(%23tealFill)%22%20stroke%3D%22%2304241c%22%20stroke-width%3D%226%22%0A%20%20%20%20%20%20%20%20%20%20paint-order%3D%22stroke%22%20transform%3D%22skewX(-6)%22%3ECLUCK%3C%2Ftext%3E%0A%20%20%20%20%3C!--%20HORIZON%20--%3E%0A%20%20%20%20%3Ctext%20x%3D%22486%22%20y%3D%22132%22%20font-size%3D%22104%22%20letter-spacing%3D%220%22%0A%20%20%20%20%20%20%20%20%20%20fill%3D%22url(%23orgFill)%22%20stroke%3D%22%233a1c05%22%20stroke-width%3D%226%22%0A%20%20%20%20%20%20%20%20%20%20paint-order%3D%22stroke%22%20transform%3D%22skewX(-6)%22%3EHORIZON%3C%2Ftext%3E%0A%20%20%3C%2Fg%3E%0A%20%20%3C!--%20beak%20divider%20between%20words%20--%3E%0A%20%20%3Cg%20transform%3D%22translate(455%2078)%22%3E%0A%20%20%20%20%3Cpolygon%20points%3D%220%2C0%2026%2C14%200%2C28%208%2C14%22%20fill%3D%22%23ffe066%22%20stroke%3D%22%233a1c05%22%20stroke-width%3D%223%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%20%20%3C!--%20wing%20underline%20swoosh%20--%3E%0A%20%20%3Cpath%20d%3D%22M150%20172%20Q%20450%20210%20750%20172%20L%20742%20188%20Q%20450%20224%20158%20188%20Z%22%0A%20%20%20%20%20%20%20%20fill%3D%22%2320c997%22%20opacity%3D%220.85%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M230%20176%20Q%20450%20198%20670%20176%22%20fill%3D%22none%22%20stroke%3D%22%23ffe066%22%20stroke-width%3D%224%22%20opacity%3D%220.7%22%2F%3E%0A%20%20%3C!--%20three%20egg%20dots%2C%20arcade%20ellipsis%20--%3E%0A%20%20%3Cg%20fill%3D%22%23ffe8cc%22%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22392%22%20cy%3D%22206%22%20r%3D%226%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22450%22%20cy%3D%22210%22%20r%3D%226%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22508%22%20cy%3D%22206%22%20r%3D%226%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%3C%2Fsvg%3E%0A
+[16:21:49] BOOT OK: mode=title pack=replica unlocked=1 lives=3 ls=null
+[16:21:49] BOOT OK: mode=title pack=replica unlocked=1 lives=3 ls=null
+[16:21:49] BOOT OK: mode=title pack=cluck unlocked=1 lives=3 ls=null
+[16:21:49] REAL CLICK (gear): settings panel open=true
+[16:21:49] REAL CLICK (START ch1): mode=play chapter=1 wave=1/2 lives=3 weapon=SOUP LASER
+[16:21:49] after input: localStorage audio={"master":0.9,"music":0.3,"sfx":0.45,"muted":true}
+[16:21:49] live apply: musicVolume=0.3 sfxVolume=0.45 muted=true -> APPLIED
+[16:21:49] after reload: musicVolume=0.3 sfxVolume=0.45 muted=true stored={"master":0.9,"music":0.3,"sfx":0.45,"muted":true} -> PERSISTED
+[16:21:49] console errors: 0
+[16:21:49] SETTINGS PERSIST: PASS
+[16:21:49] SETTINGS PASS — exit 0
+[16:21:53] audio after 4s held fire: voices=57 ctxRunning=true
+[16:21:53] console errors: 0
+[16:21:53] AUDIO SCHEDULED (voices/running): PASS
+[16:21:53] AUDIO PASS — exit 0
+[16:22:00] sr2-shmup-driver scenario=fullclear url=http://127.0.0.1:8282/games/chicken-invaders/?debug pid=517148 cdp=9509
+[16:22:00] BOOT OK: mode=title pack=replica unlocked=1 lives=3 ls=null
+[16:22:01] REAL CLICK (START ch1): mode=play chapter=1 wave=1/2 lives=3 weapon=PEA SHOOTER
+[16:22:01] screenshot -> sr2-shmup-replica-art.png (384KB)
+[16:22:35] BOSS SPAWN: THE HENERAL hp=60/60 (name rendered in HUD)
+[16:22:35] screenshot -> sr2-shmup-replica-boss.png (399KB)
+[16:22:50] CHAPTER 1 CLEAR (boss down, score=4900)
+[16:22:53] CHAPTER 2 START (unlocked=2)
+[19:14:04] sr2-shmup-driver scenario=fullclear url=http://127.0.0.1:8282/games/chicken-invaders/?debug pid=638308 cdp=9529
+[19:14:05] BOOT OK: mode=title pack=replica unlocked=1 lives=3 ls=null
+[19:14:05] REAL CLICK (START ch1): mode=play chapter=1 wave=1/2 lives=3 weapon=PEA SHOOTER
+[19:14:08] screenshot -> sr2-shmup-replica-art.png (404KB)
+[19:14:45] sr2-shmup-driver scenario=fullclear url=http://127.0.0.1:8282/games/cluck-horizon/?debug pid=639068 cdp=9569
+[19:14:45] BOOT OK: mode=title pack=cluck unlocked=1 lives=3 ls=null
+[19:14:46] REAL CLICK (START ch1): mode=play chapter=1 wave=1/2 lives=3 weapon=SOUP LASER
+[19:14:48] screenshot -> sr2-shmup-cluck-art.png (377KB)
+[19:16:24] BOSS SPAWN: MOTHER GOOSE hp=60/60 (name rendered in HUD)
+[19:16:24] BOSS SPAWN: THE HENERAL hp=60/60 (name rendered in HUD)
+[19:16:26] screenshot -> sr2-shmup-cluck-boss.png (374KB)
+[19:16:26] screenshot -> sr2-shmup-replica-boss.png (394KB)
+[19:17:05] CHAPTER 1 CLEAR (boss down, score=4450)
+[19:17:07] CHAPTER 2 START (unlocked=2)
+[19:17:35] CHAPTER 1 CLEAR (boss down, score=4800)
+[19:17:38] CHAPTER 2 START (unlocked=2)
+[19:21:08] FULLCLEAR TIMEOUT — FAIL (see above)
+[19:21:08] screenshot -> sr2-shmup-replica-fail.png (416KB)
+[19:21:08] console errors: 0
+[19:21:08] FULLCLEAR FAIL — exit 1
+[19:21:48] FULLCLEAR TIMEOUT — FAIL (see above)
+[19:21:48] screenshot -> sr2-shmup-cluck-fail.png (386KB)
+[19:21:48] console errors: 0
+[19:21:48] FULLCLEAR FAIL — exit 1
+[19:23:10] sr2-shmup-driver scenario=fullclear url=http://127.0.0.1:8282/games/chicken-invaders/?debug pid=648174 cdp=9675
+[19:23:10] BOOT OK: mode=title pack=replica unlocked=1 lives=3 ls=null
+[19:23:11] REAL CLICK (START ch1): mode=play chapter=1 wave=1/2 lives=3 weapon=PEA SHOOTER
+[19:23:13] screenshot -> sr2-shmup-replica-art.png (402KB)
+[19:23:28] death (cause=egg) lives 3->2 t=17.6s
+[19:23:59] BOSS SPAWN: THE HENERAL hp=60/60 (name rendered in HUD)
+[19:24:01] screenshot -> sr2-shmup-replica-boss.png (397KB)
+[19:24:07] death (cause=egg) lives 2->1 t=33.2s
+[19:24:22] CHAPTER 1 CLEAR (boss down, score=4850)
+[19:24:25] CHAPTER 2 START (unlocked=2)
+[19:25:16] death (cause=egg) lives 1->0 t=40.3s
+[19:25:17] FULLCLEAR GAMEOVER — FAIL (see above)
+[19:25:17] screenshot -> sr2-shmup-replica-fail.png (386KB)
+[19:25:17] console errors: 0
+[19:25:17] FULLCLEAR FAIL — exit 1
+[19:32:45] sr2-shmup-driver scenario=fullclear url=http://127.0.0.1:8282/games/chicken-invaders/?debug pid=670793 cdp=9614
+[19:32:46] BOOT OK: mode=title pack=replica unlocked=1 lives=3 ls=null
+[19:32:46] REAL CLICK (START ch1): mode=play chapter=1 wave=1/2 lives=3 weapon=PEA SHOOTER
+[19:32:48] screenshot -> sr2-shmup-replica-art.png (403KB)
+[19:33:25] BOSS SPAWN: THE HENERAL hp=60/60 (name rendered in HUD)
+[19:33:27] screenshot -> sr2-shmup-replica-boss.png (397KB)
+[19:33:29] death (cause=egg) lives 3->2 t=25.1s
+[19:34:13] CHAPTER 1 CLEAR (boss down, score=4900)
+[19:34:16] CHAPTER 2 START (unlocked=2)
+[retry-wrapper] attempt 1/4 scenario=fullclear
+[19:37:24] sr2-shmup-driver scenario=fullclear url=http://127.0.0.1:8282/games/chicken-invaders/?debug pid=675482 cdp=9623
+[19:37:25] BOOT OK: mode=title pack=replica unlocked=1 lives=3 ls=null
+[19:37:25] REAL CLICK (START ch1): mode=play chapter=1 wave=1/2 lives=3 weapon=PEA SHOOTER
+[19:37:28] screenshot -> sr2-shmup-replica-art.png (403KB)
+[19:38:04] BOSS SPAWN: THE HENERAL hp=60/60 (name rendered in HUD)
+[19:38:07] screenshot -> sr2-shmup-replica-boss.png (392KB)
+[19:38:37] death (cause=egg) lives 3->2 t=51s
+[19:38:54] CHAPTER 1 CLEAR (boss down, score=4850)
+[19:38:57] CHAPTER 2 START (unlocked=2)
+[19:39:19] death (cause=egg) lives 2->1 t=11s
+[19:39:25] death (cause=egg) lives 1->0 t=16.9s
+[19:39:27] FULLCLEAR GAMEOVER — FAIL (see above)
+[19:39:27] screenshot -> sr2-shmup-replica-fail.png (380KB)
+[19:39:27] console errors: 0
+[19:39:27] FULLCLEAR FAIL — exit 1
+[retry-wrapper] attempt 2/4 scenario=fullclear
+[19:39:30] sr2-shmup-driver scenario=fullclear url=http://127.0.0.1:8282/games/chicken-invaders/?debug pid=678519 cdp=9600
+[19:39:31] BOOT OK: mode=title pack=replica unlocked=1 lives=3 ls=null
+[19:39:31] REAL CLICK (START ch1): mode=play chapter=1 wave=1/2 lives=3 weapon=PEA SHOOTER
+[19:39:33] screenshot -> sr2-shmup-replica-art.png (402KB)
+[19:40:01] BOSS SPAWN: THE HENERAL hp=60/60 (name rendered in HUD)
+[19:40:03] screenshot -> sr2-shmup-replica-boss.png (398KB)
+[19:40:23] CHAPTER 1 CLEAR (boss down, score=4900)
+[19:40:26] CHAPTER 2 START (unlocked=2)
+[19:40:36] death (cause=egg) lives 3->2 t=10s
+[19:41:54] death (cause=egg) lives 2->1 t=70.5s
+[19:41:58] death (cause=egg) lives 1->0 t=74.3s
+[19:41:59] FULLCLEAR GAMEOVER — FAIL (see above)
+[19:41:59] screenshot -> sr2-shmup-replica-fail.png (387KB)
+[19:41:59] console errors: 0
+[19:41:59] FULLCLEAR FAIL — exit 1
+[retry-wrapper] attempt 3/4 scenario=fullclear
+[19:42:02] sr2-shmup-driver scenario=fullclear url=http://127.0.0.1:8282/games/chicken-invaders/?debug pid=682801 cdp=9562
+[19:42:03] BOOT OK: mode=title pack=replica unlocked=1 lives=3 ls=null
+[19:42:03] REAL CLICK (START ch1): mode=play chapter=1 wave=1/2 lives=3 weapon=PEA SHOOTER
+[19:42:05] screenshot -> sr2-shmup-replica-art.png (403KB)
+[19:42:36] BOSS SPAWN: THE HENERAL hp=60/60 (name rendered in HUD)
+[19:42:38] screenshot -> sr2-shmup-replica-boss.png (396KB)
+[19:43:20] CHAPTER 1 CLEAR (boss down, score=4900)
+[19:43:23] CHAPTER 2 START (unlocked=2)
+[19:44:41] death (cause=egg) lives 3->2 t=64.2s
+[19:44:55] WIN: all chapters clear score=10925 livesLeft=2 deaths=1 unlocked=2 localStorage=2
+[19:44:55] screenshot -> sr2-shmup-replica-win.png (388KB)
+[19:44:55] REAL KEY (R): win -> title mode=title unlocked=2 localStorage=2
+[19:44:55] REAL KEY (Digit2, Enter): chapter-select ch2 -> mode=play chapter=2 (restart after win works)
+[19:44:55] console errors: 0 nonLocalRequests=0
+[19:44:55] REPLICA FULL CLEAR + UNLOCK PERSIST: PASS
+[19:44:55] FULLCLEAR PASS — exit 0
+[retry-wrapper] PASS on attempt 3
+[retry-wrapper] attempt 1/4 scenario=fullclear
+[19:46:57] sr2-shmup-driver scenario=fullclear url=http://127.0.0.1:8282/games/cluck-horizon/?debug pid=689514 cdp=9615
+[19:46:58] BOOT OK: mode=title pack=cluck unlocked=1 lives=3 ls=null
+[19:46:58] REAL CLICK (START ch1): mode=play chapter=1 wave=1/2 lives=3 weapon=SOUP LASER
+[19:47:01] screenshot -> sr2-shmup-cluck-art.png (377KB)
+[19:48:18] BOSS SPAWN: MOTHER GOOSE hp=60/60 (name rendered in HUD)
+[19:48:20] screenshot -> sr2-shmup-cluck-boss.png (372KB)
+[19:49:58] CHAPTER 1 CLEAR (boss down, score=4500)
+[19:50:00] CHAPTER 2 START (unlocked=2)
+[19:52:20] WIN: all chapters clear score=10025 livesLeft=3 deaths=0 unlocked=2 localStorage=2
+[19:52:21] screenshot -> sr2-shmup-cluck-win.png (366KB)
+[19:52:21] REAL KEY (R): win -> title mode=title unlocked=2 localStorage=2
+[19:52:21] REAL KEY (Digit2, Enter): chapter-select ch2 -> mode=play chapter=2 (restart after win works)
+[19:52:21] console errors: 0 nonLocalRequests=0
+[19:52:21] CLUCK FULL CLEAR + UNLOCK PERSIST: PASS
+[19:52:21] FULLCLEAR PASS — exit 0
+[retry-wrapper] PASS on attempt 1

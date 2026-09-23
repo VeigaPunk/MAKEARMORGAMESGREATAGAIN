@@ -14,18 +14,30 @@ import type { ContentPack } from './packs';
  *    frame while `warn` decayed through a ~3-frame window (≈36 eggs). Here
  *    the radial fires exactly once when the telegraph expires.
  *
- * All combat constants are DECLARED GUESSES — dossier: every numeric is TBD
- * from ARCADE playtest. Renderer-agnostic: apps draw `sim` state via Pixi.
+ * Combat constants tuned 2026-09-23 (rationale table:
+ * ship-records/chicken-invaders.md) — every value below was proven in
+ * replay: both packs full-cleared deathless under them by an independent
+ * input-only driver, on top of the proto's own verified proof. The descent
+ * clamps (300/320/280) are the proto's proven formation floors, restored
+ * after the port dropped them. Renderer-agnostic: apps draw `sim` state.
  */
 
 export const STAGE_W = 960;
 export const STAGE_H = 540;
 
-// ---------------- tunables (ALL TBD from ARCADE playtest — declared, not measured) ----------------
+// ---------------- tunables (tuned 2026-09-23 — see ship record) ----------------
 export const DT = 1 / 120;
 const SHIP_ACC = 2600, SHIP_DAMP = 7.5, SHIP_MAXV = 400;   // inertia / float feel
 const SHIP_R = 13, SHIP_Y0 = STAGE_H - 60;
-const FIRE_EVERY = 0.17, BULLET_V = -560, BULLET_DMG = 1;
+const BULLET_V = -560;
+/** per-weapon cadence + damage — flavors stay distinct (pea = fast single,
+ *  twin = double straight, tri-spread = wide coverage, slower) while
+ *  single-target DPS stays within the proven-clear band (~6–15/s) */
+const WEAPONS = [
+  { every: 0.15, dmg: 1 },
+  { every: 0.18, dmg: 1 },
+  { every: 0.20, dmg: 1 },
+];
 const MISSILE_V = -330, MISSILE_DMG = 12, MISSILE_START = 2, MISSILE_CAP = 6;
 const EGG_V = 170, EGG_R = 6;
 const PICKUP_V = 95, GIFT_CHANCE = 0.12;
@@ -33,6 +45,8 @@ const LIVES_START = 3, RESPAWN_S = 1.2, INVULN_S = 2.0;    // spec #6: back in f
 const CHAPTER_CLEAR_S = 2.6;
 // formation grid (P-1 fix — proto left these undeclared)
 const FORM_CW = 72, FORM_CH = 56, FORM_OY = 70;
+// descent floors per pattern — the proto's proven clamps (kept verbatim)
+const DESCENT_MAX = { straight: 300, swoop: 320, dive: 280 } as const;
 
 export interface WaveDef { pattern: 'straight' | 'swoop' | 'dive'; rows: number; cols: number; hp: number; eggEvery: number }
 
@@ -53,13 +67,13 @@ export interface Bullet { x: number; y: number; vx: number; vy: number }
 export interface Missile { x: number; y: number; vy: number }
 export interface Egg { x: number; y: number; vx: number; vy: number }
 export interface Pickup { x: number; y: number; vy: number; kind: 'gift' | 'food' }
-export interface Particle { x: number; y: number; vx: number; vy: number; s: number; life: number; col: number }
+export interface Particle { x: number; y: number; vx: number; vy: number; s: number; life: number; col: number; sh: 'feather' | 'debris' | 'spark' }
 export interface Star { x: number; y: number; s: number; v: number }
 
 export type SimMode = 'title' | 'play' | 'clear' | 'gameover' | 'win';
 export type SimEvent =
-  | 'shoot' | 'missile' | 'hit' | 'death' | 'pickup' | 'ui'
-  | 'bossSpawn' | 'bossDown' | 'chapterClear' | 'gameOver' | 'win';
+  | 'shoot' | 'missile' | 'missileBoom' | 'hit' | 'pop' | 'eggSplat' | 'death' | 'pickup' | 'food' | 'ui'
+  | 'bossSpawn' | 'bossTelegraph' | 'bossRadial' | 'bossDown' | 'chapterClear' | 'gameOver' | 'win';
 
 export interface DeathRecord { cause: string; x: number; y: number; t: number }
 
@@ -147,9 +161,18 @@ export class ShmupSim {
     if (this.mode === 'gameover' || this.mode === 'win') { this.mode = 'title'; this.events.push('ui'); }
   }
   get wavesTotal(): number { return CHAPTERS[this.chapter - 1].length; }
+  /** display-safe wave number — clamps past the list during the boss phase (D-36) */
+  get waveShown(): number { return Math.min(this.waveIdx + 1, this.wavesTotal); }
 
   togglePause(): void {
     if (this.mode === 'play') { this.paused = !this.paused; this.events.push('ui'); }
+  }
+
+  /** pause/menu exit — every state has a way back to title */
+  quitToTitle(): void {
+    if (this.mode === 'play' || this.mode === 'gameover' || this.mode === 'win') {
+      this.mode = 'title'; this.paused = false; this.events.push('ui');
+    }
   }
 
   // ---------------- combat input ----------------
@@ -192,10 +215,11 @@ export class ShmupSim {
   }
 
   private burst(x: number, y: number, n: number, col: number): void {
+    const sh: Particle['sh'] = col === this.pack.ship ? 'debris' : col === this.pack.foe2 ? 'feather' : 'spark';
     for (let i = 0; i < n; i++) {
       this.parts.push({
-        x, y, vx: (Math.random() - 0.5) * 420, vy: (Math.random() - 0.5) * 420 - 80,
-        s: 2 + Math.random() * 5, life: 0.4 + Math.random() * 0.5, col,
+        x, y: y, vx: (Math.random() - 0.5) * 420, vy: (Math.random() - 0.5) * 420 - 80,
+        s: 2 + Math.random() * 5, life: 0.4 + Math.random() * 0.5, col, sh,
       });
     }
   }
@@ -210,16 +234,17 @@ export class ShmupSim {
   }
 
   private fireGuns(): void {
-    const y = this.ship.y - 16, v = BULLET_V;
+    const y = this.ship.y - 16, v = BULLET_V, w = WEAPONS[this.weaponLv];
     if (this.weaponLv === 0) this.bullets.push({ x: this.ship.x, y, vx: 0, vy: v });
     else if (this.weaponLv === 1) {
       this.bullets.push({ x: this.ship.x - 9, y, vx: 0, vy: v }, { x: this.ship.x + 9, y, vx: 0, vy: v });
     } else {
       this.bullets.push(
         { x: this.ship.x, y, vx: 0, vy: v },
-        { x: this.ship.x - 8, y, vx: -70, vy: v * 0.96 },
-        { x: this.ship.x + 8, y, vx: 70, vy: v * 0.96 });
+        { x: this.ship.x - 8, y, vx: -95, vy: v * 0.94 },
+        { x: this.ship.x + 8, y, vx: 95, vy: v * 0.94 });
     }
+    this.fireT = w.every;
     this.events.push('shoot');
   }
 
@@ -233,9 +258,9 @@ export class ShmupSim {
 
   private killChicken(c: Chicken): void {
     this.burst(c.x, c.y, 16, this.pack.foe);
-    this.score += 100;
+    this.score += this.pack.enemyTypes[c.type].score; // D-43: per-type HP pays per-type score
     this.dropPickup(c.x, c.y);
-    this.events.push('hit');
+    this.events.push('pop');
   }
 
   // ---------------- fixed-step simulation ----------------
@@ -265,7 +290,7 @@ export class ShmupSim {
       this.ship.y = Math.max(STAGE_H - 220, Math.min(STAGE_H - 30, this.ship.y + this.ship.vy * dt));
       this.ship.invuln = Math.max(0, this.ship.invuln - dt);
       this.fireT -= dt;
-      if (this.fireHeld && this.fireT <= 0) { this.fireGuns(); this.fireT = FIRE_EVERY; }
+      if (this.fireHeld && this.fireT <= 0) this.fireGuns();
     } else {
       this.deadT += dt;
       if (this.deadT >= RESPAWN_S) {
@@ -282,7 +307,10 @@ export class ShmupSim {
     // wdef is undefined (proto crashed here too; its boss was unreachable).
     const wdef = CHAPTERS[this.chapter - 1][Math.min(this.waveIdx, CHAPTERS[this.chapter - 1].length - 1)];
     for (const c of this.chickens) {
-      if (this.pack.enemyTypes[c.type].speed <= 0) continue;
+      if (this.pack.enemyTypes[c.type].speed <= 0) { // D-42: a stationary type settles into its formation slot (was: froze off-stage but still blocked the wave)
+        if (c.enter) { c.enter = 0; c.x = c.bx; c.y = c.by; }
+        continue;
+      }
       if (c.enter) { // fly-in
         c.y += (c.by - c.y) * Math.min(1, 3 * dt) + 40 * dt;
         if (Math.abs(c.y - c.by) < 4) { c.y = c.by; c.enter = 0; }
@@ -296,15 +324,15 @@ export class ShmupSim {
       if (wdef.pattern === 'straight') {
         const motionT = this.waveT * this.pack.enemyTypes[c.type].speed;
         c.x = c.bx + Math.sin(motionT * 0.7) * 130;
-        c.y = c.by + motionT * 4;
+        c.y = Math.min(c.by + motionT * 4, DESCENT_MAX.straight);
       } else if (wdef.pattern === 'swoop') {
         const motionT = this.waveT * this.pack.enemyTypes[c.type].speed;
         c.x = c.bx + Math.sin(motionT * 1.1 + c.bx * 0.01) * 170;
-        c.y = c.by + Math.sin(motionT * 0.9 + c.bx * 0.02) * 36 + motionT * 6;
+        c.y = Math.min(c.by + Math.sin(motionT * 0.9 + c.bx * 0.02) * 36 + motionT * 6, DESCENT_MAX.swoop);
       } else { // dive formation: mild sway; individuals peel off
         const motionT = this.waveT * this.pack.enemyTypes[c.type].speed;
         c.x = c.bx + Math.sin(motionT * 0.5) * 70;
-        c.y = c.by + motionT * 3;
+        c.y = Math.min(c.by + motionT * 3, DESCENT_MAX.dive);
       }
     }
     // dive scheduler
@@ -352,11 +380,12 @@ export class ShmupSim {
         }
         boss.volley = 2.4;
       }
-      if (boss.radial <= 0) { boss.warn = 0.7; boss.radial = 6.0; boss.radialArmed = true; }
+      if (boss.radial <= 0) { boss.warn = 0.7; boss.radial = 6.0; boss.radialArmed = true; this.events.push('bossTelegraph'); }
       // P-2 fix: radial fires exactly once when the telegraph expires
       // (proto re-fired every frame inside a ~3-frame window → ~36 eggs).
       if (boss.radialArmed && boss.warn <= 0) {
         boss.radialArmed = false;
+        this.events.push('bossRadial');
         for (let i = 0; i < 12; i++) {
           const a = i / 12 * Math.PI * 2;
           this.eggs.push({
@@ -379,7 +408,12 @@ export class ShmupSim {
     // projectiles
     for (const b of this.bullets) { b.x += b.vx * dt; b.y += b.vy * dt; }
     for (const m of this.missiles) m.y += m.vy * dt;
-    for (const e of this.eggs) { e.x += e.vx * dt; e.y += e.vy * dt; }
+    for (const e of this.eggs) {
+      e.x += e.vx * dt; e.y += e.vy * dt;
+      // floor splat cue the frame an egg crosses the bottom edge (ship-hit
+      // eggs teleport to y=H+99 and never satisfy the crossing test)
+      if (e.y - e.vy * dt < STAGE_H - 8 && e.y >= STAGE_H - 8) this.events.push('eggSplat');
+    }
     for (const p of this.pickups) p.y += p.vy * dt;
     this.bullets = this.bullets.filter(b => b.y > -20 && b.x > -20 && b.x < STAGE_W + 20);
     this.missiles = this.missiles.filter(m => m.y > -40);
@@ -387,24 +421,26 @@ export class ShmupSim {
     this.pickups = this.pickups.filter(p => p.y < STAGE_H + 20);
 
     // bullet/missile vs chickens
-    const hitC = (b: { x: number; y: number }, dmg: number): boolean => {
+    const hitC = (b: { x: number; y: number }, dmg: number, src: 'bullet' | 'missile'): boolean => {
       for (const c of this.chickens) {
         if (Math.abs(b.x - c.x) < 24 && Math.abs(b.y - c.y) < 18) {
           c.hp -= dmg; this.burst(b.x, b.y, 4, this.pack.foe);
+          if (src === 'missile') this.events.push('missileBoom');
           if (c.hp <= 0) { this.killChicken(c); this.chickens = this.chickens.filter(k => k !== c); }
+          else this.events.push('hit');
           return true;
         }
       }
       return false;
     };
-    this.bullets = this.bullets.filter(b => !hitC(b, BULLET_DMG));
-    this.missiles = this.missiles.filter(m => !hitC(m, MISSILE_DMG));
+    this.bullets = this.bullets.filter(b => !hitC(b, WEAPONS[this.weaponLv].dmg, 'bullet'));
+    this.missiles = this.missiles.filter(m => !hitC(m, MISSILE_DMG, 'missile'));
     // vs boss
     if (this.boss) {
       const boss = this.boss;
       const hitB = (b: { x: number; y: number }) => Math.abs(b.x - boss.x) < 56 && Math.abs(b.y - boss.y) < 40;
-      for (const b of this.bullets) if (hitB(b)) { boss.hp -= BULLET_DMG; b.y = -99; this.burst(b.x, b.y, 3, this.pack.foe2); }
-      for (const m of this.missiles) if (hitB(m)) { boss.hp -= MISSILE_DMG; m.y = -99; this.burst(m.x, m.y, 12, this.pack.foe2); }
+      for (const b of this.bullets) if (hitB(b)) { boss.hp -= WEAPONS[this.weaponLv].dmg; b.y = -99; this.burst(b.x, b.y, 3, this.pack.foe2); }
+      for (const m of this.missiles) if (hitB(m)) { boss.hp -= MISSILE_DMG; m.y = -99; this.burst(m.x, m.y, 12, this.pack.foe2); this.events.push('missileBoom'); }
       this.bullets = this.bullets.filter(b => b.y > -20);
       this.missiles = this.missiles.filter(m => m.y > -40);
       // boss body collision
@@ -429,7 +465,7 @@ export class ShmupSim {
           p.y = STAGE_H + 99; this.score += 50;
           if (p.kind === 'gift') this.weaponLv = (this.weaponLv + 1) % this.pack.weapons.length; // cycle/upgrade
           else this.missileN = Math.min(MISSILE_CAP, this.missileN + 1);
-          this.events.push('pickup');
+          this.events.push(p.kind === 'gift' ? 'pickup' : 'food');
         }
       }
     }
@@ -444,7 +480,7 @@ export class ShmupSim {
   snapshot(): Record<string, unknown> {
     return {
       mode: this.mode, pack: this.pack.id, chapter: this.chapter,
-      wave: this.waveIdx + 1, wavesTotal: CHAPTERS[this.chapter - 1].length,
+      wave: this.waveShown, wavesTotal: this.wavesTotal,
       score: this.score, lives: this.lives, missiles: this.missileN,
       weapon: this.weaponLv, weaponName: this.pack.weapons[this.weaponLv],
       shipX: this.ship.x, shipY: this.ship.y, shipAlive: this.ship.alive, invuln: this.ship.invuln,
@@ -452,6 +488,7 @@ export class ShmupSim {
       eggs: this.eggs.length,
       pickups: this.pickups.map(p => ({ x: p.x, y: p.y, kind: p.kind })),
       bossHp: this.boss ? this.boss.hp : null, bossMax: this.boss ? this.boss.max : null,
+      bossName: this.boss ? this.pack.bosses[this.boss.type].name : null,
       bossX: this.boss ? this.boss.x : null, bossWarn: this.boss ? this.boss.warn : 0,
       unlocked: this.unlocked, paused: this.paused,
       kills: this.killsInChapter, titleSel: this.titleSel, lastDeath: this.lastDeath,

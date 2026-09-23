@@ -1,0 +1,15 @@
+[19:49:02] --- hub card: Chicken Storm (games/chicken-invaders/)
+[19:49:04] card click -> http://127.0.0.1:8282/games/chicken-invaders/
+[19:49:04] game canvas booted (no ?debug): true
+[19:49:04] game booted: mode=title pack=replica
+[19:49:07] after START click: mode=play ch=1 wave=1/2 chickens=12
+[19:49:07] screenshot -> sr2-shmup-hub-chicken-storm.png (400KB)
+[19:49:07] verdict: wave1=true consoleErrors=0 nonLocal=0 -> PASS
+[19:49:07] --- hub card: Cluck Horizon (games/cluck-horizon/)
+[19:49:10] card click -> http://127.0.0.1:8282/games/cluck-horizon/
+[19:49:10] game canvas booted (no ?debug): true
+[19:49:10] game booted: mode=title pack=cluck
+[19:49:12] after START click: mode=play ch=1 wave=1/2 chickens=12
+[19:49:13] screenshot -> sr2-shmup-hub-cluck-horizon.png (378KB)
+[19:49:13] verdict: wave1=true consoleErrors=0 nonLocal=0 -> PASS
+[19:49:13] HUB BOOT-PROOF: PASS
