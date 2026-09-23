@@ -3,7 +3,7 @@
 Canvas2D arena RPG with DOM chrome. Create a gladiator, spread skill points across Strength, Agility, Vitality, and Defense, defeat scripted opponents, buy smithy/armory gear, and finish the short v1 ladder.
 
 ## Controls
-Mouse-primary; touch buttons are at least 48px and anchored along the bottom. Attack, Special, Potion, and End Turn are always available as legal actions. Keyboard bindings are intentionally unverified (**TBD ARCADE**).
+Mouse-primary; touch buttons are at least 48px and anchored along the bottom. Attack, Special, Potion, and End Turn are always available as legal actions. No custom key bindings: controls are native DOM buttons/input — Tab moves focus through looks, stats, name field and action buttons, Enter/Space activates the focused button, and the name field takes normal typed input (verified 2026-09-22 with real key events, `verification/evidence/sr1-sas-run.log`).
 
 ## Declared guesses (TBD ARCADE)
 | System | Declared guess |

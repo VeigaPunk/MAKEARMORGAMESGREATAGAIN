@@ -1,0 +1,64 @@
+=== D. keyboard map (real key events) ===
+PASS  D Tab traverses look/stat/name/buttons (>=6 distinct stops)  [BUTTON:SOUND ON | BUTTON:Scarlet | BUTTON:Azure | BUTTON:Gold | BUTTON:strength: 2 + | BUTTON:agility: 2 + | BUTTON:vitality: 2 + | BUTTON:defense: 2 + | INPUT:name | BODY:INTERNAL-NO-PUBLIC — ide]
+PASS  D Enter on focused stat button increments it  [strength: 2 + → strength: 3 +]
+PASS  D Space on focused stat button increments it  [agility: 2 + → agility: 3 +]
+PASS  D name input accepts typed text  [Keyboard Check]
+PASS  D backspace+digit editing works  [Keyboard Chec9]
+PASS  D no errors during keyboard exercise (favicon 404 whitelisted)  [ ]
+=== A. XSS injection matrix (stored name via real input) ===
+PASS  A create "<img src=x onerror=window.p=1>" → hub  [mode=hub]
+PASS  A no execution after create "<img src=x onerror=window.p=1>"  [{} errs=1]
+PASS  A arena render "<img src=x onerror=window.p=1>"
+PASS  A no execution after combat turn "<img src=x onerror=window.p=1>"  [errs=1 console: Failed to load resource: the server responded with a status of 404 (Not Found)]
+PASS  A reload+shop clean "<img src=x onerror=window.p=1>"  [mode=shop errs=2]
+PASS  A create "<script>window.p=1</script>" → hub  [mode=hub]
+PASS  A no execution after create "<script>window.p=1</script>"  [{} errs=1]
+PASS  A arena render "<script>window.p=1</script>"
+PASS  A no execution after combat turn "<script>window.p=1</script>"  [errs=1 console: Failed to load resource: the server responded with a status of 404 (Not Found)]
+PASS  A reload+shop clean "<script>window.p=1</script>"  [mode=shop errs=2]
+PASS  A create "" autofocus onfocus=window.p=1" → hub  [mode=hub]
+PASS  A no execution after create "" autofocus onfocus=window.p=1"  [{} errs=1]
+PASS  A arena render "" autofocus onfocus=window.p=1"
+PASS  A no execution after combat turn "" autofocus onfocus=window.p=1"  [errs=1 console: Failed to load resource: the server responded with a status of 404 (Not Found)]
+PASS  A reload+shop clean "" autofocus onfocus=window.p=1"  [mode=shop errs=2]
+PASS  A create "Max "The Hammer" & Co." → hub  [mode=hub]
+PASS  A no execution after create "Max "The Hammer" & Co."  [{} errs=1]
+PASS  A benign name preserved verbatim in hud  [HUB · Max "The Hammer" & Co.HP 40/40 · Gold 0 · XP 0 · Lv 1]
+PASS  A benign name injected no elements into hud  [<span>HUB · Max "The Hammer" &amp; Co.</span><span>HP 40/40 · Gold 0 · XP 0 · Lv 1</span> imgs=0]
+PASS  A benign name & HTML-escaped in source  [<span>HUB · Max "The Hammer" &amp; Co.</span><span>HP 40/40 · Gold 0 · XP 0 · Lv 1</span>]
+PASS  A arena render "Max "The Hammer" & Co."
+PASS  A no execution after combat turn "Max "The Hammer" & Co."  [errs=1 console: Failed to load resource: the server responded with a status of 404 (Not Found)]
+PASS  A reload+shop clean "Max "The Hammer" & Co."  [mode=shop errs=2]
+--- A2. tampered save (attacker-controlled localStorage) ---
+PASS  A2 tampered save loads to hub  [mode=hub]
+PASS  A2 malicious look clamped to known preset  [portrait=portrait-scarlet.svg]
+PASS  A2 no execution from tampered save  [{} errs=0]
+PASS  A2 no execution through shop+arena  [errs=1]
+PASS  A2 name HTML-escaped in hud  [<span>ARENA · &lt;img src=x onerror=window.p=1&gt;</span><span>HP 26/30 · Gold 0 · XP 0 · Lv 1</span]
+--- A3. validSave corrupt-rejection matrix ---
+PASS  A3 corrupt rejected: defeated -1  [mode=create errs=0]
+PASS  A3 corrupt rejected: defeated 99  [mode=create errs=0]
+PASS  A3 corrupt rejected: missing vitality  [mode=create errs=0]
+PASS  A3 corrupt rejected: name not string  [mode=create errs=0]
+PASS  A3 corrupt rejected: owned has number  [mode=create errs=0]
+PASS  A3 corrupt rejected: gold not number  [mode=create errs=0]
+PASS  A3 corrupt rejected: garbage json  [mode=create errs=0]
+PASS  A3 corrupt rejected: null  [mode=create errs=0]
+PASS  A3 valid mid-ladder save loads to hub  [{"mode":"hub","hp":32,"gold":10,"xp":22,"level":1,"opp":2,"oppHp":0,"stats":{"strength":3,"agility":2,"vitality":2,"defense":2},"savePresent":true}]
+=== B. Full ladder clear with real input ===
+B trace: fight1 pre: gold=0 hp=40 lvl=1 → bought=[] gold=0 || fight1 vs Tin Can Tim: turns=5 potions=0 defeats=0 won=true → hp=40 gold=25 xp=22 lvl=1 mode=hub
+PASS  B fight 1 won  [opp=1 mode=hub]
+B trace: fight2 pre: gold=25 hp=40 lvl=1 → bought=[0] gold=5 || fight2 vs Baron Bonk: turns=6 potions=0 defeats=0 won=true → hp=40 gold=40 xp=44 lvl=2 mode=hub
+PASS  B fight 2 won  [opp=2 mode=hub]
+PASS  C save/load round-trip: mode+state restored  [before={"mode":"hub","hp":40,"gold":40,"xp":44,"level":2,"opp":2,"oppHp":0,"stats":{"strength":4,"agility":3,"vitality":4,"defense":3},"savePresent":true} after={"mode":"hub","hp":40,"gold":40,"xp":44,"level":2,"opp":2,"oppHp":0,"stats":{"strength":4,"agility":3,"vitality":4,"defense":3},"savePresent":true}]
+PASS  C save bytes identical across reload
+B trace: fight3 pre: gold=40 hp=40 lvl=2 → bought=[0,1] gold=8 || fight3 vs The Sand Snorter: turns=14 potions=2 defeats=0 won=true → hp=40 gold=53 xp=66 lvl=2 mode=hub
+PASS  B fight 3 won  [opp=3 mode=hub]
+B trace: fight4 pre: gold=53 hp=40 lvl=2 → bought=[0,1,2] gold=5 || fight4 vs Emperor’s Champion: turns=38 potions=0 defeats=3 won=true → hp=40 gold=60 xp=88 lvl=3 mode=complete
+PASS  B fight 4 won  [opp=4 mode=complete]
+PASS  B reached complete screen  [mode=complete h1=V1 COMPLETE]
+PASS  B full ladder: all 4 opponents defeated  [defeated=4]
+PASS  B post-complete Return to Hub works
+
+==== SUMMARY: ALL PASS (61 checks) ====
+
