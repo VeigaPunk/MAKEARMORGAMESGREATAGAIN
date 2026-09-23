@@ -13,8 +13,24 @@ cv.width = STAGE_W; cv.height = STAGE_H;
 
 /* ---------- save ---------- */
 function loadSave() {
-  try { return Object.assign({ unlocked: 1, best: {}, deaths: 0, mute: false }, JSON.parse(localStorage.getItem(SAVE_KEY) || '{}')); }
-  catch { return { unlocked: 1, best: {}, deaths: 0, mute: false }; }
+  const def = { unlocked: 1, best: {}, deaths: 0, mute: false };
+  let raw = null;
+  try { raw = JSON.parse(localStorage.getItem(SAVE_KEY) || '{}'); } catch { return def; }
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return def;
+  const save = Object.assign({}, def, raw);
+  if (!Number.isInteger(save.unlocked) || save.unlocked < 1) save.unlocked = 1;
+  if (!Number.isFinite(save.deaths) || save.deaths < 0) save.deaths = 0;
+  save.mute = !!save.mute;
+  if (!save.best || typeof save.best !== 'object' || Array.isArray(save.best)) save.best = {};
+  for (const id of Object.keys(save.best)) {
+    const b = save.best[id];
+    const ok = b && typeof b === 'object'
+      && Number.isFinite(b.time) && b.time >= 0
+      && Number.isInteger(b.deaths) && b.deaths >= 0
+      && (b.medal === undefined || ['gold', 'silver', 'bronze'].includes(b.medal));
+    if (!ok) delete save.best[id];
+  }
+  return save;
 }
 function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch {} }
 let save = loadSave();
@@ -38,6 +54,7 @@ function beep(f, d, type, g, slide) {
 
 /* ---------- medals + tiers ---------- */
 function medalFor(d) { return d === 0 ? 'gold' : d <= 2 ? 'silver' : 'bronze'; }
+const MEDAL_COL = { gold: '#ffd23f', silver: '#c8d2dc', bronze: '#b07830' };
 const TIERS = [[10, '#7ec850', 'WARM-UP'], [20, '#9be15d', 'DEMANDING'], [30, '#ffd23f', 'BRUTAL'], [40, '#ff9f3f', 'HARD+'], [50, '#ff6f3f', 'SAVAGE'], [60, '#d21f26', 'NIGHTMARE'], [120, '#b04fd8', 'INHUMAN'], [Infinity, '#ff3f6f', 'APEX']];
 function tierOf(id) { for (const [max, c, n] of TIERS) if (id <= max) return { c, n }; }
 
@@ -62,6 +79,7 @@ addEventListener('keydown', e => {
   onKey(e.code);
 });
 addEventListener('keyup', e => keys.delete(e.code));
+addEventListener('blur', () => keys.clear());
 function axis() {
   let x = 0, y = 0;
   for (const k of keys) if (AXIS[k]) { x += AXIS[k][0]; y += AXIS[k][1]; }

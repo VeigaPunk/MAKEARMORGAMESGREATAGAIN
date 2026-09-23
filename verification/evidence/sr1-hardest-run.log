@@ -1,0 +1,12 @@
+BOOT OK: levels=114 screen=menu unlocked=1
+REAL KEY (Enter): level 1 started, status=play
+REAL KEY (hold KeyD 700ms): player.x 38.0 -> 160.5, sim time 0.47s -> 1.17s
+screenshot -> sr1-hardest-level1.png (9KB)
+REAL KEY (Esc/Esc): pause + resume OK
+DIAGNOSIS seeded save: menu rendered, valid entries intact (unlocked=3), zero exceptions so far
+screenshot -> sr1-hardest-seeded-save.png (30KB)
+DIAGNOSIS corrupt save: menu rendered, save fell back to defaults (unlocked=1)
+DIAGNOSIS unparseable save: booted clean, no exceptions
+DIAGNOSIS blur: held KeyD moved 43.8px, after blur moved 0.0px
+console errors: 0, exceptions: 0
+SMOKE PASS
