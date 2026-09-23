@@ -1,0 +1,9 @@
+PASS  hub card present
+PASS  real card click lands on built game (plain link)  [url=http://localhost:8123/games/swords-and-sandals/]
+PASS  built game title renamed  [Arena of Bonks — MAGA native replica]
+PASS  built game boots to title (?debug hook)
+PASS  create -> hub in built game
+PASS  hub -> arena in built game (fight 1 live)  [{"mode":"arena","opp":0,"oppHp":34}]
+PASS  0 console errors (favicon whitelisted)  [clean]
+PASS  0 non-local requests  [all local]
+==== SUMMARY: ALL PASS ====

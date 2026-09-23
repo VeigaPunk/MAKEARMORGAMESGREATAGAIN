@@ -1,171 +1,185 @@
-# Ship record — Swords & Sandals 2: Emperor's Reign (remake)
+# Ship record — Swords & Sandals 2: Emperor's Reign (remake, "Arena of Bonks")
 
 Original reference: Swords & Sandals 2: Emperor's Reign (2007) — gladiator
 RPG: character creation, shops, turn-based arena ladder, persistence.
 Highest legal-friction title in the roster (DD-27) — player-facing names,
-characters, and art MUST be original evocations.
+titles, characters, and art MUST be original evocations.
 
-Status: **NOT SHIPPED** — survey complete, rendition EXTENDED; the two
-blocker-class defects (D-51/52/53 stored XSS, D-54 unwinnable ladder) are
-**FIXED and re-proven with real input** (ship-run 2026-09-22, round 2).
-Remaining before ship: IP written clearance (INTERNAL-NO-PUBLIC badge),
-D-24 (WATCH), D-31 (PARTIAL), full tournament tree (content decision).
-Last updated: 2026-09-22 (ship-run 2026-09-22 round 2).
+Status: **SHIP-CANDIDATE (internal)** — blockers-fixed (D-51/52/53, D-54) and
+the sr2 wave complete: rights rename, audio+settings, title/defeat flows, r1
+art home, 5-bout ladder (proto parity), full re-verification with real input
+(75/75 desktop+touch, hub boot-proof clean). One standing non-code blocker:
+**IP written clearance** (INTERNAL-NO-PUBLIC badge retained, fleet-consistent).
+Last updated: 2026-09-23 (ship-run 2026-09-23, sr2 wave).
 
 ## Survey — implementations found
 
 1. `prototypes/swords-and-sandals.html` (822 lines, zero-dep, file://) —
-   full v1 loop proven: create → 5 scripted opponents → champion; turn-gated
-   combat (650ms enemy telegraph) with ATTACK/HEAVY/POTION/TAUNT/HOLD;
-   render-time shop gates from `{level,gold,owned}`; save-on-transition
-   `sas_proto_save` (defeat-safe); enemy AI priority list; stamina pacing
-   dial; r1 colosseum art. NOTE: `__proto` here is a **function**
-   (`window.__proto=()=>({...})`, line 802) — drivers must call it, not
-   read it. Deferred marker at line 742: full tournament tree.
-2. `MAGA-everything/02-code/armor-games/apps/swords-and-sandals` (1 file,
-   56 dense lines / ~12KB, Canvas2D+DOM) — create (3 looks/4 stats) →
-   hub → turn-based arena vs 4 scripted opponents → 3-item shop; save
-   validator (`validSave()` corrupt-rejection matrix re-proven 8/8);
-   mouse-primary; keyboard verified (no custom bindings — native DOM
-   Tab/Enter/Space + typed input; see Verification).
+   full v1 loop: create → 5 scripted opponents → champion; turn-gated
+   combat; render-time shop gates; defeat-safe save; enemy AI priority list;
+   r1 colosseum art. `__proto` here is a **function** — drivers must call it.
+   Deferred marker at line 742: full tournament tree.
+2. `MAGA-everything/02-code/armor-games/apps/swords-and-sandals` (TS/Vite,
+   Canvas2D+DOM) — this rendition, EXTENDED through sr1 (blockers) and sr2
+   (this wave). Dev `npm run dev:sands` (port 5178), `?debug` → `__maga`.
 
-Docs: concept spec `05-swords-and-sandals.md` (slice: create gladiator +
-3–5 scripted fights + small shop, one save slot), dossier skeleton, build
-card.
+Docs: concept spec `05-swords-and-sandals.md` (slice floor: create gladiator
++ 3–5 scripted fights + small shop, one save slot).
 
-## Decision: EXTEND `apps/swords-and-sandals`
+## Decision: EXTEND `apps/swords-and-sandals` (binding)
 
-Loop and save validator are proven on the app; proto is the mechanics
-contract. Blockers fixed forward 2026-09-22 (round 2); no content work
-started beyond the D-54 tuning.
+Loop and save validator proven here; proto is the mechanics contract.
+sr2 kept the sr1-tuned constants (proven winnable — no retune) and ported
+the proto's r1 presentation layer rather than inventing new art.
 
-## Known defects (blockers first)
+## What sr2 changed (2026-09-23)
 
-- **FIXED (2026-09-22): D-51 / D-52 / D-53 — stored XSS** via gladiator
-  name (was live-proven `window.p===1`). Fixes in
-  `apps/swords-and-sandals/src/main.ts`:
-  - `esc()` HTML-escapes `g.name` at the HUD innerHTML sink (the
-    live-proven vector); log pane rebuilt textContent-safe (createElement
-    + `textContent` per line, same `<div>` structure);
-  - `g.look` (also save-controlled, used in portrait `src`/`alt`
-    attributes) clamped to the known `['Scarlet','Azure','Gold']` set at
-    load — a tampered `look` string can no longer break out of an
-    attribute;
-  - name constrained at creation: length ≤ 24, charset
-    `[A-Za-z0-9 '&"._-]` with strip+trim, fallback "Unnamed Gladiator";
-  - `validSave()` untouched — save format compatible, corrupt-rejection
-    matrix re-proven (8/8 corrupt → create mode, valid mid-ladder save →
-    hub).
-  Injection matrix re-run with real input: `<img src=x
-  onerror=window.p=1>`, `<script>window.p=1</script>`, quote/attribute
-  breaker `" autofocus onfocus=window.p=1 x="`, benign `Max "The Hammer"
-  & Co.` (verbatim preserved) — zero execution across create → hub →
-  shop → arena → combat turn → reload → shop again; plus a fully
-  tampered attacker-save (payload name + attribute-breaking look):
-  clamped, escaped, zero execution. Evidence:
-  `verification/evidence/sr1-sas-run.log` (61 checks ALL PASS).
-- **FIXED (2026-09-22): D-54 — ladder unwinnable from Snorter onward.**
-  Diagnosis (app math, pure play): player effective HP pool is
-  `24+4*vit` (32–56) + 2 potions; enemy damage is
-  `str+0..2−def−⌊armor/2⌋−3(guard)` with **no enemy miss chance**, so a
-  fight's incoming damage ≈ `turns × (str−def−⌊armor/2⌋−2)`. Old curve:
-  Snorter (62hp/10str/5def) needed ~11 turns while dealing ~49 incoming
-  vs ~56 pool — coin-flip at best; Champion (78hp/12str/7def) needed ~14
-  turns at ~96–105 incoming vs ~56 pool — mathematically dead
-  (~170–190% of pool), and total old winnings (120g) were less than the
-  combined shop cost (125g), so the full kit was unaffordable anyway.
-  Minimal tuning (constants only, formulas/mechanics unchanged):
-  - Snorter: hp 62→56, str 10→9, def 5→4; Champion: hp 78→66,
-    str 12→10, def 7→6 (keeps them the hardest bouts, removes the wall);
-  - rewards: win gold `18+8d` → `25+10d` (25/35/45/55; first three = 105g
-    so the kit is purchasable before the Champion);
-  - shop: Bent Bronze Sword 22g→20g bonus +2→+3; Lucky Sandals 38g→32g;
-    Imperial Buckler 65g→48g (kit total 125g→100g, gates unchanged);
-  - potion heal 12→16 (starting belt of 2 now meaningfully covers one
-    bad fight).
-  Result (verified): a middle build (str4/agi3/vit4/def3) clears all 4
-  bouts buying sword→sandals→buckler across the ladder and reaches the
-  V1 COMPLETE screen with 0 defeats; expected incoming per fight is now
-  ~6/~22/~34/~37 vs a 40+32 pool (was ~9/~30/~49/~96).
-- OPEN: D-24 (WATCH), D-31 (PARTIAL).
-- FIXED (keep fixed): D-23, D-27, D-28, D-29, D-30, D-51/52/53, D-54.
+- **Rights rename (item 1).** Player-facing title is now **Arena of Bonks**
+  everywhere: canvas wordmark (was `SWORDS & SANDALS`), `index.html`
+  `<title>` ("Arena of Bonks — MAGA native replica"), title-screen H1.
+  String sweep: no "Swords"/"Sandals" in any player-facing string (verified
+  by driver scan of body text + title + DOM source). Opponent/shop names
+  audited — Tin Can Tim, Baron Bonk, The Sand Snorter, Emperor's Champion
+  (evocations, kept), + new "Praetor Pommel"; gear names generic (Bent
+  Bronze Sword / Lucky Sandals / Imperial Buckler). Decisions: the
+  INTERNAL-NO-PUBLIC badge (names the original's rights holders as a
+  clearance reminder) is retained, fleet-consistent with burger/hardest; the
+  storage keys `maga:swords-and-sandals:*` are machine-side and unchanged
+  for save compatibility. No source marks anywhere player-facing.
+- **Audio (item 2).** `packages/arcade-core/src/sfx.ts` consumed as-is
+  (frozen this wave — untouched). New `src/audio.ts`: arena march bed
+  (D-dorian i–VI–VII loop via `startMusic` music bus) + 13 cues wired to
+  real events: swing (Attack), swingHeavy (Special), thud (landed hits),
+  clink (guarded/blocked enemy blow), glug (potion), taunt (Taunt/pass —
+  the proto's sanctioned pass action, same mechanics as the old End Turn),
+  crowd swell (kill), fanfare (complete), sting (defeat), buy, coin, click,
+  start. **Settings**: music/SFX volume sliders + mute-all, persisted at
+  `maga:swords-and-sandals:audio`, reachable from the fixed SETTINGS button
+  (title/hub/everywhere) and via Esc from the arena.
+- **Flow completeness (item 3).** Title screen added (Continue when a save
+  exists, New Gladiator otherwise) — boot always lands there. Defeat screen
+  added (honest-play reachable): defeat-safe save kept (hp restored,
+  standing/gold kept), "Rise Again" → hub, retry works. Complete screen →
+  Return to Hub → Save & Title → Continue all verified. Esc backs out of
+  shop/create/hub (→ title) and opens settings from the arena (combat
+  preserved); every state has an exit. Touch: buttons ≥48px CSS min-height,
+  actions bar sticky at ≤600px width; tap-through verified at 390×844
+  (create → first bout won by taps; ≥40px audit clean).
+- **Art (item 4).** Proto r1 colosseum ported to `src/arena.ts` and adapted
+  to the app's 800×420 stage: 3 arched tiers with crowd stipple + per-frame
+  twinkle, hanging banners, wall band, sun-baked sand with rake arcs,
+  stains, broken-sword/shield decals, torch braziers with 2-frame flames +
+  glow, drifting dust motes. Articulated gladiators (per-look skin/tint,
+  4 armor tiers, weapon silhouettes club/sword/axe/dagger/tower-shield,
+  helms, idle bob); per-opponent skin/weapon/champion-gold. Combat feedback:
+  lunge offsets, hurt flicker, screen shake, floating damage/MISS/potion/
+  gold text, engraved nameplates + gradient HP bars over both fighters.
+  Title/create/hub/shop/complete/defeat vignettes; champion confetti. The 3
+  portrait SVGs kept (wired in create/hub). No external assets.
+- **Constants (item 5).** sr1 tuning is the proven baseline — NOT retuned:
+  Snorter 56/9/4, Champion 66/10/6, rewards 25+10d, shop 20/32/48 (kit
+  100g), potion 16, formulas/mechanics unchanged. Code annotates the
+  baseline with a pointer to this record (D-54). Remaining proto
+  DECLARED-GUESSES status recorded in the app README table (formulas kept;
+  difficulty now PROVEN; audio roster resolved). Content: added the 5th
+  mid-ladder opponent **Praetor Pommel** (hp 60 / str 9 / def 5, slot 4 of
+  5, reward 55g) — proto-parity count, cheap, and re-proven winnable
+  (ladder clear below). Tournament tree beyond the 5-bout ladder stays
+  deferred (recorded below).
 
-## Placeholders to resolve before ship
+## Known defects
 
-Proto `DECLARED GUESSES` (`prototypes/swords-and-sandals.html:17-22`) —
-combat numbers, stamina pacing. App shop/economy gates were tuned as part
-of the D-54 fix (see above) but remain declared guesses pending ARCADE
-playtest against the original's tables. Thumb-arc mobile layout unproven
-(proto used bottom strip; `MECHANICS-DIGEST.md` known-unproven list).
+- FIXED (2026-09-22, sr1): D-51/52/53 stored XSS (escaping + name charset +
+  look clamp; matrix re-proven sr2 below); D-54 unwinnable ladder
+  (constants-only retune, full clear proven).
+- FIXED (2026-09-23, sr2): D-31 subsumed (the `hud.innerHTML` sink it flagged
+  is the escaped sink; log pane is textContent-built). Missing title/defeat
+  screens, missing audio/settings, art placeholder, 4-bout ladder.
+- OPEN: D-24 (WATCH — opponent HP line froze once, unreproduced across sr1
+  full clear + sr2 five-bout clear; HP now also drawn as canvas bars).
+- STANDING BLOCKER (non-code): IP written clearance — INTERNAL-NO-PUBLIC
+  badge retained until then; not a code defect.
 
 ## Verification
 
-Recorded commands (last observed results, 2026-09-22 round 2):
-- `cd MAGA-everything/02-code/armor-games && npm install` — 35 packages,
-  0 vulnerabilities (lockfile unchanged; esbuild postinstall warn is
-  benign, binary present).
-- `npm run typecheck -w @maga/swords-and-sandals` — clean.
-- `npm run build -w @maga/swords-and-sandals` — clean (11KB bundle).
-- `npm run dev:sands` (port 5178) + Playwright-core 1.63.0 driver with
-  system `/usr/bin/chromium` (no downloaded browsers), real
-  clicks/keyboard via CDP, reads via `window.__maga` only —
-  `verification/evidence/sr1-sas-run.log`: **52 checks, 0 failures
-  (ALL PASS)**:
-  - XSS injection matrix (4 payload names incl. benign control, stored
-    via real typing, traversed create→hub→shop→arena→combat→reload):
-    zero execution (`window.p` never set), zero console errors. The only
-    console noise is a pre-existing `/favicon.ico` 404, identical on the
-    benign control (unrelated to payloads; left as-is, minimal diff).
-  - Tampered attacker-save (payload name + attribute-breaking `look`):
-    look clamped to Scarlet, name escaped, zero execution through
-    shop+arena.
+All recorded commands re-run with zero new dependencies and zero network
+beyond localhost. Last observed results 2026-09-23 (sr2):
+
+- `cd MAGA-everything/02-code/armor-games && npm run typecheck -w
+  @maga/swords-and-sandals` — clean.
+- `npm run build -w @maga/swords-and-sandals` — clean (30.6KB bundle,
+  10.5KB gzip).
+- `npm run dev:sands` (port 5178) + zero-dep CDP driver
+  (`verification/evidence/sr2-sas-run.mjs`, real Input.dispatchKeyEvent /
+  dispatchMouseEvent, reads via `window.__maga` only, fresh user-data-dir
+  per launch) — `verification/evidence/sr2-sas-run.log`: **75/75 PASS**
+  (0 failures):
+  - Rights: title/`<title>`/canvas/DOM sweep — no source mark; wordmark gone.
+  - Title → create with real typing; middle build str4/agi3/vit4/def3.
+  - Settings: sliders + mute via real clicks → `sfx.musicVolume/sfxVolume/
+    muted` applied + persisted; survive reload; reachable from title/hub
+    (SETTINGS button) and arena (Esc).
+  - Audio: `__maga.sfx.running===true`, voices accruing (music bed
+    scheduled on first gesture, voices 12 → 17 across 700ms).
+  - **Full 5-bout ladder clear, real input** (strategy: Special every turn,
+    potion when HP ≤ 18; kit sword→sandals→buckler across the ladder):
+    fight1 Tin Can Tim 8 turns; fight2 Baron Bonk 10; save/load round-trip
+    mid-ladder (state + raw save bytes identical); fight3 The Sand Snorter
+    7 turns (1 honest defeat, retry loop works); fight4 Praetor Pommel 14
+    turns; fight5 Emperor's Champion 10 turns → **ARENA CONQUERED**,
+    defeated=5, Return to Hub → Save & Title → Continue → complete mode.
+  - Defeat path (fresh profile, never attacks): DEFEAT screen by honest
+    play, defeat-safe save (hp=maxHp, standing kept), Rise Again → hub.
+  - Esc: arena → settings (combat preserved) → close; shop → hub; hub →
+    title.
+  - XSS matrix (4 payload names incl. benign control, real typing, through
+    create → hub → shop → arena → combat → reload → shop): zero execution
+    (`window.p` never set), no injected HUD elements, benign name verbatim
+    + `&amp;`-escaped, zero console errors (favicon 404 eliminated by
+    `data:` icon). Tampered attacker-save (payload name + attribute-breaking
+    look): look clamped to Scarlet, zero execution through shop+arena.
   - `validSave()` corrupt-rejection matrix: 8/8 corrupt saves → fresh
-    create mode, no errors; valid mid-ladder save → hub.
-  - Full ladder clear with real input (driver strategy: Special every
-    turn — it strictly dominates Attack — potion when HP ≤ 18; build
-    str4/agi3/vit4/def3, gladiator "Maximus QA"):
-    fight1 Tin Can Tim 5 turns; fight2 Baron Bonk 6 turns; save/load
-    round-trip mid-ladder (state + raw save bytes identical after
-    reload, run continued); fight3 The Sand Snorter 14 turns, 2 potions;
-    fight4 Emperor's Champion 38 turns across 4 attempts (3 honest
-    defeats, retry loop works) → **V1 COMPLETE**, `defeated=4`,
-    Return-to-Hub after complete works. The previous run cleared the
-    same ladder 0-defeat in 14 turns, so the Champion now reads
-    "hard but fair" instead of a wall.
-  - Keyboard map: no custom bindings (documented in app README) — real
-    key events verified: Tab traverses all controls (11 distinct stops),
-    Enter/Space activate focused stat buttons, name field takes typed
-    text + backspace/digit editing; no errors.
-- Evidence files: `verification/evidence/sr1-sas-run.log`,
-  `sr1-sas-create.png`, `sr1-sas-shop.png`, `sr1-sas-arena.png`
-  (Champion bout, 42/66 HP), `sr1-sas-complete.png` (V1 COMPLETE,
-  +55 gold victory line).
+    create; valid mid-ladder save → hub (defeated=2).
+  - Keyboard: Tab reaches buttons (gear first), Enter activates the focused
+    title button (keyDown with `text:'\r'` — noted for future drivers:
+    CDP Enter without `text` does not activate buttons in this chromium).
+  - Touch (390×844): boots to title; create → hub → arena → first bout won
+    by taps; all combat/shop buttons ≥40px; no console errors.
+- Fleet staging: `npm run build -w @maga/swords-and-sandals`, clean copy of
+  `dist/` → `games/swords-and-sandals/` (same semantics as
+  `tools/build-fleet.mjs`; only this title staged).
+- Hub boot-proof (built game): `python3 -m http.server 8123` from repo root
+  + `node verification/evidence/sr2-sas-hub.mjs` — **8/8 PASS**: real hub-card
+  click lands on the built game (plain link), title renamed, boots to title,
+  create → hub → arena (fight 1 live, opp HP 34), combat frame clean,
+  **0 console errors, 0 non-local requests**. Evidence:
+  `verification/evidence/sr2-sas-hub.log`, `sr2-sas-hub.png`.
 
-- **sr1 root entry point (2026-09-23):** built via `npm run build:fleet`
-  (staged to `games/swords-and-sandals/`), served by `python3 -m
-  http.server 8123` from the repo root; hub card real-mouse-click ->
-  create screen -> real typed name "KIMI" + 6x strength+ clicks ->
-  "Enter the Arena" -> hub -> "Start First Bout" -> arena (opponent HP
-  34) — 0 console errors, 0 non-local requests. Evidence:
-  `verification/evidence/sr1-hub-run.log`, `sr1-hub-swords-and-sandals.png`.
+Ship-gate checklist: full ladder clear with real input — PASS (5/5 bouts);
+XSS matrix clean — PASS; keyboard — PASS (native DOM, real events);
+save/load round-trip — PASS; settings persist — PASS; audio scheduled —
+PASS; touch smoke — PASS; rights sweep — PASS; built-game hub boot — PASS
+(0 errors / 0 non-local).
 
-Ship-gate checklist: full ladder clear to champion/complete screen with
-real input — PASS; XSS injection matrix clean — PASS; keyboard map
-verified — PASS (no custom bindings by design, native DOM behavior
-proven); save/load round-trip — PASS.
+Evidence files: `sr2-sas-run.mjs`, `sr2-sas-run.log` (75 checks),
+`sr2-sas-title.png`, `sr2-sas-settings.png`, `sr2-sas-arena.png`,
+`sr2-sas-complete.png`, `sr2-sas-touch.png`, `sr2-sas-hub.mjs`,
+`sr2-sas-hub.log`, `sr2-sas-hub.png`.
 
 ## Deferrals
 
-Full tournament tree (proto line 742) was deferred by the proto run —
-reassess at content time; the mission bar is the original's scope as
-documented in the concept spec (3–5 scripted fights slice floor). The
-4-bout v1 ladder is now winnable end-to-end, so the deferral no longer
-blocks the completion claim.
+- Full tournament tree (proto line 742): still deferred — the spec slice
+  floor (3–5 scripted fights + small shop) is now exceeded at 5 fights + 3
+  items, proven winnable end-to-end. A bracket/tree remains future content.
+- Exact original combat tables/prices remain unverified against the
+  original (no external consultation allowed); the sr1-tuned numbers stand
+  as the declared, proven baseline.
+- IP written clearance: operator-side blocker, badge retained.
 
 ## Provenance declaration
 
 Consulted: this working copy only — git history, `verification/`,
 `MAGA-everything/01-design-docs/`, `prototypes/`, plus my own knowledge of
-the original game. Network use: none beyond a single `npm ping` probe. No
-web/GitHub searches about this project, no forks/copies, no third-party
+the original game. Network use: none beyond localhost dev/probe servers.
+No web/GitHub searches about this project, no forks/copies, no third-party
 remakes of the original were consulted.

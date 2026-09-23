@@ -1,0 +1,81 @@
+=== desktop run (1280x800) ===
+PASS  A rights: document.title renamed  [Arena of Bonks — MAGA native replica]
+PASS  A title screen is the boot state  [mode=title]
+screenshot -> /home/vgpnk/Projects/MAKEARMORGAMESGREATAGAIN-kimi/verification/evidence/sr2-sas-title.png
+PASS  A rights: no "Swords" mark in player-facing strings  [body/title clean]
+PASS  A rights: no "Sandals" mark in player-facing strings  [body/title clean]
+PASS  A rights: original wordmark gone from DOM/canvas text  [src searched]
+PASS  A title -> create via real click  [mode=create]
+PASS  B create -> hub with middle build  [{"mode":"hub","hp":40,"gold":0,"xp":0,"level":1,"defeated":0,"potions":2,"opp":0,"oppHp":0,"oppName":"","stats":{"strength":4,"agility":3,"vitality":4,"defense":3}}]
+PASS  C settings: volumes+mute applied + persisted  [{"music":0.29,"sfxVol":0.5,"muted":true,"ls":"{\"music\":0.29,\"sfx\":0.5,\"muted\":true}"}]
+PASS  C settings persist across reload  [{"music":0.29,"muted":true,"slider":"29"}]
+PASS  C unmute applied  [muted=false]
+PASS  C after reload, no premature save  [mode=title savePresent=true]
+PASS  D audio: ctx running + voices scheduled (music accruing)  [{"voices":12,"running":true} -> 17]
+PASS  E fight 1 (Tin Can Tim) won  [turns=6 defeats=0]
+PASS  E fight 2 (Baron Bonk) won  [turns=7 defeats=0]
+PASS  E fight 3 (The Sand Snorter) won  [turns=8 defeats=0]
+PASS  E save/load round-trip mid-ladder  [before={"mode":"hub","hp":40,"gold":53,"xp":66,"level":2,"defeated":3,"potions":2,"opp":3,"oppHp":0,"oppName":"","stats":{"strength":4,"agility":3,"vitality":4,"defense":3}} after={"mode":"hub","hp":40,"gold":53,"xp":66,"level":2,"defeated":3,"potions":2,"opp":3,"oppHp":0,"oppName":"","stats":{"strength":4,"agility":3,"vitality":4,"defense":3}}]
+PASS  E fight 4 (Praetor Pommel) won  [turns=16 defeats=0]
+PASS  E fight 5 (Emperor’s Champion) won  [turns=10 defeats=0]
+PASS  E complete screen reached  [mode=complete h1=ARENA CONQUERED]
+PASS  E complete -> Return to Hub
+PASS  E hub -> Save & Title
+PASS  E title offers Continue after save
+PASS  E Continue -> complete mode (ladder done)
+E ladder trace: fight1 vs Tin Can Tim: turns=6 defeats=0 won=true mode=hub hp=40 gold=25 lvl=1 || fight2 vs Baron Bonk: turns=7 defeats=0 won=true mode=hub hp=40 gold=40 lvl=2 || fight3 vs The Sand Snorter: turns=8 defeats=0 won=true mode=hub hp=40 gold=53 lvl=2 || fight4 vs Praetor Pommel: turns=16 defeats=0 won=true mode=hub hp=40 gold=60 lvl=3 || fight5 vs Emperor’s Champion: turns=10 defeats=0 won=true mode=complete hp=40 gold=125 lvl=3
+E honest defeats across the run: 0
+PASS  F arena art frame: no console errors during combat  [clean]
+PASS  F Esc in arena opens settings (combat preserved)
+PASS  F Esc closes settings
+PASS  G defeat screen reached by honest play  [mode=defeat turns=7]
+PASS  G defeat screen copy  [DEFEAT]
+PASS  G defeat-safe save (hp restored, standing kept)  [hp=32/32]
+PASS  G defeat -> Rise Again -> hub
+PASS  G no console errors on defeat path
+PASS  G Esc in shop backs to hub
+PASS  G Esc in hub backs to title
+PASS  H XSS "<img src=x onerror=windo" create -> hub  [mode=hub]
+PASS  H XSS "<img src=x onerror=windo" zero execution through create/shop/arena  [p=0]
+PASS  H XSS "<img src=x onerror=windo" zero execution after reload+shop  [p=0]
+PASS  H XSS "<img src=x onerror=windo" hud injected no elements
+PASS  H XSS "<img src=x onerror=windo" no console errors
+PASS  H XSS "<script>window.p=1</scri" create -> hub  [mode=hub]
+PASS  H XSS "<script>window.p=1</scri" zero execution through create/shop/arena  [p=0]
+PASS  H XSS "<script>window.p=1</scri" zero execution after reload+shop  [p=0]
+PASS  H XSS "<script>window.p=1</scri" hud injected no elements
+PASS  H XSS "<script>window.p=1</scri" no console errors
+PASS  H XSS "" autofocus onfocus=wind" create -> hub  [mode=hub]
+PASS  H XSS "" autofocus onfocus=wind" zero execution through create/shop/arena  [p=0]
+PASS  H XSS "" autofocus onfocus=wind" zero execution after reload+shop  [p=0]
+PASS  H XSS "" autofocus onfocus=wind" hud injected no elements
+PASS  H XSS "" autofocus onfocus=wind" no console errors
+PASS  H XSS "Max "The Hammer" & Co." create -> hub  [mode=hub]
+PASS  H XSS "Max "The Hammer" & Co." zero execution through create/shop/arena  [p=0]
+PASS  H XSS "Max "The Hammer" & Co." zero execution after reload+shop  [p=0]
+PASS  H XSS "Max "The Hammer" & Co." hud injected no elements
+PASS  H benign name verbatim + escaped
+PASS  H XSS "Max "The Hammer" & Co." no console errors
+PASS  H2 tampered save: look clamped to known preset  [portrait-scarlet.svg]
+PASS  H2 tampered save: zero execution through shop+arena  [p=0]
+PASS  H2 tampered save: no console errors
+PASS  I validSave corrupt #1/8 rejected  [mode=create]
+PASS  I validSave corrupt #2/8 rejected  [mode=create]
+PASS  I validSave corrupt #3/8 rejected  [mode=create]
+PASS  I validSave corrupt #4/8 rejected  [mode=create]
+PASS  I validSave corrupt #5/8 rejected  [mode=create]
+PASS  I validSave corrupt #6/8 rejected  [mode=create]
+PASS  I validSave corrupt #7/8 rejected  [mode=create]
+PASS  I validSave corrupt #8/8 rejected  [mode=create]
+PASS  I valid mid-ladder save -> hub  [mode=hub defeated=2]
+PASS  J Tab moves focus to a button  [BUTTON:SETTINGS]
+PASS  J Enter activates focused title button  [mode=create]
+PASS  J no console errors (desktop)  [clean]
+=== touch run (390x844) ===
+PASS  T boots to title at phone viewport  [mode=title]
+PASS  T create -> hub via taps  [mode=hub]
+PASS  T hub -> arena via tap  [mode=arena]
+PASS  T all combat/shop buttons >=40px at phone viewport  [[]]
+PASS  T first bout winnable by taps  [mode=hub defeated=1]
+PASS  T no console errors (touch)  [clean]
+==== SUMMARY: ALL PASS ====
