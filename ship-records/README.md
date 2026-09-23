@@ -74,12 +74,16 @@ Fleet branding below).
    each, 0 console errors, 0 non-local requests): driver
    `verification/evidence/sr1-hub-run.mjs`, log `sr1-hub-run.log`,
    screenshots `sr1-hub*.png`.
-4. **Ship-readiness per game:** resolve/tune placeholder constants, audio
-   (WebAudio doctrine), authored art, menus/HUD/pause/settings/touch/
-   persistence, rights renames (hardest title still original; check each
-   app's player-facing strings).
-5. **Final verification + records:** real-input proofs with evidence; finish
-   each record's checklist/commands/deferrals/provenance.
+4. ~~**Ship-readiness per game**~~ — **DONE (sr2 2026-09-23):** all six titles
+   at SHIP-CANDIDATE — constants tuned with recorded rationale (declared
+   guesses eliminated), WebAudio music + SFX per doctrine, authored art,
+   title/menus/HUD/pause/settings (volume/mute persisted)/touch/persistence,
+   rights renames applied in-app. Per-title results in the records; evidence
+   `verification/evidence/sr2-*`.
+5. ~~**Final verification + records**~~ — **DONE (sr3 2026-09-23):** closing
+   fleet audit below; all recorded verification re-runs offline with zero new
+   dependencies; records complete (checklists, commands + last observed
+   results, deferrals, provenance).
 
 ## Fleet branding (player-facing names, rights posture)
 
@@ -89,22 +93,30 @@ docs, and records; every player-facing name is an original evocation.
 
 | Hub card | Rendition (href) | Name | Basis |
 |---|---|---|---|
-| Crateheads | `games/boxhead/` | Crateheads | **Proposed sr1 2026-09-23** (evocation; flagged for parent) |
-| Impossible Run | `games/impossible-game/` | Impossible Run | **Proposed sr1 2026-09-23** (evocation; keeps the generic adjective only, flagged — alternative "One-Button Ordeal") |
+| Crateheads | `games/boxhead/` | Crateheads | **Decided sr1, applied in-app sr2** (wordmark + strings; bundle grep clean) |
+| Impossible Run | `games/impossible-game/` | Impossible Run | **Decided sr3 2026-09-23 (final):** keeps only the generic adjective + genre noun per the Burger Tycoon precedent (drop the mark, keep descriptive generics); the full-title mark is "The Impossible Game", which appears nowhere player-facing. Alternative "One-Button Ordeal" rejected — loses legibility without reducing risk. |
 | Burger Tycoon | `games/burger-tycoon/` | Burger Tycoon | Sanctioned precedent (concept spec 03; internal UI branding) |
-| Chicken Storm | `games/chicken-invaders/` | Chicken Storm | **Proposed sr1 2026-09-23** (evocation; flagged for parent) |
+| Chicken Storm | `games/chicken-invaders/` | Chicken Storm | **Decided sr1, applied in-app sr2** (pack title + strings; subtitle scrubbed) |
 | Cluck Horizon | `games/cluck-horizon/` | Cluck Horizon | Sanctioned original IP (concept spec 06; in-app title) |
 | Arena of Bonks | `games/swords-and-sandals/` | Arena of Bonks | In-app original string (`apps/swords-and-sandals` arena title), reused |
 | The Cruel Maze | `hardest/` | The Cruel Maze | **Decided sr1 2026-09-23** (renamed in `hardest/game.js`, `hardest/index.html`, `hardest/README.md`; validator re-run 114/114 after) |
 
-Known remaining original-mark player-facing strings INSIDE the apps (out
-of the sr1 slice's touch list; flagged for the ship-readiness wave):
-`apps/boxhead/src/game.ts` title "BOXHEAD — 2PLAY ROOMS (native replica)";
-`apps/swords-and-sandals/src/main.ts` canvas title "SWORDS & SANDALS";
-shmup replica pack title "CHICKEN INVADERS" (`packages/shmup-core/src/
-packs.ts`); impossible in-app strings reference the original title in
-comments only. Level 96 display name "World's Hardest" (`hardest/levels/
-96-worlds-hardest.js`, HUD-visible) also flagged.
+sr2 wave applied every rename in-app (Crateheads wordmark, Chicken Storm
+pack title, Arena of Bonks title, Impossible Run title, The Cruel Maze +
+level-name sweep). sr3 audit: original marks appear in shipped artifacts
+only as storage-key slugs (`maga:boxhead:*` — recorded must-not-regress
+keys), path slugs, and code comments (explicitly permitted).
+
+## Closing fleet audit (sr3, 2026-09-23 — final committed tree)
+
+| Gate | Command | Result |
+|---|---|---|
+| Hardest corpus validator | `node hardest/validate.mjs` | **114/114 exit 0** |
+| Typecheck (8 workspaces) | `npm run typecheck -w @maga/<each>` | **8/8 PASS** |
+| Fleet click-through | `python3 -m http.server 8123` + `node verification/evidence/sr1-hub-run.mjs` | **PASS — all 7 games boot + real-input interaction, 0 console errors, 0 non-local requests** (driver updated for sr2 title flows; refreshed evidence committed) |
+| file:// hub | (same driver) | PASS — 7 cards + serve hint |
+| Rights audit | grep shipped `games/`+`hardest/`+`index.html` for original marks | clean (slugs/comments/keys only) |
+| External-URL audit | grep shipped artifacts for http(s) refs | none (pixi/w3 inert strings only) |
 
 ## Standing directives (from the design pack; bind all records)
 

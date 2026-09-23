@@ -166,13 +166,18 @@ async function gameBoxhead() {
 }
 
 async function gameImpossible() {
-  await waitFor(() => evl(`!!window.__maga && window.__maga.state === 'running'`), 20000, 'impossible running');
+  await waitFor(() => evl(`!!window.__maga && window.__maga.mode === 'title'`), 20000, 'impossible title');
+  const L = await evl(`(()=>{const cv=document.querySelector('canvas');const r=cv.getBoundingClientRect();return {left:r.left,top:r.top,scale:r.width/960}})()`);
+  const chip = await evl(`(()=>{const c=window.__maga.chips.find(c=>c.id==='play');return {x:c.x+c.w/2,y:c.y+c.h/2}})()`);
+  await cdp.click(L.left + chip.x * L.scale, L.top + chip.y * L.scale);
+  await sleep(400);
+  const mode1 = await evl('window.__maga.mode');
   const y0 = await evl('window.__maga.y');
-  log(`boot: state=running attempt=${await evl('window.__maga.attempt')} y=${y0.toFixed(1)}`);
+  log(`REAL CLICK (PLAY): mode=${mode1} y=${y0.toFixed(1)}`);
   await cdp.tap('Space', ' ', 32);
   let minY = y0;
   for (let i = 0; i < 10; i++) { await sleep(50); const y = await evl('window.__maga.y'); if (y < minY) minY = y; }
-  const ok = minY < y0 - 4;
+  const ok = mode1 === 'run' && minY < y0 - 4;
   log(`REAL KEY (Space): jump y ${y0.toFixed(1)} -> min ${minY.toFixed(1)} ${ok ? 'PASS' : 'FAIL'}`);
   await sleep(400);
   await shot('sr1-hub-impossible-game.png');
@@ -181,10 +186,12 @@ async function gameImpossible() {
 
 async function gameBurger() {
   await waitFor(() => evl(`!!window.__maga && !!window.__maga.sim`), 20000, 'burger sim');
-  const crops0 = await evl('window.__maga.sim.s.crops');
   await shot('sr1-hub-burger-tycoon-title.png');
   const L = await evl(`(()=>{const cv=document.querySelector('#wrap canvas');const r=cv.getBoundingClientRect();return {left:r.left,top:r.top,scale:r.width/960}})()`);
-  await cdp.click(L.left + (14 + 135) * L.scale, L.top + (38 + 17) * L.scale); // farm pane, first action (sow)
+  await cdp.click(L.left + 480 * L.scale, L.top + 273 * L.scale); // title: START
+  await sleep(500);
+  const crops0 = await evl('window.__maga.sim.s.crops');
+  await cdp.click(L.left + (10 + 123) * L.scale, L.top + (32 + 15) * L.scale); // farm pane, first action (sow)
   await sleep(400);
   const crops1 = await evl('window.__maga.sim.s.crops');
   const ok = crops1 > crops0;
@@ -210,8 +217,10 @@ async function gameChicken() { const ok = await shmupStart('replica'); await sho
 async function gameCluck() { const ok = await shmupStart('cluck'); await shot('sr1-hub-cluck-horizon.png'); return ok; }
 
 async function gameSas() {
-  await waitFor(() => evl(`!!window.__maga && window.__maga.mode === 'create'`), 20000, 'sas create screen');
-  log('boot: mode=create');
+  await waitFor(() => evl(`!!window.__maga && (window.__maga.mode === 'create' || window.__maga.mode === 'title')`), 20000, 'sas title/create screen');
+  const bootMode = await evl('window.__maga.mode');
+  log(`boot: mode=${bootMode}`);
+  if (bootMode === 'title') { await clickButton('New Gladiator'); await sleep(300); log('REAL CLICK (New Gladiator): mode=' + await evl('window.__maga.mode')); }
   await evl(`document.getElementById('name').focus()`);
   await typeText('KIMI');
   const name = await evl(`document.getElementById('name').value`);
