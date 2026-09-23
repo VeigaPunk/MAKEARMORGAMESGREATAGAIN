@@ -5,7 +5,8 @@ solo + local 2P co-op + deathmatch. Player-facing branding must be an original
 evocation.
 
 Status: **NOT SHIPPED** — survey complete, rendition EXTEND in progress.
-Last updated: 2026-09-22 (ship-run 2026-09-22).
+Last updated: 2026-09-23 (sr1 verification wave: debug hook landed + B-N1/B-N2
+re-probe with real input).
 
 ## Survey — implementations found
 
@@ -37,14 +38,23 @@ outranks taste. Recorded comparison baseline: B-N1/B-N2 verdicts in
 
 ## Known defects (from `verification/divergence.md`, r05 board)
 
-- OPEN MED: D-16→D-58 — throttle-resume burst (visibilitychange
-  catch-up spike).
-- OPEN LOW: D-18 (banner bleed, re-confirmed), D-55/56/57 (minor).
+- OPEN MED: D-16→D-58 — throttle-resume burst. NOT reproduced this run
+  (headless BeginFrame does not throttle rAF like a backgrounded tab); code
+  re-read: dt clamp 0.05 in place — remains OPEN per r05.
+- OPEN LOW: D-55 **re-confirmed live** (pause banner says "M / ENTER — menu";
+  Enter is bound to `fire`, does nothing in pause; M works). D-56 **re-confirmed
+  live** (frozen world renders behind SELECT MODE after pause→M).
+  D-57 **partial data**: pickup with 2 crates on field gave 2→1 after 400ms
+  (timer still positive); the unclamped-negative instant-respawn branch needs
+  13s+ parked at cap-2 — not reproduced live. D-18 **not reproduced** on
+  current tree (showModeSelect clears banner — R04 fix 7e110e7 postdates the
+  r05 regress screenshots).
 - OPEN: D-05 (doc stage-size contradiction 640×400 vs 480), D-06 (stale
   ticket header), D-08 (F3 isolated-fps scenario; enabler landed, ~52fps
   lower bound @ ~100 movers), D-19 (resolved in code, ruling owed).
-- FIXED (keep fixed): D-01–04, 09, 10, 12–15, 17, 20, 25 (DM crates),
-  26 (pause ESC/P).
+- FIXED (keep fixed): D-01–04, 09, 10, 12–15 (touch end-chips re-verified
+  this run), 17, 20, 25 (DM crates re-verified, first crate 8.3s), 26 (ESC/P
+  pause/resume re-verified in solo + co-op + DM).
 
 ## Placeholders to resolve before ship (51 marker lines; key ones)
 
@@ -59,12 +69,38 @@ and record the tuning rationale.
 ## Verification
 
 Recorded commands (last observed results):
-- `cd MAGA-everything/02-code/armor-games && npm install` then
-  `npm run dev:boxhead` (port 5173) — last run r05, PASS.
-- Headless chromium CDP probes against `http://localhost:5173/?debug`
-  (boxhead lacks `window.__maga` — HUD-pixel reads only; closing that hook
-  gap is a task).
-- Acceptance: B-N1 PASS; B-N2 8/8 PASS (`apps/boxhead/docs/`).
+- `cd MAGA-everything/02-code/armor-games && npm run dev:boxhead` (port 5173) — UP, 200 OK.
+- `npm run typecheck -w @maga/boxhead` — PASS (clean).
+- `npm run build -w @maga/boxhead` — PASS (dist JS 27.6 kB, pixi external via
+  importmap, unchanged).
+- **sr1 re-probe (2026-09-23):** zero-dep node-24 CDP driver
+  (`Input.dispatchKeyEvent/MouseEvent/TouchEvent`; `/tmp/sr1-boxhead-run.mjs`,
+  recreatable from `verification/evidence/sr1-boxhead-run.log` — not shipped in
+  repo) against `/usr/bin/chromium --headless=new` on CDP 127.0.0.1:9777.
+  Reads via `window.__maga.state` (the new hook). Canonical full-suite run
+  37/39 green, 0 console errors/exceptions:
+  - Solo: boot→title→mode→room→waves 1–3 victory 49s (score 15300);
+    victory→Space retry; idle death→"OVERRUN"→Space retry; pause ESC/P +
+    world-frozen + D-55 Enter-noop; localStorage `maga:boxhead:highscore`
+    survives reload (15300).
+  - Co-op: P1 WASD+Space / P2 arrows+KeyL simultaneous move+fire; P1 bullets
+    inert vs P2 (hp 100→100).
+  - Deathmatch: crates at 8.3s (D-25), P2 damages P1 (100→70), barrel AoE
+    25 dmg with NO kill credit (stub game.ts:737-739 confirmed, unfixed per
+    brief), P1 wins 5–0, rematch flow.
+  - Touch (emulated): tap through menus, stick drag, FIRE hold, dead-screen
+    tap retry + MENU chip (D-14 stays fixed), portrait letterbox.
+  - Grenade AoE multi-kill: **UNPROVEN** — tier reached (mult x14, grenades
+    equipped) in 5/13 solo runs; lob fired twice (one long-range miss, one
+    point-blank stale-aim miss — both driver-side, fixed after); post-fix x14
+    windows (1–4s) closed before a valid target formed. AoE kill-credit path
+    (`detonate` → `scoreSys.kill()`, same code grenades use) verified via
+    barrels (+500/+900 credited blast kills). Needs a human-grade streak run.
+- Acceptance: B-N1 PASS; B-N2 8/8 PASS (`apps/boxhead/docs/`) — **re-proved
+  on this run** (rows filled in `docs/PROOF-CHECKLIST.md`).
+- Evidence: `verification/evidence/sr1-boxhead-run.log`,
+  `sr1-boxhead-solo-wave3.png`, `sr1-boxhead-victory.png`,
+  `sr1-boxhead-coop.png`, `sr1-boxhead-dm-end.png`, `sr1-boxhead-touch.png`.
 - `scripts/bh2-2p-smoke.js` is referenced but **missing from the tree** —
   recreate or drop the reference.
 
@@ -73,7 +109,12 @@ will be filled as items are proven on this run.
 
 ## Deferrals
 
-None declared yet.
+- Grenade AoE multi-kill capture (mechanic reachable — tier hit 5×; needs a
+  human-grade 13-streak run, see Verification).
+- C1 ≥60s human phone run (touch smoke passed via CDP emulation; auto-aim
+  path needs a real coarse-pointer device).
+- D-58 live reproduction (needs a throttling browser environment).
+- G suite matrix (Firefox / phone / tablet).
 
 ## Provenance declaration
 

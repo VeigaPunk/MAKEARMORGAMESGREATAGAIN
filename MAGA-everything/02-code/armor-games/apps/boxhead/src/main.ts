@@ -57,7 +57,10 @@ const game = new Game(app, input, sfx, touch);
 
 // PROOF/debug hook: open with ?debug to expose state for automated acceptance
 if (new URLSearchParams(location.search).has('debug')) {
-  (window as unknown as { __maga: unknown }).__maga = { game, input, touch };
+  (window as unknown as { __maga: unknown }).__maga = {
+    game, input, touch,
+    get state() { return game.snapshot(); },
+  };
 }
 
 function layout(): void {

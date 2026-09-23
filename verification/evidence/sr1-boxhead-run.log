@@ -1,0 +1,78 @@
+# sr1 boxhead verification run — 2026-09-23 (real-input CDP, chromium 151 headless, zero-dep node driver)
+
+Build: 5d996c3 + sr1 debug-hook change (uncommitted) · URL http://localhost:5173/?debug
+Driver: /tmp/sr1-boxhead-run.mjs (node 24 fetch+WebSocket CDP; Input.dispatchKeyEvent/
+dispatchMouseEvent/dispatchTouchEvent only for input; Runtime.evaluate reads __maga.state).
+CANONICAL full-suite run below (37/39); three solo items re-probed in focused runs
+(probe C/H/I/M, same build/driver) — lines marked [probe]. 13 solo playthroughs total.
+
+## Boot / display / cold start
+BOOT OK: state=title in 0.1s, canvas+__maga up, 0 console errors
+PASS ROW8-letterbox: scale=1 uniform (integer letterbox, no stretch) [canonical]
+PASS ROW9-cold-start: title->playing 0.2s (<3s) [canonical]
+PASS ROW10-English: src+index grep — UI strings ASCII-only (en-dash in comments only) [this run, shell]
+
+## Solo e2e (canonical run; waves 1–3 victory t=49s, score 15300)
+PASS E-pause-solo-esc: ESC -> paused, banner "PAUSED"; world frozen (zombie positions identical 500ms)
+PASS D-55: ENTER in pause -> still paused (banner promises "M / ENTER — menu"; Enter=fire — re-confirmed LOW)
+PASS E-resume-solo-p: P -> playing
+PASS ROW1-waves: waves 1–3 cleared -> "WAVE 3 CLEARED (SOLO)", score 15300, high 15300 (x14 reached, grenades tier shown)
+PASS ROW1-retry-victory: SPACE on victory -> playing (instant restart)
+PASS ROW1-death: idle death 13.0s (10 dmg/hit, 0.8s invuln) -> "OVERRUN ON WAVE 1 (OPEN YARD)"
+PASS ROW1-dead-retry: SPACE on dead -> playing
+PASS ROW5-streak: mult x1..x14; ladder pistol->shotgun->uzi->grenades observed live (placeholder thresholds 4/8/14)
+PASS ROW3-swarm: peak 8 concurrent under sustained aimbot fire; wave 3 fields 14 @0.85s cadence (4 runners)
+PASS ROW4-crates: pickup +16 on dry ammo (canonical 1x; [probe C] 16 pickups 15->31 ... 79->95)
+[probe H] PASS ROW4-barrel: barrel exploded under swarm, score +500 (multi-kill blast + chain credit)
+  ([probe I] exploded, 2 cleared, +900; [probe M] +400 — repeatable)
+PASS D-18-recheck: after dead->M, banner text EMPTY at mode select (showModeSelect clear works — bleed not reproduced on current tree; r05 screenshots predate R04 fix 7e110e7)
+PASS D-56-recheck: world container still visible behind SELECT MODE after pause->M (frozen world behind menu — re-confirmed LOW)
+PASS B10-localStorage-key: "maga:boxhead:highscore"=15300 == run high
+PASS B10-persist-reload: reload -> high=15300 survives, state=title, boot 0.1s
+[probe D] D-57 data: pickup with 2 crates on field -> replacement 2->1 after 400ms (timer still
+  positive; instant-respawn branch NOT triggered — D-57 needs 13s+ at cap-2, not reproduced live)
+
+## Co-op (canonical)
+PASS B11: mode=coop, 2 players, wave spawns shared
+PASS E-pause-coop-esc / E-resume-coop-p: ESC pause / P resume in co-op
+PASS ROW2-simul-move: P1 y 200->125 (KeyW) while P2 x 220->295 (ArrowRight), same 600ms window
+PASS ROW2-simul-fire: P1 ammo 24->22 (Space) while P2 ammo 24->22 (KeyL), overlapping holds
+PASS ROW2-friendly: P1 fired 4 aimed shots through P2 — P2 hp 100->100 (bullets inert vs partner in co-op)
+screenshot -> sr1-boxhead-coop.png
+
+## Deathmatch (canonical)
+PASS B13-start: no zombies, pure PvP
+PASS E-pause-dm-esc / E-resume-dm-p: ESC pause / P resume in DM
+PASS D-25-crates-in-dm: first crate at 8.3s (regression stays fixed)
+PASS B13-mutual-damage: P2 (KeyL) hits P1 hp 100->70
+PASS DM-aoe-no-credit: barrel blast P2 100->75 (-25 AoE), P1 kills stays 0 (stub game.ts:737-739 live;
+  full AoE kill unreachable: 2 barrels x25 < 100hp; grenades need mult>=14, DM has no zombies to build it)
+P1 kills #1..#5 at 15/23/32/53s (dry->crate->resume economy works)
+PASS B13-match-end: "P1 WINS THE DEATHMATCH 5–0" winner banner
+PASS B13-rematch: SPACE on winner screen -> playing
+screenshot -> sr1-boxhead-dm-end.png
+
+## Touch (canonical; page 2 with setTouchEmulationEnabled)
+PASS G-touch-menus: tap title->mode->room->playing
+PASS G-touch-stick: virtual stick drag right, P1 x 320->407
+PASS G-touch-fire: FIRE button hold, ammo 24->22 (zone-claimed, fires in facing; note: auto-aim
+  needs (pointer:coarse) media query — true on phones, false in this headless driver)
+PASS D-14-tap-retry: dead screen tap -> retry (stays fixed)
+PASS D-14-menu-chip: dead screen MENU chip tap -> mode select (stays fixed)
+PASS C6-rotate-letterbox: portrait 500x900 -> scale 0.78125 uniform (sub-1x fractional fit is D-04 by design: shrink, never crop)
+screenshot -> sr1-boxhead-touch.png
+
+## Grenade AoE (task 2f) — PARTIAL / multi-kill UNPROVEN
+- Grenade tier reached (mult x14) in 5 of 13 solo runs: v10, v11, probe E, probe H (x15), probe K (x14 twice), canonical2
+- Real lob observed: [probe H] GRENADE fired at 262px cluster (missed — long flight, pre-fix);
+  [probe J] point-blank lob (stale aim — game requires pointer>24px from player, fixed in driver after)
+- After all driver fixes: x14 windows lasted 1–4s; no <140px/cluster target formed inside the window
+  before mult decayed (3.5s kill timer). 6 attempts reserved per run never engaged.
+- Kill credit for AoE vs zombies: OBSERVED via barrel detonate() which shares the scoreSys.kill()
+  path ([probe H] +500 = 5 credited blast kills; [probe I] +900) — grenade-specific credit not captured.
+- DM AoE no-credit stub: CONFIRMED (DM-aoe-no-credit above; game.ts:737-739 unchanged, not fixed per brief)
+
+## Hygiene
+console errors: 0 · exceptions: 0 across all runs
+CANONICAL SMOKE: 37/39 (F-grenade-aoe multi-kill + barrel-opportunity-in-canonical-run the two reds;
+barrel re-proven PASS in 4 focused probes)

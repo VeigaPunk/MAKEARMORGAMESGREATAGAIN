@@ -786,4 +786,32 @@ export class Game {
       (second ? `\nP2 HP ${Math.max(0, second.p.hp)}  AMMO ${second.p.ammo}` : '') +
       (this.spawnQueue === 0 && this.zombies.length === 0 ? '  — wave clear…' : '');
   }
+
+  /** PROOF/debug snapshot — read-only state for automated acceptance (?debug) */
+  snapshot(): Record<string, unknown> {
+    return {
+      state: this.state,
+      mode: this.mode,
+      room: this.room.id,
+      wave: this.wave,
+      maxWave: MAX_WAVE,
+      score: this.scoreSys.score,
+      mult: this.scoreSys.mult,
+      weapon: this.scoreSys.weaponForMult(),
+      high: this.high,
+      players: this.slots.map((s) => ({
+        hp: s.p.hp, ammo: s.p.ammo, alive: s.alive, kills: s.kills,
+        x: s.p.pos.x, y: s.p.pos.y, invuln: s.p.invuln,
+      })),
+      zombies: this.zombies.length,
+      zombieList: this.zombies.map((z) => ({ x: z.pos.x, y: z.pos.y, hp: z.hp, runner: z.runner })),
+      bullets: this.bullets.length,
+      crates: this.crates.map((c) => ({ x: c.pos.x, y: c.pos.y })),
+      barrels: this.barrels.map((b) => ({ x: b.pos.x, y: b.pos.y, exploded: b.exploded, fuse: b.fuse })),
+      spawnQueue: this.spawnQueue,
+      obstacles: this.room.obstacles,
+      banner: this.banner.text,
+      hud: this.hudText.text,
+    };
+  }
 }
