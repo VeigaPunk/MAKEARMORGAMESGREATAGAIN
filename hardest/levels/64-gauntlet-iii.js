@@ -1,7 +1,7 @@
-/* Level 64 — Gauntlet III. Two keys unlock the chained chambers; checkpoints split the run. */
+/* Level 64 — Chained Chambers. Two keys unlock the chained chambers; checkpoints split the run. */
 (globalThis.HARDEST_LEVELS = globalThis.HARDEST_LEVELS || []).push({
   id: 64,
-  name: 'Gauntlet III',
+  name: 'Chained Chambers',
   map: [
     '##############################',
     '#SS.......#.........#........#',

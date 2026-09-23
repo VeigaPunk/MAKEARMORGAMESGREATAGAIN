@@ -13,7 +13,7 @@ cv.width = STAGE_W; cv.height = STAGE_H;
 
 /* ---------- save ---------- */
 function loadSave() {
-  const def = { unlocked: 1, best: {}, deaths: 0, mute: false };
+  const def = { unlocked: 1, best: {}, deaths: 0, mute: false, volume: 1 };
   let raw = null;
   try { raw = JSON.parse(localStorage.getItem(SAVE_KEY) || '{}'); } catch { return def; }
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return def;
@@ -21,6 +21,7 @@ function loadSave() {
   if (!Number.isInteger(save.unlocked) || save.unlocked < 1) save.unlocked = 1;
   if (!Number.isFinite(save.deaths) || save.deaths < 0) save.deaths = 0;
   save.mute = !!save.mute;
+  if (!Number.isFinite(save.volume) || save.volume < 0 || save.volume > 1) save.volume = 1;
   if (!save.best || typeof save.best !== 'object' || Array.isArray(save.best)) save.best = {};
   for (const id of Object.keys(save.best)) {
     const b = save.best[id];
@@ -35,21 +36,39 @@ function loadSave() {
 function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch {} }
 let save = loadSave();
 
-/* ---------- audio (WebAudio blips, no assets; M mutes) ---------- */
+/* ---------- audio (WebAudio recipes, no assets; M mutes, -/= volume) ---------- */
 let AC = null;
 function beep(f, d, type, g, slide) {
-  if (save.mute) return;
+  if (save.mute || save.volume <= 0) return;
   try {
     AC = AC || new (window.AudioContext || window.webkitAudioContext)();
     if (AC.state === 'suspended') AC.resume();
     const o = AC.createOscillator(), gn = AC.createGain();
     o.type = type || 'square'; o.frequency.value = f;
     if (slide) o.frequency.exponentialRampToValueAtTime(slide, AC.currentTime + d);
-    gn.gain.value = g || 0.05;
+    gn.gain.value = (g || 0.05) * save.volume;
     gn.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime + d);
     o.connect(gn); gn.connect(AC.destination);
     o.start(); o.stop(AC.currentTime + d);
   } catch {}
+}
+const ARP = [220, 0, 330, 0, 262, 0, 196, 175];   // A-minor tension bed, rests breathe
+let arpStep = 0, musicTimer = null, musicTicks = 0;
+function ensureMusic() {
+  if (musicTimer) return;
+  try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); } catch { return; }
+  musicTimer = setInterval(() => {
+    musicTicks++;
+    if (save.mute || save.volume <= 0 || !AC || AC.state !== 'running') return;
+    const f = ARP[arpStep++ % ARP.length];
+    if (f) beep(f, 0.24, 'triangle', 0.02);
+    if (arpStep % ARP.length === 1) beep(110, 1.1, 'sine', 0.028);
+  }, 420);
+}
+function setVol(v) {
+  save.volume = Math.round(Math.min(1, Math.max(0, v)) * 10) / 10;
+  persist();
+  beep(660, 0.06, 'square', 0.04);
 }
 
 /* ---------- medals + tiers ---------- */
@@ -77,6 +96,7 @@ addEventListener('keydown', e => {
   if (e.repeat) return;
   keys.add(e.code);
   onKey(e.code);
+  ensureMusic();
 });
 addEventListener('keyup', e => keys.delete(e.code));
 addEventListener('blur', () => keys.clear());
@@ -89,7 +109,7 @@ function axis() {
 }
 
 /* ---------- state ---------- */
-let screen = 'menu';           // 'menu' | 'play' | 'pause' | 'clear'
+let screen = 'menu';           // 'menu' | 'play' | 'pause' | 'clear' | 'win'
 let st = null;                 // engine state
 let levelIdx = 0;
 let sel = 0;                   // menu selection index
@@ -107,20 +127,20 @@ function startLevel(i) {
   prevCoins = st.coinsLeft; prevKeys = st.keysLeft; prevTps = 0; prevDoors = st.P.doorsOpen;
 }
 function onKey(code) {
+  if (code === 'KeyM') { save.mute = !save.mute; persist(); }
+  if (code === 'Minus' || code === 'NumpadSubtract') setVol(save.volume - 0.1);
+  if (code === 'Equal' || code === 'NumpadAdd') setVol(save.volume + 0.1);
   if (screen === 'menu') {
     if (code === 'ArrowRight' || code === 'KeyD') sel = Math.min(LEVELS.length - 1, sel + 1);
     if (code === 'ArrowLeft' || code === 'KeyA') sel = Math.max(0, sel - 1);
     if (code === 'ArrowDown' || code === 'KeyS') sel = Math.min(LEVELS.length - 1, sel + MENU_COLS);
     if (code === 'ArrowUp' || code === 'KeyW') sel = Math.max(0, sel - MENU_COLS);
     if (code === 'Enter' || code === 'Space') { if (sel < save.unlocked) startLevel(sel); }
-    if (code === 'KeyM') { save.mute = !save.mute; persist(); }
   } else if (screen === 'play') {
     if (code === 'Escape') screen = 'pause';
-    if (code === 'KeyM') { save.mute = !save.mute; persist(); }
     if (code === 'KeyR') { save.deaths += st.deaths; persist(); startLevel(levelIdx); }
   } else if (screen === 'pause') {
     if (code === 'Escape') screen = 'play';
-    if (code === 'KeyM') { save.mute = !save.mute; persist(); }
     if (code === 'KeyQ') { save.deaths += st.deaths; persist(); screen = 'menu'; }
     if (code === 'KeyR') { save.deaths += st.deaths; persist(); startLevel(levelIdx); }
   } else if (screen === 'clear') {
@@ -128,8 +148,9 @@ function onKey(code) {
       screen = 'menu';
       if (levelIdx + 1 < LEVELS.length) startLevel(levelIdx + 1);
     }
-    if (code === 'KeyM') { save.mute = !save.mute; persist(); }
     if (code === 'Escape') screen = 'menu';
+  } else if (screen === 'win') {
+    if (code === 'Enter' || code === 'Space' || code === 'Escape') screen = 'menu';
   }
 }
 
@@ -139,6 +160,7 @@ function canvasPos(e) {
   return { x: (e.clientX - r.left) * STAGE_W / r.width, y: (e.clientY - r.top) * STAGE_H / r.height };
 }
 cv.addEventListener('pointerdown', e => {
+  ensureMusic();
   const p = canvasPos(e);
   if (screen === 'menu') {
     for (const r of menuRects) if (p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h) {
@@ -153,6 +175,8 @@ cv.addEventListener('pointerdown', e => {
     if (levelIdx + 1 < LEVELS.length) startLevel(levelIdx + 1);
   } else if (screen === 'pause') {
     screen = 'play';
+  } else if (screen === 'win') {
+    screen = 'menu';
   }
 });
 cv.addEventListener('pointermove', e => {
@@ -183,6 +207,7 @@ function levelOrigin() {
 function draw() {
   ctx.fillStyle = COL.bg; ctx.fillRect(0, 0, STAGE_W, STAGE_H);
   if (screen === 'menu') return drawMenu();
+  if (screen === 'win') return drawWin();
   const o = levelOrigin(), T = E.TILE, P = st.P;
   // floor + zones + doors + pads
   for (let y = 0; y < P.h; y++) for (let x = 0; x < P.w; x++) {
@@ -264,11 +289,12 @@ function draw() {
     ctx.fillStyle = 'rgba(210,31,38,.5)'; ctx.beginPath(); ctx.arc(joy.ox + joy.x * 36, joy.oy + joy.y * 36, 14, 0, 7); ctx.fill();
   }
   drawHud();
-  if (screen === 'pause') overlay('PAUSED', 'Esc resume · R restart · Q quit · M mute');
+  if (screen === 'pause') overlay('PAUSED', 'Esc resume · R restart · Q quit · -/= volume · M mute');
   if (screen === 'clear') {
     const par = (globalThis.HARDEST_PARS || {})[LEVELS[levelIdx].id];
     const parTxt = par ? ` · par ${par}s ${st.time <= par ? 'BEATEN' : 'missed'}` : '';
-    overlay(`LEVEL CLEAR — ${medalFor(st.deaths).toUpperCase()}`, `deaths ${st.deaths} · time ${st.time.toFixed(1)}s${parTxt} — Enter for next`);
+    const medal = medalFor(st.deaths);
+    overlay(`LEVEL CLEAR — ${medal.toUpperCase()}`, `deaths ${st.deaths} · time ${st.time.toFixed(1)}s${parTxt} — Enter for next`, MEDAL_COL[medal]);
   }
 }
 function drawHud() {
@@ -283,18 +309,56 @@ function drawHud() {
   const par = (globalThis.HARDEST_PARS || {})[L.id];
   ctx.fillText(`DEATHS ${st.deaths}   ${st.time.toFixed(1)}s${par ? ` / PAR ${par}s` : ''}`, STAGE_W - 10, 14);
 }
-function overlay(title, sub) {
+function overlay(title, sub, titleCol) {
   ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(0, 0, STAGE_W, STAGE_H);
-  ctx.fillStyle = COL.text; ctx.textAlign = 'center';
+  ctx.fillStyle = titleCol || COL.text; ctx.textAlign = 'center';
   ctx.font = 'bold 42px monospace'; ctx.fillText(title, STAGE_W / 2, STAGE_H / 2 - 20);
   ctx.font = '16px monospace'; ctx.fillStyle = COL.dim; ctx.fillText(sub, STAGE_W / 2, STAGE_H / 2 + 24);
+}
+function drawWin() {
+  let g = 0, s = 0, b = 0;
+  for (const id of Object.keys(save.best)) {
+    const m = save.best[id].medal;
+    if (m === 'gold') g++; else if (m === 'silver') s++; else if (m === 'bronze') b++;
+  }
+  ctx.fillStyle = COL.text; ctx.textAlign = 'center';
+  ctx.font = 'bold 38px monospace'; ctx.fillStyle = COL.coin;
+  ctx.fillText('THE CRUEL MAZE CONQUERED', STAGE_W / 2, 170);
+  ctx.font = '18px monospace'; ctx.fillStyle = COL.text;
+  ctx.fillText(`all ${LEVELS.length} levels cleared`, STAGE_W / 2, 226);
+  const tall = [['gold', g], ['silver', s], ['bronze', b]];
+  let mx = STAGE_W / 2 - 130;
+  for (const [m, n] of tall) {
+    ctx.fillStyle = MEDAL_COL[m]; ctx.beginPath(); ctx.arc(mx, 286, 9, 0, 7); ctx.fill();
+    ctx.fillStyle = COL.text; ctx.textAlign = 'left'; ctx.font = '18px monospace';
+    ctx.fillText(`× ${n}`, mx + 16, 287);
+    mx += 110;
+  }
+  ctx.textAlign = 'center'; ctx.font = '16px monospace'; ctx.fillStyle = COL.dim;
+  ctx.fillText(`total deaths ${save.deaths}`, STAGE_W / 2, 356);
+  ctx.fillText('Enter — back to menu', STAGE_W / 2, 404);
 }
 function drawMenu() {
   ctx.fillStyle = COL.text; ctx.textAlign = 'center';
   ctx.font = 'bold 40px monospace'; ctx.fillText('THE CRUEL MAZE', STAGE_W / 2, 60);
   ctx.font = '14px monospace'; ctx.fillStyle = COL.dim;
-  ctx.fillText('arrows/WASD move · grab every coin · reach green · blue kills · R restart · M mute', STAGE_W / 2, 92);
-  ctx.fillText(`total deaths ${save.deaths}`, STAGE_W / 2, 114);
+  ctx.fillText('arrows/WASD move · grab every coin · reach green · blue kills · R restart', STAGE_W / 2, 92);
+  // settings row: SFX volume bar + mute state
+  {
+    const vy = 114, sx = STAGE_W / 2 - 300;
+    ctx.textAlign = 'left'; ctx.font = '12px monospace'; ctx.fillStyle = COL.dim;
+    ctx.fillText('SFX', sx, vy);
+    ctx.strokeStyle = COL.dim; ctx.lineWidth = 1;
+    ctx.strokeRect(sx + 32, vy - 6, 100, 12);
+    ctx.fillStyle = save.mute ? '#555' : COL.coin;
+    ctx.fillRect(sx + 33, vy - 5, 98 * (save.mute ? 0 : save.volume), 10);
+    ctx.fillStyle = COL.dim;
+    ctx.fillText(`${Math.round(save.volume * 100)}%`, sx + 140, vy);
+    ctx.fillText(save.mute ? 'MUTED — M to unmute' : 'M mute · -/= volume', sx + 190, vy);
+    ctx.textAlign = 'right';
+    ctx.fillText(`total deaths ${save.deaths}`, STAGE_W / 2 + 300, vy);
+    ctx.textAlign = 'center';
+  }
   // tier legend — two centered rows of 4
   {
     ctx.font = '10px monospace';
@@ -337,6 +401,15 @@ function drawMenu() {
   }
 }
 
+function recordClear() {
+  const L = LEVELS[levelIdx];
+  save.deaths += st.deaths;
+  save.unlocked = Math.max(save.unlocked, Math.min(LEVELS.length, levelIdx + 2));
+  const b = save.best[L.id];
+  if (!b || st.deaths < b.deaths || (st.deaths === b.deaths && st.time < b.time)) save.best[L.id] = { deaths: st.deaths, time: st.time, medal: medalFor(st.deaths) };
+  persist();
+}
+
 /* ---------- loop ---------- */
 let acc = 0, last = 0;
 function frame(ts) {
@@ -361,14 +434,14 @@ function frame(ts) {
     prevCoins = st.coinsLeft; prevKeys = st.keysLeft; prevTps = st.teleports; prevDoors = st.P.doorsOpen;
     prevStatus = st.status;
     if (st.status === 'clear') {
-      const L = LEVELS[levelIdx];
-      save.deaths += st.deaths;
-      save.unlocked = Math.max(save.unlocked, Math.min(LEVELS.length, levelIdx + 2));
-      const b = save.best[L.id];
-      if (!b || st.deaths < b.deaths || (st.deaths === b.deaths && st.time < b.time)) save.best[L.id] = { deaths: st.deaths, time: st.time, medal: medalFor(st.deaths) };
-      persist();
+      recordClear();
       beep(523, 0.12, 'square', 0.05); setTimeout(() => beep(659, 0.12, 'square', 0.05), 110); setTimeout(() => beep(784, 0.2, 'square', 0.05), 220);
-      screen = 'clear';
+      if (levelIdx + 1 < LEVELS.length) {
+        screen = 'clear';
+      } else {
+        screen = 'win';
+        setTimeout(() => beep(1047, 0.16, 'square', 0.05), 340); setTimeout(() => beep(1319, 0.34, 'square', 0.05), 480);
+      }
     }
   }
   for (const p of particles) { p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt; }
@@ -383,7 +456,7 @@ function boot() {
   requestAnimationFrame(frame);
 }
 globalThis.__hardest = {
-  state: () => ({ screen, level: LEVELS[levelIdx] && LEVELS[levelIdx].id, status: st && st.status, deaths: st && st.deaths, coinsLeft: st && st.coinsLeft, keysLeft: st && st.keysLeft, teleports: st && st.teleports, doorsOpen: st && st.P.doorsOpen, time: st && st.time, unlocked: save.unlocked, levels: LEVELS.length }),
+  state: () => ({ screen, level: LEVELS[levelIdx] && LEVELS[levelIdx].id, status: st && st.status, deaths: st && st.deaths, coinsLeft: st && st.coinsLeft, keysLeft: st && st.keysLeft, teleports: st && st.teleports, doorsOpen: st && st.P.doorsOpen, time: st && st.time, unlocked: save.unlocked, levels: LEVELS.length, volume: save.volume, mute: save.mute, musicTicks }),
   start: i => startLevel(i),
   input: (x, y) => { joy = { id: -1, ox: 0, oy: 0, x, y }; }, // probe-only drive
   engine: () => st,

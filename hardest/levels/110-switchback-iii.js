@@ -1,8 +1,8 @@
-/* Level 110 — Switchback III. The zigzag now breathes: 1×2 vertical sliders
+/* Level 110 — Switchback IV. The zigzag now breathes: 1×2 vertical sliders
  * throttle each descent gap; counter-phase pairs sweep every lane. */
 (globalThis.HARDEST_LEVELS = globalThis.HARDEST_LEVELS || []).push({
   id: 110,
-  name: 'Switchback III',
+  name: 'Switchback IV',
   map: [
     '##########################',
     '#SS......................#',

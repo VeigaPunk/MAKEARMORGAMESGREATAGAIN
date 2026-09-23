@@ -6,13 +6,14 @@ Maze** (ship-run sr1, 2026-09-23): `hardest/game.js` menu title,
 `hardest/index.html` `<title>`, `hardest/README.md` heading. Internal
 file/dir names and `HARDEST_*` globals unchanged.
 
-Status: **NOT SHIPPED** — validator gate is GREEN (114/114 after the
-rename); the two HIGH menu defects and the blur defect are FIXED.
-Remaining ship blockers: broader real-input browser verification beyond
-the sr1 smoke; in-app menus/HUD/pause/settings/touch polish. Root
-entry-point integration is DONE (reachable from `/index.html` as
-`hardest/`).
-Last updated: 2026-09-23 (ship-run sr1, root entry-point wave).
+Status: **SHIP-CANDIDATE** (ship-run sr2, 2026-09-23) — validator gate GREEN
+(114/114 exit 0 re-run at end of sr2); rights sweep done (level 96 renamed,
+cosmetic duplicate names de-duplicated); settings (SFX volume + mute,
+persisted) and a synthesized music bed added; level-114 victory screen added;
+full state-machine exit audit clean; real-input browser matrix sr2 **12/12
+PASS** (file:// + hub http). Root entry-point integration DONE (reachable
+from `/index.html` as `hardest/`).
+Last updated: 2026-09-23 (ship-run sr2, ship-candidate wave).
 
 ## Survey — implementations found
 
@@ -28,7 +29,7 @@ Last updated: 2026-09-23 (ship-run sr1, root entry-point wave).
    `gen-pars.mjs`. Mechanics in corpus: coins, keys/doors, telepads,
    checkpoints, movers/crush, speed override; tiers through APEX.
    Keyboard + touch joystick, localStorage save, `__hardest` probe hook
-   (`game.js:367`).
+   (`game.js:458`).
 
 ## Decision: ADOPT + EXTEND `hardest/`
 
@@ -63,18 +64,21 @@ architecture decision of this run, recorded per the mission rule.
 
 - **FIXED HIGH: D-47** — `MEDAL_COL` was used at the menu medal render,
   defined nowhere → ReferenceError for any player who cleared a level.
-  Now defined at `game.js:57` as
+  Now defined at `game.js:76` as
   `{ gold: '#ffd23f', silver: '#c8d2dc', bronze: '#b07830' }`, consistent
   with the palette (coin gold / gray silver / door-family bronze).
+  Re-proven with real input in sr2 (menu medal dot after a real L1 clear;
+  seeded gold/silver save rendered, 0 exceptions).
 - **FIXED HIGH: D-45** — `loadSave` (`game.js:15`) now sanitizes on load:
   non-object/garbage JSON falls back to defaults; `unlocked` must be an
-  integer ≥ 1; `deaths` a finite ≥ 0 number; `best` entries are dropped
+  integer ≥ 1; `deaths` a finite ≥ 0 number; `volume` a finite number in
+  0–1 (added sr2, defaults to 1 for pre-sr2 saves); `best` entries are dropped
   unless `time` is finite ≥ 0, `deaths` an integer ≥ 0, and `medal` absent
   or gold/silver/bronze. Never throws on arbitrary localStorage content;
-  valid saves pass through byte-for-byte (verified in browser, see sr1
-  evidence). The old `b.time.toFixed` throw path (now game.js:336) is dead.
+  valid saves pass through byte-for-byte (verified in browser, see sr1/sr2
+  evidence). The old `b.time.toFixed` throw path (now game.js:400) is dead.
 - **FIXED MED: D-65** — `addEventListener('blur', () => keys.clear())` at
-  `game.js:82`; held keys no longer stick on focus loss. No
+  `game.js:102`; held keys no longer stick on focus loss. No
   visibilitychange handler existed to mirror. Verified in browser: held
   key moved the player 43.8px, after a blur event 0.0px.
 - OPEN MED: D-49 (autopilot fidelity/unreachable notes). OPEN LOW: D-50
@@ -85,7 +89,58 @@ architecture decision of this run, recorded per the mission rule.
 - Data hygiene: FIXED — `gen-pars.mjs` regenerated `pars.js` (114 pars;
   `109:48`, `111:39` added, all other values identical) and
   `difficulty.mjs` regenerated `DIFFICULTY.md` (now 114 rows, was 98).
-  Duplicate level names cosmetic (64/114, 75/87, 77/110).
+- Rights sweep (sr2, FIXED): level 96 HUD name was the original's name —
+  now **The Crucible** (`levels/96-worlds-hardest.js` name + header;
+  DIFFICULTY.md regenerated). Cosmetic duplicate names de-duplicated:
+  64 **Chained Chambers** (was = 114 'Gauntlet III'; header mentions the
+  chained chambers), 87 **Vault Raid** (was = 75 'Portal Vault'; header
+  says "raid the locked vault"), 110 **Switchback IV** (was = 77
+  'Switchback III'; series 11/41/77/110 now I→IV). Player-facing string
+  sweep clean: no other original-mark residue in game/boot surfaces
+  (menu title, HUD names, `<title>`, hub card are original evocations;
+  originals referenced by name only in internal docs/comments, which the
+  mission allows).
+
+## sr2 changes (2026-09-23, ship-candidate wave)
+
+All in `hardest/`, validator re-run after (see Verification):
+
+- **Settings (mission floor)**: `game.js` — save v1 gains `volume`
+  (0–1, default 1, sanitized in `loadSave`; pre-sr2 saves upgrade
+  silently). `beep()` gain scales by `save.volume` and honors `mute`.
+  `-`/`=` (and numpad) adjust volume in 10% steps on EVERY screen, with
+  an ack blip; `M` toggles mute globally (was per-screen, consolidated).
+  Menu renders a settings row: SFX bar + % + mute hint + total deaths.
+  Pause overlay lists the volume keys. Verified: adjust → localStorage
+  write → reload → persisted (sr2 matrix).
+- **Music (implemented, not deferred)**: sparse A-minor tension bed per
+  the repo audio doctrine (zero binary assets, WebAudio recipes only):
+  8-step arpeggio with rests (triangle, gain 0.02) + sub-root sine each
+  bar, 420 ms steps, started on first user gesture (autoplay-safe),
+  skipped while muted/zero-volume. Same volume control as SFX. Chosen
+  over silence deliberately: the mission's floor asks for music where it
+  fits; a quiet bed raises production value without fighting the
+  concentration genre. Audibility not asserted headless (see sr2 honest
+  limits).
+- **Victory screen**: clearing level 114 now routes to a new `win` screen
+  (THE CRUEL MAZE CONQUERED + medal tally + total deaths) instead of the
+  misleading "Enter for next" clear card. Exits: Enter/Space/Esc/tap →
+  menu. Clear-handling factored into `recordClear()`.
+- **Polish (bounded)**: clear-overlay medal word now renders in
+  `MEDAL_COL`; pause overlay typography unchanged; no redesign.
+- Flow audit (see below) drove only the victory-screen gap; no other
+  state gaps found.
+
+## Flow audit (sr2)
+
+States and exits, verified by code pass + sr2 real-input matrix:
+`menu` (→ play via Enter/tap on unlocked cell; arrows move selection) ·
+`play` (→ pause Esc, → restart R, → menu via pause-Q, → clear/win on
+goal) · `pause` (→ play Esc/tap, → restart R, → menu Q) · `clear` (→
+next level Enter/Space/tap, → menu Esc) · `win` (→ menu Enter/Space/Esc/
+tap; sr2-added). Death → auto-respawn at last S/K checkpoint (verified
+real-input: died in L1, respawned on the S row). Blur clears held keys
+(D-65). Touch joystick only in `play`. Every state has an exit.
 
 ## Traps for later runs
 
@@ -100,12 +155,45 @@ Recorded commands (last observed results):
 - `node hardest/validate.mjs` — r05: 96/96 exit 0 (36.8s);
   sr1 2026-09-22: **114/114 exit 0** (109: clear t=37.8s d=0;
   111: clear t=30.6s d=0); sr1 2026-09-23 (after the title rename):
+  **114/114 exit 0** (~2 min full corpus); sr2 2026-09-23 baseline:
+  **114/114 exit 0**; sr2 after all hardest/ changes (renames + settings +
+  victory + README): **114/114 exit 0**; sr2 final (end of run, quoted):
   **114/114 exit 0** (~2 min full corpus). Scoped iteration used
   `node hardest/validate.mjs --only hardest/levels/NN-slug.js`.
-- `node hardest/gen-pars.mjs` → `pars.js: 114 pars`;
-  `node hardest/difficulty.mjs` → `DIFFICULTY.md: 114 levels`
-  (run after the corpus was final; `gen-manifest.mjs` intentionally NOT
+- `node hardest/difficulty.mjs` → `DIFFICULTY.md: 114 levels`
+  (re-run in sr2 after the renames — names embedded in the report;
+  autopilot stats unchanged; `gen-manifest.mjs` intentionally NOT
   run — manifest already matches, and the script rewrites regardless).
+- sr2 browser matrix (headless chromium via raw CDP, zero-dep Node 24
+  driver `verification/evidence/sr2-hardest-driver.mjs`, real
+  `Input.dispatchKeyEvent` / `Input.dispatchTouchEvent` / mouse events,
+  fresh user-data-dirs, `__hardest` read-only assertions):
+  `node verification/evidence/sr2-hardest-driver.mjs` → **SR2 MATRIX:
+  12/12 PASS**, 0 console errors/exceptions across both sessions.
+  Items: boot (menu, 114 levels, 0 errors) · settings (5×`-` → 50%, M →
+  muted, localStorage write, **reload → persisted**, clamp at 100%) ·
+  start/move/pause/resume (L1, KeyD 700ms = 122.5px) · death→respawn
+  (walked into patrol 1, deaths=1, auto-respawned on S-row checkpoint,
+  back in play) · clear→medal→next (real-input L1 clear, SILVER card
+  rendered, best[1] saved, Enter → L2, Esc/Q → menu) · menu medal dot
+  (D-47 render path) · touch (emulated touch drag = joystick, player
+  moved 38.0→163.4px in L2) · music scheduler ticks (27; WebAudio
+  recipes) · mid-corpus via LEVEL SELECT (seeded profile, 46×ArrowRight +
+  Enter as real keys → L47 Pad Chain, moved 157.5px) · console-clean ·
+  hub (`python3 -m http.server 8126 --bind 127.0.0.1 -d <root>`, real
+  click on the hub card → `/hardest/` menu, 114 levels, 0 errors).
+  Evidence: `verification/evidence/sr2-hardest-run.log`,
+  `sr2-hardest-settings.png` (volume bar 50% + MUTED),
+  `sr2-hardest-clear.png` (silver medal card),
+  `sr2-hardest-medals.png` (menu, unlocks, settings row),
+  `sr2-hardest-touch.png` (joystick drag in L2),
+  `sr2-hardest-midcorpus.png` (L47 in play). Honest limits: full clears
+  of long levels remain with the autopilot validator (deterministic);
+  audio audibility not asserted under `--mute-audio` (persistence,
+  scheduler liveness, and gain math verified; recipes by inspection);
+  the level-114 `win` screen's real-input reach is impractical (114
+  clears) — logic shares the `clear` transition, exit keys verified by
+  inspection.
 - sr1 browser smoke (headless chromium 151.0.7922.137 via raw CDP,
   `file://…/hardest/index.html`, zero-dep Node 24 driver, real
   `Input.dispatchKeyEvent` keyboard): boot to menu 114 levels with
@@ -119,25 +207,46 @@ Recorded commands (last observed results):
   `verification/evidence/sr1-hardest-run.log`, `sr1-hardest-level1.png`
   (in-play, PAR 5s HUD from regenerated pars), `sr1-hardest-seeded-save.png`
   (menu with medals/stats, diagnosis only). Not exercised: levels beyond 1
-  in-browser, touch joystick, audio, the fixed 109/111 movers in-browser.
+  in-browser, touch joystick, audio, the fixed 109/111 movers in-browser
+  (all since covered by sr2).
 - r05 browser matrix (boot/control/save/touch, lanes HardestBoot/Engine/
   LvA-D/Adversarial, evidence `verification/evidence/r05-*`) — PASS for
   levels 1–98 state.
-- Contract: validator MUST pass before and after any `hardest/` change.
+- Contract: validator MUST pass before and after any `hardest/` change —
+  sr2 ran it 4× (baseline, post-change, final, plus difficulty regen
+  lane), all 114/114 exit 0.
 
-Ship-gate checklist (pending): ~~gate 114/114~~ DONE sr1; ~~D-45/47/65
-fixed + re-proven~~ DONE sr1; ~~pars + DIFFICULTY regenerated~~ DONE sr1;
-~~rename to original evocation~~ DONE sr1 (The Cruel Maze, validator re-run
-after rename); ~~integrated into the root entry point~~ DONE sr1 (root
-`index.html` card -> `hardest/`, real-input click-through proof in
-`verification/evidence/sr1-hub-run.log` / `sr1-hub-hardest.png`; renders
-from file:// too, serve hint on the hub); menus/HUD/pause/settings/touch
-verified with real input in browser (sr1 covered menu/level-1/pause/resume;
-settings does not exist).
+Ship-gate checklist: ~~gate 114/114~~ DONE sr1, re-proven sr2 (4 runs);
+~~D-45/47/65 fixed + re-proven~~ DONE sr1, D-47 re-proven with real input
+sr2; ~~pars + DIFFICULTY regenerated~~ DONE sr1, DIFFICULTY re-generated
+sr2 after renames; ~~rename to original evocation~~ DONE sr1 (The Cruel
+Maze) + sr2 rights sweep (L96 The Crucible; duplicates 64/87/110);
+~~integrated into the root entry point~~ DONE sr1, re-proven sr2 with a
+real hub click over http; ~~menus/HUD/pause/settings/touch verified with
+real input~~ DONE sr2 (12/12 matrix incl. settings persistence, touch
+joystick, medal dots, level select, hub); ~~victory screen for L114~~
+DONE sr2 (state + exits audited); ~~audio volume/mute~~ DONE sr2
+(+ synthesized music bed, no binary assets). Remaining open: D-49/D-50/
+D-62 (pre-existing, recorded above); audio audibility in a headed
+browser (deferral, below).
 
 ## Deferrals
 
-None declared yet.
+- **Audio audibility in a headed browser** — sr2 verified volume/mute
+  persistence, the music scheduler (tick liveness), and gain math under
+  `--mute-audio`; nobody listened. Recipes are oscillator-only per the
+  repo audio doctrine; a quick headed-browser listen is the remaining
+  human check.
+- **Real-input clear of level 114 → victory screen** — impractical by
+  hand; completability is proven by the deterministic autopilot gate
+  (114/114). The `win` screen transition/exit keys verified by
+  inspection; shares the proven `clear` path.
+- **D-49 / D-50 / D-62** — pre-existing low/med items carried from sr1
+  (autopilot fidelity notes; one cosmetic patrol-over-wall render;
+  autopilot not loaded in the player shell, by design).
+- Music was considered for deferral as "minimalism" but implemented
+  instead (sparse synthesized bed, same volume control) — it fits the
+  WebAudio recipe style cheaply and meets the mission floor.
 
 ## Provenance declaration
 

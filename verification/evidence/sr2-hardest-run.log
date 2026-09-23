@@ -1,0 +1,14 @@
+PASS [boot] menu=menu levels=114 volume=1 mute=false consoleErrors=0
+PASS [settings-volume-mute] after -x5,M: volume=0.5 mute=true; reload persisted=true; localStorage={"volume":0.5,"mute":true}
+PASS [settings-volume-clamp] after M,+x5: volume=1 mute=false
+PASS [start-move-pause] Enter->L1, KeyD700ms moved 122.5px, pause=true, resume=true
+PASS [death-respawn] died=true deaths=1 status=play respawnX=70.0 (S-row checkpoint, spawn=38/col2=70)
+PASS [clear-medal-next] clear=true medal=silver best1={"deaths":1,"time":7.7833333333332115,"medal":"silver"} Enter->L2 quitToMenu=true
+PASS [menu-medal-dot] unlocked=2 best1.medal=silver (D-47 render path)
+PASS [touch-joystick] touch drag right on canvas: player.x 38.0 -> 163.4 (level 2)
+PASS [music-bed] scheduler ticks=27 (WebAudio recipes only; audibility not asserted under --mute-audio)
+PASS [level-select-midcorpus] seeded unlocked=60; 46x ArrowRight + Enter (real keys) -> level 47 (Pad Chain); moved 157.5px
+PASS [console-clean] console errors / exceptions across session: 0
+PASS [hub-http] real click on hub card -> pathname=/hardest/ menu levels=114 consoleErrors=0
+
+SR2 MATRIX: 12/12 PASS

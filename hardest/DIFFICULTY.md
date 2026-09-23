@@ -68,7 +68,7 @@ difficulty PROXY — a greedy bot, not a human. Use for re-balance passes.
 | 61 | Inhuman | INHUMAN | yes | 0 | 11.1 |
 | 62 | Pad Roulette | INHUMAN | yes | 0 | 11.5 |
 | 63 | Key Largo | INHUMAN | yes | 0 | 14.1 |
-| 64 | Gauntlet III | INHUMAN | yes | 0 | 14.0 |
+| 64 | Chained Chambers | INHUMAN | yes | 0 | 14.0 |
 | 65 | Portal Prison | INHUMAN | yes | 0 | 7.2 |
 | 66 | Lockdown | INHUMAN | yes | 0 | 21.1 |
 | 67 | Warp Storm | INHUMAN | yes | 0 | 11.0 |
@@ -91,7 +91,7 @@ difficulty PROXY — a greedy bot, not a human. Use for re-balance passes.
 | 84 | Warp Labyrinth | INHUMAN | yes | 0 | 21.9 |
 | 85 | Lockpick | INHUMAN | yes | 0 | 12.8 |
 | 86 | Crossfire IV | INHUMAN | yes | 0 | 9.7 |
-| 87 | Portal Vault | INHUMAN | yes | 0 | 11.9 |
+| 87 | Vault Raid | INHUMAN | yes | 0 | 11.9 |
 | 88 | The Squeeze III | INHUMAN | yes | 0 | 13.5 |
 | 89 | Dot Hell | INHUMAN | yes | 0 | 8.3 |
 | 90 | Ninety | INHUMAN | yes | 0 | 15.8 |
@@ -100,7 +100,7 @@ difficulty PROXY — a greedy bot, not a human. Use for re-balance passes.
 | 93 | Panic III | INHUMAN | yes | 0 | 13.5 |
 | 94 | Warp Hell | INHUMAN | yes | 0 | 12.2 |
 | 95 | Penultimate | INHUMAN | yes | 0 | 14.4 |
-| 96 | World's Hardest | INHUMAN | yes | 0 | 18.1 |
+| 96 | The Crucible | INHUMAN | yes | 0 | 18.1 |
 | 97 | Moving Walls | INHUMAN | yes | 0 | 7.6 |
 | 98 | Crush Alley | INHUMAN | yes | 0 | 7.2 |
 | 99 | Wall Street | INHUMAN | yes | 0 | 8.1 |
@@ -114,7 +114,7 @@ difficulty PROXY — a greedy bot, not a human. Use for re-balance passes.
 | 107 | Airlock | INHUMAN | yes | 1 | 21.7 |
 | 108 | Piston II | INHUMAN | yes | 0 | 8.0 |
 | 109 | Vault Door | INHUMAN | yes | 0 | 37.8 |
-| 110 | Switchback III | INHUMAN | yes | 0 | 22.0 |
+| 110 | Switchback IV | INHUMAN | yes | 0 | 22.0 |
 | 111 | Portal Press | INHUMAN | yes | 0 | 30.6 |
 | 112 | Crush Vault | INHUMAN | yes | 0 | 14.5 |
 | 113 | Tempo Walls | INHUMAN | yes | 0 | 16.3 |

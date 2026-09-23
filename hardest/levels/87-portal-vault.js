@@ -1,7 +1,7 @@
-/* Level 87 — Portal Vault. Raid the locked vault through paired in/out portals. */
+/* Level 87 — Vault Raid. Raid the locked vault through paired in/out portals. */
 (globalThis.HARDEST_LEVELS = globalThis.HARDEST_LEVELS || []).push({
   id: 87,
-  name: 'Portal Vault',
+  name: 'Vault Raid',
   playerSpeed: 175,
   map: [
     '############################',

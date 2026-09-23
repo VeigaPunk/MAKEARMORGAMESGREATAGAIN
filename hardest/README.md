@@ -14,6 +14,8 @@ Or serve statically: `python3 -m http.server -d hardest` → http://localhost:80
 
 - Move: WASD / arrows (touch: drag anywhere = joystick)
 - R: restart level · Esc: pause / back · Enter: next level / select · M: mute
+- -/=: SFX volume (0–100%, saved) — a sparse synthesized music bed plays
+  under the SFX, same volume control, no audio files.
 - Progress (unlocks, best deaths/time, medals, total deaths) saves to localStorage.
 - Medals: gold = 0 deaths, silver ≤ 2, bronze = clear. Level numbers are tinted
   by difficulty tier (WARM-UP → INHUMAN).

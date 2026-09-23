@@ -1,7 +1,7 @@
-/* Level 96 — World's Hardest. Tier INHUMAN. The final gauntlet combines keys, doors, and a four-pad shortcut. */
+/* Level 96 — The Crucible. Tier INHUMAN. Keys, doors, and a four-pad shortcut across the widest chamber. */
 (globalThis.HARDEST_LEVELS = globalThis.HARDEST_LEVELS || []).push({
   id: 96,
-  name: "World's Hardest",
+  name: 'The Crucible',
   tier: 'INHUMAN',
   map: [
     '##############################',
