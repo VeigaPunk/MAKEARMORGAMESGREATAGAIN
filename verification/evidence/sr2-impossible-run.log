@@ -1,0 +1,31 @@
+== sr2 IMPOSSIBLE RUN — features/flow/audio on FINAL BUILD (real input) ==
+PASS boots to title screen — mode=title screen=title
+PASS title->play via real chip click — mode=run state=running attempt=1
+PASS music bed scheduling (WebAudio running, voices>3) — {"voices":11,"running":true,"music":0.7,"sfxVol":0.9}
+PASS jump via real Space (y drops) — y 396.0 -> min 250.8
+PASS pause: Esc freezes sim — paused=true x 756.00 -> 756.00
+PASS resume: Esc resumes sim — x 756.0 -> 954.0
+PASS settings reachable from pause menu — screen=settings
+PASS back from pause-settings returns to pause menu — screen=null paused=true
+PASS resume from pause menu — paused=false state=running
+PASS death at gap x~1410 (no jump) — state=dead x=1410.0 deaths=1
+PASS respawn <=200ms after death — respawnMs=166.5 attempt=2
+PASS pause menu -> QUIT to title — mode=title screen=title
+PASS practice select screen — screen=practice
+PASS practice start at FLAG 3 (x~6600) — practice=true x=6654.0 lastCp=6600
+PASS practice death (spike 6900, no jump) — x=6888.0
+PASS practice respawn at last flag (x~6600) — x=6600.0 lastCp=6600
+PASS practice: best-progress NOT recorded — best 0.14242424242424243 -> 0.14242424242424243
+PASS practice -> quit to title — mode=title
+PASS calibration screen — screen=calibration
+PASS calibration set 20ms + persisted — inputOffset=20 ls=20
+PASS calibration persists across reload — inputOffset=20
+PASS calibration reset to 0 (clean for clear-driver) — ls=0
+PASS settings screen — screen=settings
+PASS settings applied + persisted — {"music":0.6,"sfxVol":0.8,"muted":true,"ls":"{\"music\":0.6,\"sfx\":0.8,\"muted\":true}"}
+PASS settings persist across reload — {"music":0.6,"sfxVol":0.8,"muted":true}
+PASS unmute applied — muted=false
+PASS touch tap on title PLAY chip starts run — mode=run
+PASS tap-to-jump via CDP touch (y drops) — y 396.0 -> min 250.8
+PASS console errors: 0 app-originated — clean
+== SUMMARY: ALL PASS ==
