@@ -1,0 +1,9 @@
+== sr2 hub entry point: impossible-game boot proof (built game, real input) ==
+PASS hub card present — games/impossible-game/
+PASS hub click navigates into game — http://localhost:8123/games/impossible-game/
+PASS built game boots (?debug hook) — url=http://localhost:8123/games/impossible-game/
+PASS title screen on built game — mode=title
+PASS real click PLAY + real Space jump on built game — mode=run y 396.0 -> min 250.8
+PASS console errors: 0 — clean
+PASS non-local requests: 0 — all local
+== SUMMARY: ALL PASS ==
