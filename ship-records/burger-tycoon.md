@@ -5,7 +5,7 @@ Original reference: Burger Tycoon (Molleindustria's McDonald's Videogame,
 Branding precedent: ship as "Burger Tycoon" twin, no McDonald's marks.
 
 Status: **NOT SHIPPED** — survey complete, rendition EXTEND in progress.
-Last updated: 2026-09-22 (ship-run 2026-09-22).
+Last updated: 2026-09-23 (verification wave sr1, verification-only lane).
 
 ## Survey — implementations found
 
@@ -35,8 +35,12 @@ portrait pass per proto card), audio, art, tuned numbers, and menus/settings.
 
 ## Known defects
 
-- No open D-IDs (only title with a clean register; r05 PASS).
+- No open D-IDs (only title with a clean register; r05 PASS; sr1 re-proof PASS).
 - Proto card exact timings unverified (carry as tuning task, not defect).
+- sr1 note: collapse timing is strategy-dependent. r05 recorded rep→0 at
+  t=135s; sr1 stacked all three dirty toggles at t=0 and collapsed at **t=42s**
+  (backlash 100, rep 0, one DISEASE OUTBREAK at t=33s). Same mechanism, same
+  end-state (`REPUTATION COLLAPSE — activists shut you down`); not a defect.
 
 ## Placeholders to resolve before ship
 
@@ -52,6 +56,27 @@ Recorded commands (last observed results):
   clicks via CDP — PASS (`verification/proto-verdicts/burger-tycoon.md`).
 - App: `npm run dev:burger` (port 5175) + CDP — 5/5 acceptance items live,
   collapse chain proven to rep=0 at t=135s (r05).
+- **sr1 (2026-09-23), zero-dep Node CDP driver `verification/evidence/sr1-cdp.mjs`
+  + `sr1-burger-run.mjs`** (`npm run dev:burger` on 5175, `/usr/bin/chromium
+  --headless=new`, fresh `--user-data-dir` per run, real
+  `Input.dispatchMouseEvent` clicks; `__maga` read-only) — **all 7 acceptance
+  items PASS** (`verification/evidence/sr1-burger-run.log`):
+  - AC1 four-panes-affect-economy: crops 20→35, patties 10→14, demand 1.0→1.9,
+    cash 500→342 — one real click per pane — PASS.
+  - AC2 dirty=cutCorners: profit 0→$12/s (1.6x margin), backlash 0→1.6 — PASS.
+  - AC3 forced-failure: real clicks flip deforest+cheapFeed+cutCorners →
+    **GAME OVER `REPUTATION COLLAPSE` at t=42s**, rep 0, backlash 100 — PASS;
+    screenshots `sr1-burger-dirty-on.png`, `sr1-burger-collapse.png`.
+  - AC4 mobile tabs (best-effort, 500px viewport, single-pane): 4 DOM tabs,
+    pane 4 reachable — PASS; `sr1-burger-mobile-tabs.png`.
+  - AC5 no-McD-marks: rendered body text scanned, none — PASS (only internal
+    policy comments mention McDonald's; wordmark is original "BURGER TYCOON").
+  - AC6 English-only: 0 non-Latin/accented chars (only —/· punctuation) — PASS.
+  - AC7 sim-idles: t 0→2.5s, cash 500→503 with no input — PASS.
+  - Restart after game-over (real click): over=false, t=0, cash 500, rep 70 —
+    PASS. Best-time persistence: `maga:burger-tycoon:best-time` (41.96s)
+    survives in-session reload, HUD shows BEST — PASS.
+  - Console errors: 0 app-originated (only `/favicon.ico` 404).
 
 Ship-gate checklist: pending.
 

@@ -6,7 +6,7 @@ content target: the full game, not the Lite slice. Player-facing branding
 must be an original evocation.
 
 Status: **NOT SHIPPED** — survey complete, rendition EXTEND in progress.
-Last updated: 2026-09-22 (ship-run 2026-09-22).
+Last updated: 2026-09-23 (verification wave sr1, verification-only lane).
 
 ## Survey — implementations found
 
@@ -37,13 +37,31 @@ toward full-game scope (more than the Lite slice) and land AudioSyncClock.
 
 ## Known defects / unproven fronts
 
-- FIXED, must stay fixed (D-33/34): front-edge side-kill and
-  floor-absence+depth-margin gap kill — death coordinates x=1410 and x=2967
-  are the regression sentinels (27/27 deaths reproduced at r05).
-- OPEN: D-35 (NOTE), D-60/D-61 (INFO; D-60: `__proto` hook readability).
-- UNPROVEN: full clear x=9900 **on the app** (segment-verified only).
+- FIXED, re-confirmed at sr1 (D-33/D-34): floor-absence gap kill at **x=1410**
+  and block front-edge side-kill at **x=2967**, both with real key events,
+  coordinates read from `__maga` — PASS (`verification/evidence/sr1-impossible-run.log`).
+- **PROVEN at sr1 (was the r05 gap): full clear x=9900 on the app** with real
+  input. Closed-loop CDP driver replayed a 17-jump schedule (derived offline
+  from the LEVEL array + constants, `sr1-impossible-thresholds.json`) as real
+  `Input.dispatchKeyEvent` Space presses; state=clear, 0 deaths in the clear
+  attempt, best=100%. Reproduced 2/2 independent runs.
+- PROVEN at sr1: best-progress persistence — `maga:impossible:best-progress`
+  survives an in-session reload (14.24% after a death, reloaded, value intact).
+- OPEN: D-35 (NOTE, sub-frame taps dropped — not re-examined at sr1),
+  D-60/D-61 (INFO).
+- UNPROVEN (presentation/content, not mechanics): title screen & menus (app
+  boots straight into the run), practice mode + checkpoints + input-offset
+  calibration (proto has them, app does not), touch-tap jump (Input pointer
+  path exists in code; not explicitly re-driven at sr1).
 - UNPROVEN RISK (flagship): `AudioSyncClock` — music-synchronized obstacle
-  timing; zero audio exists anywhere in the repo yet.
+  timing; app has only jump/death/clear `Sfx` blips + a mute toggle, no music
+  track exists anywhere in the repo yet.
+- OBSERVATION (not a defect, proto-faithful): the spike at x=5650 sits on
+  block 5600 but is drawn at ground level (partially inside the block front)
+  and its hitbox (`cy > GROUND_Y-26`, `main.ts:139-146`) only triggers at
+  ground level, so it is harmless when standing on the block. Identical LEVEL
+  data + `spikeAt` in the verified proto (`prototypes/impossible-game.html:41,124-132`);
+  1:1 port, no regression.
 
 ## Placeholders to resolve before ship
 
@@ -59,7 +77,22 @@ Recorded commands (last observed results):
   key events, `tab.evaluate` reading `__proto` — PASS (2026-09-22, r1 art
   commit `2d30570`, zero console errors).
 - App: `npm run dev:impossible` (port 5174) + CDP probes — deaths at
-  x=1410/x=2967 re-confirmed r05; full clear NOT proven.
+  x=1410/x=2967 re-confirmed r05; full clear NOT proven (r05).
+- **sr1 (2026-09-23), zero-dep Node CDP driver `verification/evidence/sr1-cdp.mjs`
+  + `sr1-impossible-run.mjs`** (`npm run dev:impossible` on 5174,
+  `/usr/bin/chromium --headless=new`, fresh `--user-data-dir`, real
+  `Input.dispatchKeyEvent`; `__maga` read-only):
+  - `node verification/evidence/sr1-impossible-run.mjs --sentinels` —
+    SENTINEL A gap death **x=1410.0** PASS, SENTINEL B block front-edge death
+    **x=2967.0** PASS; screenshots `sr1-impossible-sentinel-{gap,block}.png`.
+  - `node verification/evidence/sr1-impossible-run.mjs --clear` — **FULL CLEAR
+    PASS**, state=clear at x=9900, 0 deaths in the attempt, best=100%,
+    17 real Space presses on a closed-loop schedule; screenshot
+    `sr1-impossible-clear.png`; log `sr1-impossible-run.log`. Reproduced 2/2.
+  - Persistence probe (same driver, in-session `Page.reload`) —
+    `maga:impossible:best-progress` retained after reload; PASS.
+  - Console errors: 0 app-originated (only the browser's automatic
+    `/favicon.ico` 404). Evidence: `sr1-impossible-*.{log,png,json,mjs}`.
 
 Ship-gate checklist: pending (per-game acceptance to be assembled from spec
 02 + mission bar: menus/HUD/pause/settings/touch/persistence/audio/content).

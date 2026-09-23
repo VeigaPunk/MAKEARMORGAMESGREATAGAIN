@@ -1,0 +1,26 @@
+== SENTINELS (D-33 gap / D-34 front-edge) — real key events ==
+SENTINEL A (floor-absence gap): state=dead death x=1410.0 (sentinel x≈1410) deaths=1 PASS
+SENTINEL B (front-edge side-kill): death x=2967.0 (sentinel x≈2967) PASS
+console errors so far: 2
+== FULL CLEAR attempt (LEVEL_END 9900) — real key events, closed loop ==
+thresholds: [1344,1785,2304,2863,3285,3864,4264,4924,5463,6255,6700,6964,7160,7779,8406,8964,9318]
+  jump fired: threshold=1344 x≈1344.0 (3.51s)
+  jump fired: threshold=1785 x≈1782.0 (4.72s)
+  jump fired: threshold=2304 x≈2304.0 (6.17s)
+  jump fired: threshold=2863 x≈2862.0 (7.72s)
+  jump fired: threshold=3285 x≈3282.0 (8.89s)
+  jump fired: threshold=3864 x≈3864.0 (10.51s)
+  jump fired: threshold=4264 x≈4260.0 (11.61s)
+  jump fired: threshold=4924 x≈4920.0 (13.44s)
+  jump fired: threshold=5463 x≈5460.0 (14.94s)
+  jump fired: threshold=6255 x≈6252.0 (17.14s)
+  jump fired: threshold=6700 x≈6696.0 (18.37s)
+  jump fired: threshold=6964 x≈6960.0 (19.10s)
+  jump fired: threshold=7160 x≈7158.0 (19.65s)
+  jump fired: threshold=7779 x≈7776.0 (21.37s)
+  jump fired: threshold=8406 x≈8406.0 (23.12s)
+  jump fired: threshold=8964 x≈8964.0 (24.67s)
+  jump fired: threshold=9318 x≈9318.0 (25.65s)
+FULL CLEAR PASS: state=clear at x=9900.0 attempt=5 deaths=2 time=27.2s best=100%
+FULL CLEAR RESULT: PASS
+total console errors: 2 ["log: Failed to load resource: the server responded with a status of 404 (Not Found)","log: Failed to load resource: the server responded with a status of 404 (Not Found)"]

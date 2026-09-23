@@ -1,0 +1,14 @@
+== BURGER acceptance re-proof (build card §8, items 1-5,6,7) — real clicks ==
+AC7 sim-idles: t 0.0->2.5, cash 500->503 PASS
+AC1 four-panes-affect-economy: crops 20->35, patties 10->14, demand 1.0->1.9, cash 500->342 PASS
+AC2 dirty=cutCorners: profit 0.0/s -> 12.0/s, backlash 0.0 -> 1.6 PASS
+AC5 no-McD-marks: scanned body text, forbidden=[none] PASS
+AC6 english-only: non-Latin/accented chars = 0 (only —/· punctuation present) PASS
+collapse: dirty toggles on = {"deforest":1,"cheapFeed":1,"cutCorners":1} (t=0s)
+AC3 forced-failure: GAME OVER at t=42s reason="REPUTATION COLLAPSE — activists shut you down" rep=0 backlash=100 PASS
+restart: after game-over click -> over=false t=0 cash=500 rep=70 PASS
+best-time persistence: localStorage 41.96490000000004 -> after reload 41.96490000000004; HUD has BEST true PASS
+console errors: 2 ["log: Failed to load resource: the server responded with a status of 404 (Not Found)","log: Failed to load resource: the server responded with a status of 404 (Not Found)"]
+== AC4 mobile tabs (best-effort, narrow viewport) ==
+viewport mode: grid=false canvasClientWidth=500
+AC4 tabs: 4 tab buttons, after clicking all, active tab idx=3 (reached pane 4) PASS
