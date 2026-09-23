@@ -7,20 +7,26 @@ begin with the survey + adopt/extend/replace decision and end as ship records
 deferrals, provenance declaration).
 
 Run log: **ship-run 2026-09-22** (goal-mode run) — reconnaissance complete,
-records seeded. Prior runs' status lives in git history, `verification/`,
-`MAGA-everything/01-design-docs/` (DISSECTION/OPEN-ITEMS/divergence-log), and
-`.ufo/handoff/` — mined as status records, never as instructions.
+records seeded; fix-forward wave A (hardest gate + S&S blockers) landed;
+baseline re-probe wave (all six apps, real input) landed. Prior runs' status
+lives in git history, `verification/`, `MAGA-everything/01-design-docs/`
+(DISSECTION/OPEN-ITEMS/divergence-log), and `.ufo/handoff/` — mined as status
+records, never as instructions.
 
-## Status board (as of 2026-09-22, ship-run start)
+## Status board (updated 2026-09-23, after sr1 waves A+B)
 
-| Game | Rendition | Decision | Gate / proof state | Blocking defects | Ship status |
+| Game | Rendition | Decision | Gate / proof state (this run) | Remaining before ship | Ship status |
 |---|---|---|---|---|---|
-| Boxhead: 2Play Rooms | `MAGA-everything/02-code/armor-games/apps/boxhead` (Pixi 8) | EXTEND | B-N1 PASS, B-N2 8/8 PASS (r05); needs re-probe after install | none HIGH; D-16→D-58 MED, D-18, D-55/56/57 LOW; 51 placeholder markers | NOT SHIPPED |
-| The Impossible Game | `apps/impossible` (Canvas2D) + proto contract | EXTEND | proto fully verified; app slice unproven end-to-end | full clear x=9900 unproven on app; AudioSyncClock unproven | NOT SHIPPED |
-| Burger Tycoon | `apps/burger-tycoon` (Canvas2D+DOM) | EXTEND | strongest app: 5/5 acceptance live, collapse chain proven | none open; all economy numbers are guesses | NOT SHIPPED |
-| Chicken Invaders 2 (+ Cluck Horizon) | `packages/shmup-core` + `apps/chicken-invaders{,-original}` | EXTEND (keep dual-pack architecture) | cluck full clear proven; replica ch1+boss proven | D-38 replica enemy types no-op; D-37 boss names; replica game-over + ch2 boss unproven | NOT SHIPPED |
-| Swords & Sandals 2 | `apps/swords-and-sandals` (Canvas2D+DOM) | EXTEND | loop proven; save validator proven | **D-51/52/53 stored XSS (HIGH)**; **D-54 ladder unwinnable (MED)** | NOT SHIPPED |
-| The World's Hardest Game | `hardest/` (zero-dep, file://) | ADOPT + EXTEND | **validator RED: 112/114** (109, 111 autopilot fail) | D-47 HIGH (MEDAL_COL crash), D-45 HIGH (save brick), D-65 MED | NOT SHIPPED |
+| Boxhead: 2Play Rooms | `apps/boxhead` (Pixi 8) | EXTEND | B-N1/B-N2 re-proven 37/39 real-input (sr1); `?debug` hook added | grenade AoE multi-kill unproven; DM kill-credit stub `game.ts:737-739`; D-55/56 re-confirmed, D-58 open; 51 placeholders; art/audio/menus polish | NOT SHIPPED |
+| The Impossible Game | `apps/impossible` (Canvas2D) | EXTEND | sentinels x=1410/x=2967 exact; **full clear x=9900 proven 2/2** (sr1); persistence PASS | title/menus, practice checkpoints, calibration, touch, audio (AudioSyncClock) — proto features not yet in app; constants guessed | NOT SHIPPED |
+| Burger Tycoon | `apps/burger-tycoon` (Canvas2D+DOM) | EXTEND | 7/7 acceptance re-proven (sr1); collapse chain forced-failure t=42s | economy numbers guessed; audio/art/menus/settings polish | NOT SHIPPED |
+| Chicken Invaders 2 (+ Cluck Horizon) | `packages/shmup-core` + 2 pack apps | EXTEND (dual-pack kept) | **both packs full clear proven** (sr1); D-37/D-38 FIXED; cluck regression clean | D-36/39/41–44 LOW; combat constants guessed; cluck gameplay SVGs unwired; audio/art polish | NOT SHIPPED |
+| Swords & Sandals 2 | `apps/swords-and-sandals` (Canvas2D+DOM) | EXTEND | D-51/52/53 XSS FIXED; D-54 rebalanced — **full ladder clear to V1 COMPLETE proven** (sr1); save/load + keyboard PASS | art/audio/menus polish; mobile thumb layout; content depth vs original (tournament tree deferred) | NOT SHIPPED |
+| The World's Hardest Game | `hardest/` (zero-dep, file://) | ADOPT + EXTEND | **validator 114/114 GREEN exit 0** (sr1); D-45/47/65 FIXED; pars + DIFFICULTY regenerated | **rights rename (title still original)**; menus/HUD/pause/settings/touch browser proof beyond level 1; audio polish | NOT SHIPPED |
+
+Wave notes: all sr1 verification used real input events via zero-dependency
+Node CDP drivers (committed under `verification/evidence/sr1-*.mjs`) against
+system chromium — re-runnable offline with no new dependencies.
 
 Global gaps: no root entry point; no audio anywhere beyond synth blips; all
 combat/economy constants are declared guesses ("TBD ARCADE"); art is
@@ -42,18 +48,21 @@ placeholder/first-pass in the monorepo.
 
 ## Run plan (ship-run 2026-09-22)
 
-1. **Fix-forward wave A (gates first):** hardest — repair 109/111 (degenerate
-   stationary movers), D-47, D-45, D-65; regen `pars.js` + `DIFFICULTY.md`;
-   gate must read 114/114. S&S — D-51/52/53 XSS, D-54 ladder economy.
-2. **Baseline re-probe:** `npm install`; boot all six apps headless; re-run
-   recorded verifications (B-N1/B-N2 boxhead, shmup clears, burger collapse,
-   impossible deaths at x=1410/2967, sas save matrix).
-3. **Root entry point:** single `index.html` at repo root linking exactly one
-   rendition per title (hardest via `hardest/`, five via built monorepo apps —
-   committed static build output so the player needs no build step).
+1. ~~**Fix-forward wave A (gates first)**~~ — **DONE (sr1):** hardest gate
+   114/114 GREEN (109/111 repaired, D-45/47/65 fixed, pars + DIFFICULTY
+   regenerated); S&S D-51/52/53 XSS fixed, D-54 ladder winnable + proven.
+2. ~~**Baseline re-probe**~~ — **DONE (sr1):** `npm install` clean (lockfile
+   unchanged); all six apps re-verified with real input (boxhead 37/39,
+   impossible full clear 2/2, burger 7/7, both shmup packs full clear,
+   sas 61/61).
+3. **Root entry point** ← NEXT: single `index.html` at repo root linking
+   exactly one rendition per title (hardest via `hardest/`, five via built
+   monorepo apps — committed static build output so the player needs no
+   build step).
 4. **Ship-readiness per game:** resolve/tune placeholder constants, audio
    (WebAudio doctrine), authored art, menus/HUD/pause/settings/touch/
-   persistence, rights renames (hardest title still original).
+   persistence, rights renames (hardest title still original; check each
+   app's player-facing strings).
 5. **Final verification + records:** real-input proofs with evidence; finish
    each record's checklist/commands/deferrals/provenance.
 
