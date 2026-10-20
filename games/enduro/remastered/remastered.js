@@ -262,12 +262,29 @@
   /* Layout.                                                              */
   /* ------------------------------------------------------------------ */
 
+  var padInset = 0;
+
+  function viewportSize() {
+    var vv = window.visualViewport;
+    var vw = vv ? vv.width : window.innerWidth;
+    var vh = vv ? vv.height : window.innerHeight;
+    return { w: Math.floor(Math.min(vw, window.innerWidth) || vw), h: Math.floor(Math.min(vh, window.innerHeight) || vh) };
+  }
+
   function resize() {
-    var vw = window.innerWidth, vh = window.innerHeight;
+    var vp = viewportSize(), vw = vp.w, vh = vp.h;
     var coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
-    var availH = vh;
-    if (coarse && vw < vh) availH = Math.max(240, vh - 140);
-    var aspect = clamp(vw / availH, 0.78, 1.6);
+    var portrait = coarse && vw < vh;
+    var landscape = coarse && !portrait;
+    var top0 = 0, availH = vh;
+    if (portrait) {
+      // canvas sits between the top chips and the pad bar
+      var bar = document.getElementById('touch').getBoundingClientRect().height || 136;
+      var tb = document.getElementById('topbar').getBoundingClientRect();
+      top0 = Math.ceil(tb.bottom + 6);
+      availH = Math.max(200, vh - bar - top0);
+    }
+    var aspect = clamp(vw / availH, portrait ? 0.6 : 0.78, landscape ? 2.3 : 1.6);
     var w = vw, h = w / aspect;
     if (h > availH) { h = availH; w = h * aspect; }
     w = Math.floor(w); h = Math.floor(h);
@@ -275,20 +292,29 @@
     canvas.style.width = w + 'px';
     canvas.style.height = h + 'px';
     canvas.style.left = Math.floor((vw - w) / 2) + 'px';
-    canvas.style.top = Math.floor((availH - h) / 2) + 'px';
+    canvas.style.top = Math.floor(top0 + (availH - h) / 2) + 'px';
     canvas.width = Math.round(w * DPR);
     canvas.height = Math.round(h * DPR);
     maskCanvas.width = canvas.width;
     maskCanvas.height = canvas.height;
     W = w; H = h;
-    hudH = clamp(H * 0.15, 66, 124);
+    // landscape touch: the pads sit over the bottom corners, keep the HUD between them
+    padInset = 0;
+    if (landscape) {
+      var steer = document.querySelector('#touch .steer'), ped = document.querySelector('#touch .pedals');
+      var sr = steer ? steer.getBoundingClientRect() : null, pr = ped ? ped.getBoundingClientRect() : null;
+      var left = sr ? sr.right - parseFloat(canvas.style.left) : 0;
+      var right = pr ? parseFloat(canvas.style.left) + w - pr.left : 0;
+      padInset = Math.max(0, Math.max(left, right) + 8);
+    }
+    hudH = clamp(H * 0.15, landscape ? 58 : 66, 124);
     var m = Math.max(8, Math.min(W, H) * 0.016);
     hudTop = H - hudH - m;
     playerY = hudTop - H * 0.015;
     horizonY = Math.round(H * 0.4);
     cx = W / 2;
-    halfRoad = W * 0.35;
-    BEND_PX = W * 0.45;
+    halfRoad = Math.min(W * 0.35, H * 0.62);
+    BEND_PX = halfRoad * (0.45 / 0.35);
     buildVignette();
   }
 
@@ -306,6 +332,23 @@
   }
 
   function rowOf(p) { return horizonY + p * (playerY - horizonY); }
+
+  // Headlight cone: straight ahead of the car in screen space, so bends carry the road out of it.
+  function beamPath(c, x, pEnd, widen) {
+    var steps = 14, q, pq, wq;
+    c.beginPath();
+    for (q = 0; q <= steps; q++) {
+      pq = 1 - (1 - pEnd) * (q / steps);
+      wq = (0.13 + 0.5 * (1 - pq)) * widen;
+      c.lineTo(cx + (x - wq) * pq * halfRoad, rowOf(pq));
+    }
+    for (q = steps; q >= 0; q--) {
+      pq = 1 - (1 - pEnd) * (q / steps);
+      wq = (0.13 + 0.5 * (1 - pq)) * widen;
+      c.lineTo(cx + (x + wq) * pq * halfRoad, rowOf(pq));
+    }
+    c.closePath();
+  }
   function roadX(d) { return cx + rGame.bendAt(d) * BEND_PX; }
 
   /* ------------------------------------------------------------------ */
@@ -345,12 +388,17 @@
       var sy2 = horizonY - pal.sunElev * horizonY * 0.95;
       var sr = Math.min(W, H) * 0.032;
       var glow = ctx.createRadialGradient(sx2, sy2, sr * 0.5, sx2, sy2, sr * 9);
-      glow.addColorStop(0, rgb(pal.sun, 0.55 * pal.sunA));
-      glow.addColorStop(0.25, rgb(pal.sun, 0.18 * pal.sunA));
+      glow.addColorStop(0, rgb(pal.sun, 0.75 * pal.sunA));
+      glow.addColorStop(0.18, rgb(pal.sun, 0.3 * pal.sunA));
+      glow.addColorStop(0.45, rgb(pal.sun, 0.08 * pal.sunA));
       glow.addColorStop(1, rgb(pal.sun, 0));
       ctx.fillStyle = glow;
       ctx.fillRect(sx2 - sr * 9, sy2 - sr * 9, sr * 18, sr * 18);
-      ctx.fillStyle = rgb(shade(pal.sun, 0.35), pal.sunA);
+      var core = ctx.createRadialGradient(sx2, sy2, 0, sx2, sy2, sr);
+      core.addColorStop(0, rgb([255, 255, 250], pal.sunA));
+      core.addColorStop(0.7, rgb(shade(pal.sun, 0.5), pal.sunA));
+      core.addColorStop(1, rgb(pal.sun, pal.sunA * 0.9));
+      ctx.fillStyle = core;
       ctx.beginPath(); ctx.arc(sx2, sy2, sr, 0, Math.PI * 2); ctx.fill();
     }
     if (pal.cloudA > 0.01) {
@@ -800,7 +848,8 @@
 
   function drawHud(game, now) {
     var m = Math.max(8, Math.min(W, H) * 0.016);
-    var pw = Math.min(W - m * 2, 980);
+    var pw = Math.min(W - m * 2 - padInset * 2, 980);
+    if (pw < 300) pw = Math.min(W - m * 2, 300);
     var x0 = (W - pw) / 2, y0 = hudTop, ph = hudH;
     var r = Math.min(18, ph * 0.2);
 
@@ -835,8 +884,8 @@
     var label = Math.max(8, Math.min(11, ph * 0.1)) | 0;
 
     // --- speedometer (left column)
-    var gr = Math.min(inner * 0.46, colW * 0.3);
-    var gx = x0 + Math.max(gr + r * 0.6, colW * 0.28), gy = iy + inner * 0.56;
+    var gr = Math.min(inner * 0.42, colW * 0.3);
+    var gx = x0 + Math.max(gr + r * 0.9, colW * 0.28), gy = Math.min(iy + inner * 0.5, y0 + ph - gr * 0.98 - 3);
     var a0 = Math.PI * 0.8, a1 = Math.PI * 2.2;
     var sf = game.v / C.VMAX;
     ctx.lineCap = 'round';
@@ -868,11 +917,11 @@
     ctx.textAlign = 'center';
     ctx.textBaseline = 'alphabetic';
     ctx.fillStyle = '#ffffff';
-    ctx.font = '800 ' + Math.round(gr * 0.5) + 'px ' + MONO;
-    ctx.fillText(String(Math.round(game.v)), gx, gy + gr * 0.62);
+    ctx.font = '800 ' + Math.round(gr * 0.46) + 'px ' + MONO;
+    ctx.fillText(String(Math.round(game.v)), gx, gy + gr * 0.56);
     ctx.fillStyle = 'rgba(255,255,255,0.55)';
-    ctx.font = '700 ' + label + 'px ' + UI_FONT;
-    ctx.fillText('MPH', gx, gy + gr * 0.95);
+    ctx.font = '700 ' + Math.max(7, Math.round(Math.min(label, gr * 0.24))) + 'px ' + UI_FONT;
+    ctx.fillText('MPH', gx, gy + gr * 0.9);
 
     // --- odometer + day (centre column)
     var ccx = x0 + pw / 2;
@@ -1101,20 +1150,14 @@
       beam.addColorStop(0.55, 'rgba(0,0,0,0.75)');
       beam.addColorStop(1, 'rgba(0,0,0,0)');
       mctx.fillStyle = beam;
-      mctx.beginPath();
-      var steps = 14, q, pq, wq;
-      for (q = 0; q <= steps; q++) {
-        pq = 1 - (1 - pEnd) * (q / steps);
-        wq = 0.16 + 0.52 * (1 - pq);
-        mctx.lineTo(cx + (game.x - wq) * pq * halfRoad, rowOf(pq));
+      var feather = [[1, 0.5], [1.25, 0.3], [1.55, 0.2]];
+      for (var fq = 0; fq < feather.length; fq++) {
+        var save = mctx.globalAlpha;
+        mctx.globalAlpha = save * feather[fq][1] * 2;
+        beamPath(mctx, game.x, pEnd, feather[fq][0]);
+        mctx.fill();
+        mctx.globalAlpha = save;
       }
-      for (q = steps; q >= 0; q--) {
-        pq = 1 - (1 - pEnd) * (q / steps);
-        wq = 0.16 + 0.52 * (1 - pq);
-        mctx.lineTo(cx + (game.x + wq) * pq * halfRoad, rowOf(pq));
-      }
-      mctx.closePath();
-      mctx.fill();
       var aura = mctx.createRadialGradient(px, playerY - carW1 * 0.3, carW1 * 0.1, px, playerY - carW1 * 0.3, carW1 * 1.1);
       aura.addColorStop(0, 'rgba(0,0,0,0.8)');
       aura.addColorStop(1, 'rgba(0,0,0,0)');
@@ -1165,13 +1208,12 @@
       hg.addColorStop(0, 'rgba(255,244,214,' + hz.toFixed(3) + ')');
       hg.addColorStop(1, 'rgba(255,244,214,0)');
       ctx.fillStyle = hg;
-      ctx.beginPath();
-      ctx.moveTo(px - carW1 * 0.35, playerY - carW1 * 0.25);
-      ctx.lineTo(cx + (game.x - 0.55) * 0.25 * halfRoad, rowOf(0.25));
-      ctx.lineTo(cx + (game.x + 0.55) * 0.25 * halfRoad, rowOf(0.25));
-      ctx.lineTo(px + carW1 * 0.35, playerY - carW1 * 0.25);
-      ctx.closePath();
+      beamPath(ctx, game.x, 0.25, 1.1);
       ctx.fill();
+      ctx.globalAlpha = 0.5;
+      beamPath(ctx, game.x, 0.25, 1.45);
+      ctx.fill();
+      ctx.globalAlpha = 1;
     }
     drawParticles(pal, true);
     ctx.globalCompositeOperation = 'source-over';
@@ -1432,8 +1474,20 @@
     b.addEventListener('click', function () { b.blur(); });
   });
 
-  window.addEventListener('resize', resize);
-  if (window.visualViewport) window.visualViewport.addEventListener('resize', resize);
+  var resizeTimer = 0;
+  function refit() {
+    resize();
+    clearTimeout(resizeTimer);
+    // iOS reports the settled size a beat after rotating
+    resizeTimer = setTimeout(resize, 300);
+  }
+  window.addEventListener('resize', refit);
+  window.addEventListener('orientationchange', refit);
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', refit);
+  if (window.matchMedia) {
+    var mq = window.matchMedia('(orientation: portrait)');
+    if (mq.addEventListener) mq.addEventListener('change', refit);
+  }
   resize();
 
   EnduroShell.boot({
