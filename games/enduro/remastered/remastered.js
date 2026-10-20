@@ -474,7 +474,7 @@
   }
 
   function drawGround(pal, game) {
-    var S = 2;
+    var S = H > 900 ? 3 : 2;
     var span = playerY - horizonY;
     var grassMid = mix(pal.grassA, pal.grassB, 0.5);
     var rumMid = mix(pal.rumA, pal.rumB, 0.5);
