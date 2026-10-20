@@ -330,32 +330,32 @@
     sctx.drawImage(frame, 0, 0, screen.width, screen.height);
   }
 
-  // Integer pixel scaling with a near-4:3 picture (2600 pixels are wide).
+  // Near-4:3 picture (2600 pixels are wide). Big screens get crisp integer
+  // scaling; phones get the largest fractional fit, drawn at device resolution.
   function fit() {
     var tv = document.getElementById('tv'), bezel = tv.firstElementChild;
     var avail = tv.getBoundingClientRect(), ts = getComputedStyle(tv), bs = getComputedStyle(bezel);
     var padX = parseFloat(ts.paddingLeft) + parseFloat(ts.paddingRight) + parseFloat(bs.paddingLeft) + parseFloat(bs.paddingRight);
     var padY = parseFloat(ts.paddingTop) + parseFloat(ts.paddingBottom) + parseFloat(bs.paddingTop) + parseFloat(bs.paddingBottom);
-    var maxW = Math.max(160, avail.width - padX), maxH = Math.max(120, avail.height - padY);
-    var best = { sx: 2, sy: 1 };
-    for (var sy = 1; sy <= 8; sy++) {
+    var maxW = Math.max(120, avail.width - padX), maxH = Math.max(90, avail.height - padY);
+    var s = Math.min(maxW / (W * 1.6), maxH / H);
+    var cssW = Math.floor(W * 1.6 * s), cssH = Math.floor(H * s);
+    for (var sy = 8; sy >= 2; sy--) {
       var sx = Math.round(sy * 1.6);
-      if (W * sx <= maxW && H * sy <= maxH) best = { sx: sx, sy: sy };
+      if (W * sx <= maxW && H * sy <= maxH) {
+        if (sy >= s * 0.88) { cssW = W * sx; cssH = H * sy; }
+        break;
+      }
     }
-    if (W * best.sx > maxW || H * best.sy > maxH) {
-      var s = Math.min(maxW / (W * 1.6), maxH / H);
-      screen.style.width = Math.floor(W * 1.6 * s) + 'px';
-      screen.style.height = Math.floor(H * s) + 'px';
-      screen.width = W * 2;
-      screen.height = H;
-      return;
-    }
-    screen.width = W * best.sx;
-    screen.height = H * best.sy;
-    screen.style.width = screen.width + 'px';
-    screen.style.height = screen.height + 'px';
+    var dpr = Math.min(3, window.devicePixelRatio || 1);
+    screen.width = Math.round(cssW * dpr);
+    screen.height = Math.round(cssH * dpr);
+    screen.style.width = cssW + 'px';
+    screen.style.height = cssH + 'px';
   }
   window.addEventListener('resize', fit);
+  window.addEventListener('orientationchange', function () { setTimeout(fit, 120); });
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', fit);
   fit();
 
   // --- TIA-style audio ----------------------------------------------------------

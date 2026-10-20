@@ -110,34 +110,61 @@
       if (document.hidden && game.state === 'race') setPaused(true);
     });
 
-    // Touch / pointer pads (only shown on coarse pointers by the page CSS).
+    // iOS and Android only unlock audio on pointerup/touchend/click, not on pointerdown.
+    ['pointerup', 'touchend', 'click'].forEach(function (type) {
+      document.addEventListener(type, unlockAudio, true);
+    });
+
+    // Touch pads (shown on coarse pointers by the page CSS). Each finger is tracked
+    // by position, so it can hold gas with one thumb and slide ◀ ↔ ▶ with the other.
     if (opts.touchRoot) {
-      var pads = opts.touchRoot.querySelectorAll('[data-pad]');
-      Array.prototype.forEach.call(pads, function (el) {
-        var name = el.getAttribute('data-pad');
-        var down = function (e) {
-          e.preventDefault();
-          unlockAudio();
-          if (name === 'accel' && game.state !== 'race') requestStart();
-          if (paused) setPaused(false);
-          touch[name] = true;
-          el.classList.add('on');
-          if (el.setPointerCapture && e.pointerId != null) {
-            try { el.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
-          }
-        };
-        var up = function (e) {
-          e.preventDefault();
-          touch[name] = false;
-          el.classList.remove('on');
-        };
-        el.addEventListener('pointerdown', down);
-        el.addEventListener('pointerup', up);
-        el.addEventListener('pointercancel', up);
-        el.addEventListener('lostpointercapture', up);
-        el.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+      var root = opts.touchRoot;
+      var fingers = {};
+      var padEls = root.querySelectorAll('[data-pad]');
+      var padAt = function (x, y) {
+        var el = document.elementFromPoint(x, y);
+        el = el && el.closest ? el.closest('[data-pad]') : null;
+        return el && root.contains(el) ? el.getAttribute('data-pad') : null;
+      };
+      var refresh = function () {
+        touch.left = touch.right = touch.accel = touch.brake = false;
+        for (var id in fingers) if (fingers[id]) touch[fingers[id]] = true;
+        Array.prototype.forEach.call(padEls, function (el) {
+          el.classList.toggle('on', !!touch[el.getAttribute('data-pad')]);
+        });
+      };
+      root.addEventListener('pointerdown', function (e) {
+        var name = padAt(e.clientX, e.clientY);
+        if (!name) return;
+        e.preventDefault();
+        if (e.target.releasePointerCapture && e.target.hasPointerCapture && e.target.hasPointerCapture(e.pointerId)) {
+          e.target.releasePointerCapture(e.pointerId);
+        }
+        if (name === 'accel' && game.state !== 'race') requestStart();
+        if (paused) setPaused(false);
+        fingers[e.pointerId] = name;
+        refresh();
       });
+      root.addEventListener('pointermove', function (e) {
+        if (!(e.pointerId in fingers)) return;
+        var name = padAt(e.clientX, e.clientY);
+        if (name !== fingers[e.pointerId]) { fingers[e.pointerId] = name; refresh(); }
+      });
+      var lift = function (e) {
+        if (!(e.pointerId in fingers)) return;
+        delete fingers[e.pointerId];
+        refresh();
+      };
+      ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (type) {
+        root.addEventListener(type, lift);
+      });
+      global.addEventListener('pointerup', lift);
+      global.addEventListener('pointercancel', lift);
+      global.addEventListener('blur', function () { fingers = {}; refresh(); });
+      root.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+      root.addEventListener('touchstart', function (e) { e.preventDefault(); }, { passive: false });
     }
+    var buzz = !!(navigator.vibrate && global.matchMedia && global.matchMedia('(pointer: coarse)').matches);
     if (opts.canvas) {
       opts.canvas.addEventListener('pointerdown', function () {
         unlockAudio();
@@ -208,6 +235,7 @@
               var ev = events[i];
               if (ev.type === 'gameover') { overAt = performance.now(); saveBest(ev.data.day, ev.data.odo); }
               if (ev.type === 'newday') saveBest(ev.data.day, Math.floor(game.odo));
+              if (ev.type === 'crash' && buzz) { try { navigator.vibrate(70); } catch (err) { /* ignore */ } }
             }
             if (opts.audio) opts.audio.onEvents(events, game);
             if (opts.onEvents) opts.onEvents(events, game);
